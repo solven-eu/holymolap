@@ -1,0 +1,43 @@
+# Binaries
+######################
+*.class
+ 
+# Eclipse
+######################
+.project
+.settings
+.classpath
+
+#IntelliJ
+*.iml
+ 
+# Maven
+######################
+target
+bin
+#### Release Plugin
+*.releaseBackup
+*.versionsBackup
+release.properties
+pom.xml.tag
+pom.xml.next
+ 
+# Temporary files
+######################
+*.swp
+*.log
+log
+bin
+pom.xml.versionsBackup
+
+# Mac temp file
+.DS_Store
+
+#Eclipse Spring plugin
+.springBeans
+
+#OutOfMemory HeapDumps
+java_pid*
+
+#svn
+.svn
