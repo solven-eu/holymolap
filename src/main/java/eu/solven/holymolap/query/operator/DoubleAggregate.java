@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.common.util.concurrent.AtomicDouble;
 
+import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
+
 public class DoubleAggregate implements IDoubleAggregate {
 
 	protected final IDoubleBinaryOperator operator;

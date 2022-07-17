@@ -3,16 +3,22 @@ package eu.solven.holymolap.sink;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * When sinking some data, we enable recording some context. Typically, some metadata about each column.
+ * 
+ * @author Benoit Lacelle
+ *
+ */
 public interface ISinkContext {
 	int expectedNbRows();
 
-	List<Comparable<?>> keyIndexToKey();
+	List<String> keyIndexToKey();
 
-	Set<? extends Comparable<?>> objectKeySet();
+	Set<? extends String> objectKeySet();
 
-	Set<? extends Comparable<?>> doubleKeySet();
+	Set<? extends String> doubleKeySet();
 
-	Set<? extends Comparable<?>> intKeySet();
+	Set<? extends String> intKeySet();
 
 	boolean hasNewKey();
 

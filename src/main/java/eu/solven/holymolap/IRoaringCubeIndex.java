@@ -12,7 +12,7 @@ public interface IRoaringCubeIndex {
 
 	void startIndexing(int keyIndex);
 
-	void startIndexing(Set<?> keysToIndex);
+	void startIndexing(Set<String> keysToIndex);
 
 	long getSizeInBytes();
 
@@ -24,20 +24,20 @@ public interface IRoaringCubeIndex {
 
 	RoaringBitmap getValueIndexToBitmap(int wildcardKeyIndex, int valueIndex);
 
-	RoaringBitmap getBitmap(Object wildcardKey, Object value);
+	RoaringBitmap getBitmap(String wildcardKey, Object value);
 
-	Object convertValueIndexToValue(Object key, int valueIndex);
+	Object convertValueIndexToValue(String key, int valueIndex);
 
 	// Slow
-	Object getValueAtRow(Object key, int row);
+	Object getValueAtRow(String key, int row);
 
 	List<?> getValuesForKey(String key);
 
 	Set<?> keySet();
 
-	int getKeyIndex(Object wildcardKey);
+	int getKeyIndex(String wildcardKey);
 
-	Object getKeyAtIndex(int keyIndex);
+	String getKeyAtIndex(int keyIndex);
 
 	int getValueIndex(int wildcardKeyIndex, int rowToConsider);
 

@@ -16,15 +16,18 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.AbstractIterator;
 
-import eu.solven.holymolap.IHolyCube;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
+import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.operator.OperatorFactory;
 import eu.solven.holymolap.sink.FastEntry;
 import eu.solven.holymolap.sink.IFastEntry;
-import eu.solven.holymolap.sink.IRoaringSink;
+import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
 import eu.solven.holymolap.sink.RoaringSink;
+import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
+import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
@@ -36,7 +39,7 @@ public class MediumCardinalityDimensionTest {
 
 	@Test
 	public void testOneHighCardinality() {
-		IRoaringSink sink = new RoaringSink();
+		IHolySink sink = new RoaringSink();
 
 		final int nbRows = 1000000;
 		final float cardinalityFactor = 1;
@@ -108,7 +111,10 @@ public class MediumCardinalityDimensionTest {
 				long start = System.currentTimeMillis();
 
 				final AtomicInteger resultSize = new AtomicInteger();
-				AggregateHelper.consumeQueryResult(cube, AggregateQueryBuilder.wildcard(key).addAggregation(doubleKey).build(),
+				AggregateHelper.consumeQueryResult(cube,
+						AggregateQueryBuilder.wildcard(key)
+								.addAggregation(new AggregatedAxis(doubleKey, OperatorFactory.SUM))
+								.build(),
 						new Consumer<RawCoordinatesToBitmap>() {
 
 							@Override
@@ -120,7 +126,10 @@ public class MediumCardinalityDimensionTest {
 
 				Assert.assertEquals(keyToValues.get(i).size(), resultSize.get());
 
-				LOGGER.info("It took {} ms for {} aggregates for key={}", System.currentTimeMillis() - start, resultSize, key);
+				LOGGER.info("It took {} ms for {} aggregates for key={}",
+						System.currentTimeMillis() - start,
+						resultSize,
+						key);
 			}
 
 			{
@@ -131,7 +140,10 @@ public class MediumCardinalityDimensionTest {
 				long start = System.currentTimeMillis();
 
 				final AtomicInteger resultSize = new AtomicInteger();
-				AggregateHelper.consumeQueryResult(cube, AggregateQueryBuilder.wildcards(subKeys).addAggregation(doubleKey).build(),
+				AggregateHelper.consumeQueryResult(cube,
+						AggregateQueryBuilder.wildcards(subKeys)
+								.addAggregation(OperatorFactory.sum(doubleKey) )
+								.build(),
 						new Consumer<RawCoordinatesToBitmap>() {
 
 							@Override
@@ -143,7 +155,10 @@ public class MediumCardinalityDimensionTest {
 
 				Assert.assertTrue(keyToValues.get(i).size() <= resultSize.get());
 
-				LOGGER.info("It took {} ms for {} aggregates for wildcards: {}", System.currentTimeMillis() - start, resultSize, subKeys);
+				LOGGER.info("It took {} ms for {} aggregates for wildcards: {}",
+						System.currentTimeMillis() - start,
+						resultSize,
+						subKeys);
 			}
 		}
 	}

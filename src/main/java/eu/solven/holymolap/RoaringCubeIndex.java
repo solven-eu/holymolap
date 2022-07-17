@@ -18,7 +18,7 @@ import javolution.util.function.Consumer;
 public class RoaringCubeIndex implements IRoaringCubeIndex {
 
 	protected final int nbRows;
-	protected final List<?> keyIndexToKey;
+	protected final List<String> keyIndexToKey;
 
 	protected final List<IntList> keyToRowToValueIndex;
 	protected final List<IntList> keysBeingIndexed;
@@ -27,7 +27,10 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 
 	protected final IDataHolder dataHolder;
 
-	public RoaringCubeIndex(int nbRows, List<?> keyIndexToKey, List<? extends IKeyValuesIndex> keyIndexToValueIndex, IDataHolder dataHolder) {
+	public RoaringCubeIndex(int nbRows,
+			List<String> keyIndexToKey,
+			List<? extends IKeyValuesIndex> keyIndexToValueIndex,
+			IDataHolder dataHolder) {
 		this.nbRows = nbRows;
 		this.keyIndexToKey = keyIndexToKey;
 
@@ -41,13 +44,13 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 	}
 
 	@Override
-	public int getKeyIndex(Object key) {
+	public int getKeyIndex(String key) {
 		return keyIndexToKey.indexOf(key);
 	}
 
 	@Override
-	public void startIndexing(Set<?> keysToIndex) {
-		for (Object keyToIndex : keysToIndex) {
+	public void startIndexing(Set<String> keysToIndex) {
+		for (String keyToIndex : keysToIndex) {
 			int keyIndex = getKeyIndex(keyToIndex);
 
 			startIndexing(keyIndex);
@@ -139,12 +142,12 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 	}
 
 	@Override
-	public Object convertValueIndexToValue(Object key, int valueIndex) {
+	public Object convertValueIndexToValue(String key, int valueIndex) {
 		return keyIndexToValueIndex.get(getKeyIndex(key)).getValue(valueIndex);
 	}
 
 	@Override
-	public RoaringBitmap getBitmap(Object key, Object value) {
+	public RoaringBitmap getBitmap(String key, Object value) {
 		int keyIndex = getKeyIndex(key);
 
 		if (keyIndex < 0) {
@@ -160,7 +163,7 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 
 	// Slow
 	@Override
-	public Object getValueAtRow(Object key, int row) {
+	public Object getValueAtRow(String key, int row) {
 		int keyIndex = getKeyIndex(key);
 
 		// TODO: check keyBitmap
@@ -189,7 +192,7 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 	}
 
 	@Override
-	public Object getKeyAtIndex(int keyIndex) {
+	public String getKeyAtIndex(int keyIndex) {
 		return keyIndexToKey.get(keyIndex);
 	}
 

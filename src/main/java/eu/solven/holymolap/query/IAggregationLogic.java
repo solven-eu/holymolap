@@ -2,9 +2,9 @@ package eu.solven.holymolap.query;
 
 import org.roaringbitmap.IntIterator;
 
-import eu.solven.holymolap.IHolyCube;
+import eu.solven.holymolap.cube.IHolyCube;
 
-public interface AggregationLogic<T> {
+public interface IAggregationLogic<T> {
 
 	T aggregateTo(IHolyCube roaringCube, IntIterator it, int[] valueIndexes);
 

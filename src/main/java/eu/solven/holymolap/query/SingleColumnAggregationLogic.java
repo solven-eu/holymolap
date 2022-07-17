@@ -2,11 +2,11 @@ package eu.solven.holymolap.query;
 
 import org.roaringbitmap.IntIterator;
 
-import eu.solven.holymolap.IHolyCube;
-import eu.solven.holymolap.query.operator.IDoubleBinaryOperator;
+import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 
-public class SingleColumnAggregationLogic implements AggregationLogic<Double> {
+public class SingleColumnAggregationLogic implements IAggregationLogic<Double> {
 	protected final String aggregatedKey;
 	protected final IDoubleBinaryOperator operator;
 

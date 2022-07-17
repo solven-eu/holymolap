@@ -8,9 +8,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public class ImmutableSinkContext implements ISinkContext {
-	protected final Set<?> objectKeys;
-	protected final Set<?> doubleKeys;
-	protected final Set<?> intKeys;
+	protected final Set<String> objectKeys;
+	protected final Set<String> doubleKeys;
+	protected final Set<String> intKeys;
 
 	protected final List<Object> allKeys;
 
@@ -18,7 +18,9 @@ public class ImmutableSinkContext implements ISinkContext {
 	// protected final List<?> doubleKeysAsList;
 	// protected final List<Object> intKeysAsList;
 
-	public ImmutableSinkContext(Collection<?> objectKeys, Collection<?> doubleKeys, Collection<Object> intKeys) {
+	public ImmutableSinkContext(Collection<String> objectKeys,
+			Collection<String> doubleKeys,
+			Collection<String> intKeys) {
 		this.objectKeys = ImmutableSet.copyOf(objectKeys);
 		this.doubleKeys = ImmutableSet.copyOf(doubleKeys);
 		this.intKeys = ImmutableSet.copyOf(intKeys);
@@ -40,22 +42,22 @@ public class ImmutableSinkContext implements ISinkContext {
 	}
 
 	@Override
-	public List<Comparable<?>> keyIndexToKey() {
+	public List<String> keyIndexToKey() {
 		return (List) allKeys;
 	}
 
 	@Override
-	public Set<? extends Comparable<?>> objectKeySet() {
+	public Set<? extends String> objectKeySet() {
 		return (Set) objectKeys;
 	}
 
 	@Override
-	public Set<? extends Comparable<?>> doubleKeySet() {
+	public Set<? extends String> doubleKeySet() {
 		return (Set) doubleKeys;
 	}
 
 	@Override
-	public Set<? extends Comparable<?>> intKeySet() {
+	public Set<? extends String> intKeySet() {
 		return (Set) intKeys;
 	}
 

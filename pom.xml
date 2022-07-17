@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
@@ -13,7 +14,7 @@
 
 	<groupId>io.github.solven-eu.holymolap</groupId>
 	<version>1.0-SNAPSHOT</version>
-	
+
 	<artifactId>monolith</artifactId>
 	<packaging>jar</packaging>
 
@@ -29,7 +30,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>18.0</version>
+			<version>31.1-jre</version>
 		</dependency>
 
 		<dependency>
@@ -41,29 +42,29 @@
 		<dependency>
 			<groupId>org.roaringbitmap</groupId>
 			<artifactId>RoaringBitmap</artifactId>
-			<version>0.5.3</version>
+			<version>0.9.30</version>
 		</dependency>
 		<dependency>
 			<groupId>me.lemire.integercompression</groupId>
 			<artifactId>JavaFastPFOR</artifactId>
-			<version>0.1.3</version>
+			<version>0.1.12</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mapdb</groupId>
 			<artifactId>mapdb</artifactId>
-			<version>2.0-beta4</version>
+			<version>3.0.8</version>
 		</dependency>
 
 		<dependency>
 			<groupId>it.unimi.dsi</groupId>
 			<artifactId>fastutil</artifactId>
-			<version>7.0.7</version>
+			<version>8.5.8</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.simpleflatmapper</groupId>
-			<artifactId>sfm</artifactId>
-			<version>2.2</version>
+			<artifactId>sfm-csv</artifactId>
+			<version>8.2.3</version>
 		</dependency>
 
 		<dependency>
@@ -71,9 +72,10 @@
 			<artifactId>metrics-core</artifactId>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
 		<dependency>

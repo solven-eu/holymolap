@@ -10,11 +10,11 @@ import org.junit.Test;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableSet;
 
-import eu.solven.holymolap.IHolyCube;
 import eu.solven.holymolap.TestAggregation;
+import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.sink.FastEntry;
 import eu.solven.holymolap.sink.IFastEntry;
-import eu.solven.holymolap.sink.IRoaringSink;
+import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
 import eu.solven.holymolap.sink.RoaringSink;
 
@@ -22,7 +22,7 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testOneHighCardinality() {
-		IRoaringSink sink = new RoaringSink();
+		IHolySink sink = new RoaringSink();
 
 		final int cardinality = 10000000;
 
@@ -96,7 +96,7 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testTwoHighCardinality() {
-		IRoaringSink sink = new RoaringSink();
+		IHolySink sink = new RoaringSink();
 
 		final int cardinality = 1000000;
 
@@ -171,7 +171,7 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testIndexAllKeysOneByOne() {
-		IRoaringSink sink = new RoaringSink();
+		IHolySink sink = new RoaringSink();
 
 		IHolyCube cube = sink.sink(new FastEntry(new Object[] { "a", "b", "c" }),
 				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),

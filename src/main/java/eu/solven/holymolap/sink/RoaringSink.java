@@ -2,9 +2,9 @@ package eu.solven.holymolap.sink;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import org.roaringbitmap.RoaringBitmap;
 import org.slf4j.Logger;
@@ -12,28 +12,18 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Meter;
 
-import eu.solven.holymolap.IHolyCube;
-import eu.solven.holymolap.RoaringCube;
+import eu.solven.holymolap.cube.HolyCube;
+import eu.solven.holymolap.cube.IHolyCube;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
-public class RoaringSink implements IRoaringSink {
+public class RoaringSink implements IHolySink {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(RoaringSink.class);
 
 	@Override
-	public IHolyCube sink(IFastEntry toAdd, ISinkContext context) {
-		return sink(Collections.singleton(toAdd), context);
-	}
-
-	@Override
-	public IHolyCube sink(Iterable<? extends IFastEntry> toAdd, ISinkContext context) {
-		return sink(toAdd.iterator(), context);
-	}
-
-	@Override
-	public IHolyCube sink(Iterator<? extends IFastEntry> toAdd, ISinkContext context) {
+	public IHolyCube sink(Stream<? extends IFastEntry> toAdd, ISinkContext context) {
 		int nbKeys = context.keyIndexToKey().size();
 
 		List<RoaringBitmap> keyIndexToBitmap;
@@ -53,15 +43,15 @@ public class RoaringSink implements IRoaringSink {
 		List<List<RoaringBitmap>> keyIndexToValueIndexToBitmap = (List) Arrays.asList(new List[nbKeys]);
 
 		final Meter requests = new Meter();
-		int rowIndex = -1;
-		while (toAdd.hasNext()) {
-			if (rowIndex == Integer.MAX_VALUE) {
-				throw new RuntimeException("We can not sink an Iterable with more than Integer.MAX_VALUE elements");
+		AtomicInteger rowIndex = new AtomicInteger(-1);
+
+		toAdd.forEach(next -> {
+			if (rowIndex.get() == Integer.MAX_VALUE) {
+				throw new IllegalArgumentException(
+						"We can not sink an Iterable with more than Integer.MAX_VALUE elements");
 			}
 
-			IFastEntry next = toAdd.next();
-
-			rowIndex++;
+			int currentRowIndex = rowIndex.incrementAndGet();
 
 			requests.mark();
 			if (requests.getCount() % 100000 == 100000 - 1) {
@@ -74,19 +64,19 @@ public class RoaringSink implements IRoaringSink {
 			}
 
 			for (int keyIndex : next.expressedDoubleIndexes()) {
-				keyIndexToBitmap.get(keyIndex).add(rowIndex);
+				keyIndexToBitmap.get(keyIndex).add(currentRowIndex);
 
 				double value = next.getDouble(keyIndex);
 
-				contributeDoubleToRow(value, keyIndex, keyIndexToDoubles, context.expectedNbRows(), rowIndex);
+				contributeDoubleToRow(value, keyIndex, keyIndexToDoubles, context.expectedNbRows(), currentRowIndex);
 			}
 
 			for (int keyIndex : next.expressedIntIndexes()) {
-				keyIndexToBitmap.get(keyIndex).add(rowIndex);
+				keyIndexToBitmap.get(keyIndex).add(currentRowIndex);
 
 				int value = next.getInt(keyIndex);
 
-				contributeIntToRow(value, keyIndex, keyIndexToInts, context.expectedNbRows(), rowIndex);
+				contributeIntToRow(value, keyIndex, keyIndexToInts, context.expectedNbRows(), currentRowIndex);
 			}
 
 			for (int keyIndex : next.expressedObjectIndexes()) {
@@ -100,7 +90,7 @@ public class RoaringSink implements IRoaringSink {
 				}
 
 				RoaringBitmap bitmap = keyIndexToBitmap.get(keyIndex);
-				bitmap.add(rowIndex);
+				bitmap.add(currentRowIndex);
 
 				Comparable<?> value = next.getValue(keyIndex);
 
@@ -111,10 +101,10 @@ public class RoaringSink implements IRoaringSink {
 					// index them
 					if (value instanceof Integer) {
 						contributeIntToRow(((Number) value)
-								.intValue(), keyIndex, keyIndexToInts, context.expectedNbRows(), rowIndex);
+								.intValue(), keyIndex, keyIndexToInts, context.expectedNbRows(), currentRowIndex);
 					} else {
 						contributeDoubleToRow(((Number) value)
-								.doubleValue(), keyIndex, keyIndexToDoubles, context.expectedNbRows(), rowIndex);
+								.doubleValue(), keyIndex, keyIndexToDoubles, context.expectedNbRows(), currentRowIndex);
 					}
 				} else {
 					List<RoaringBitmap> valueToBitmap = keyIndexToValueIndexToBitmap.get(keyIndex);
@@ -140,13 +130,14 @@ public class RoaringSink implements IRoaringSink {
 
 					RoaringBitmap valueBitmap = valueToBitmap.get(valueIndex);
 
-					valueBitmap.add(rowIndex);
+					valueBitmap.add(currentRowIndex);
 				}
 			}
-		}
+		});
 
 		// NbRows is rowIndex + 1
-		return new RoaringCube(rowIndex + 1,
+		int nbRows = rowIndex.get() + 1;
+		return new HolyCube(nbRows,
 				context.keyIndexToKey(),
 				keyIndexToBitmap,
 				keyIndexToValueIndex,

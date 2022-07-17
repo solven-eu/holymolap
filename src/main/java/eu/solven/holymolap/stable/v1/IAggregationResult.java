@@ -1,13 +1,11 @@
-package eu.solven.holymolap.result;
+package eu.solven.holymolap.stable.v1;
 
 import java.util.NavigableMap;
 
-import eu.solven.holymolap.query.IAggregateQuery;
 import eu.solven.holymolap.query.operator.IDoubleAggregate;
-import eu.solven.holymolap.query.operator.IDoubleBinaryOperator;
 
 /**
- * The result of an {@link IAggregateQuery}
+ * The result of an {@link IAggregationQuery}
  * 
  * @author Benoit Lacelle
  *

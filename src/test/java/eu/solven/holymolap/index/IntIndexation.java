@@ -7,10 +7,10 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
 
-import eu.solven.holymolap.IHolyCube;
 import eu.solven.holymolap.TestAggregation;
+import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.sink.FastEntry;
-import eu.solven.holymolap.sink.IRoaringSink;
+import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
 import eu.solven.holymolap.sink.RoaringSink;
 
@@ -18,7 +18,7 @@ public class IntIndexation {
 
 	@Test
 	public void testIndexAllKeysOneByOne() {
-		IRoaringSink sink = new RoaringSink();
+		IHolySink sink = new RoaringSink();
 
 		IHolyCube cube = sink.sink(new FastEntry(new Object[0], null, new int[] { 3, 7 }), new ImmutableSinkContext(
 				ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY), Collections.emptySet(), Collections.emptySet()));

@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Set;
 
 public class ObjectOnlySinkContext implements ISinkContext {
-	protected final Object[] keys;
+	protected final String[] keys;
 
-	public ObjectOnlySinkContext(Object[] keys) {
+	public ObjectOnlySinkContext(String[] keys) {
 		this.keys = keys;
 	}
 
@@ -19,22 +19,22 @@ public class ObjectOnlySinkContext implements ISinkContext {
 	}
 
 	@Override
-	public List<Comparable<?>> keyIndexToKey() {
-		return (List) Arrays.asList(keys);
+	public List<String> keyIndexToKey() {
+		return Arrays.asList(keys);
 	}
 
 	@Override
-	public Set<? extends Comparable<?>> objectKeySet() {
+	public Set<? extends String> objectKeySet() {
 		return new HashSet<>(keyIndexToKey());
 	}
 
 	@Override
-	public Set<? extends Comparable<?>> doubleKeySet() {
+	public Set<? extends String> doubleKeySet() {
 		return Collections.emptySet();
 	}
 
 	@Override
-	public Set<? extends Comparable<?>> intKeySet() {
+	public Set<? extends String> intKeySet() {
 		return Collections.emptySet();
 	}
 

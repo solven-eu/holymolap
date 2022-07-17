@@ -1,15 +1,21 @@
 package eu.solven.holymolap.query;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import eu.solven.holymolap.query.operator.IStandardOperators;
+import eu.solven.holymolap.query.operator.OperatorFactory;
+import eu.solven.holymolap.stable.v1.IAggregatedAxis;
 
 public class AggregateQueryBuilder {
 	protected final Set<String> wildcards = new ConcurrentSkipListSet<>();
 	protected final Map<String, Object> filters = new ConcurrentSkipListMap<>();
 
-	protected final Set<String> aggregatesKeys = new ConcurrentSkipListSet<>();
+	protected final List<IAggregatedAxis> aggregatesKeys = new CopyOnWriteArrayList<>();
 
 	public AggregateQueryBuilder addWildcard(String wildcard) {
 		wildcards.add(wildcard);
@@ -23,14 +29,25 @@ public class AggregateQueryBuilder {
 		return this;
 	}
 
-	public AggregateQueryBuilder addAggregation(String key) {
-		aggregatesKeys.add(key);
+	public AggregateQueryBuilder addAggregation(IAggregatedAxis aggregatedAxis) {
+		aggregatesKeys.add(aggregatedAxis);
 
 		return this;
 	}
 
-	public AggregateQuery build() {
-		AggregateQuery query = new AggregateQuery(filters, wildcards, aggregatesKeys);
+	/**
+	 * Like .addAggregation, but specialized for sums.
+	 * 
+	 * @param axis
+	 *            the axis the aggregate with a SUM.
+	 * @return current builder.
+	 */
+	public AggregateQueryBuilder sum(String axis) {
+		return addAggregation(OperatorFactory.sum(axis));
+	}
+
+	public SimpleAggregationQuery build() {
+		SimpleAggregationQuery query = new SimpleAggregationQuery(filters, wildcards, aggregatesKeys);
 
 		return query;
 	}

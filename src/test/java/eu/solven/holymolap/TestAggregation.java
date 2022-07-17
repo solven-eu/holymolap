@@ -13,16 +13,17 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
 
-import eu.solven.holymolap.IHolyCube;
-import eu.solven.holymolap.RoaringCube;
+import eu.solven.holymolap.cube.HolyCube;
+import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.query.AggregateHelper;
-import eu.solven.holymolap.query.AggregateQuery;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.query.SingleColumnAggregationLogic;
-import eu.solven.holymolap.query.operator.IDoubleBinaryOperator;
+import eu.solven.holymolap.query.operator.IStandardOperators;
 import eu.solven.holymolap.sink.FastEntry;
 import eu.solven.holymolap.sink.ObjectOnlySinkContext;
 import eu.solven.holymolap.sink.RoaringSink;
+import eu.solven.holymolap.stable.v1.IAggregationQuery;
 
 public class TestAggregation {
 	public static final String FIRST_KEY = "firstKey";
@@ -37,18 +38,21 @@ public class TestAggregation {
 	public static final String DOUBLE_SECOND_KEY = "doubleSecondKey";
 	public static final double DOUBLE_SECOND_VALUE = 17D;
 
-	public static AggregateQuery GRAND_TOTAL = AggregateQuery.GRAND_TOTAL;
+	public static IAggregationQuery GRAND_TOTAL = SimpleAggregationQuery.GRAND_TOTAL;
 
-	public static AggregateQuery FILTER_FIRST_KEY = AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build();
-	public static AggregateQuery DD_FIRST_KEY = AggregateQueryBuilder.wildcard(FIRST_KEY).build();
+	public static SimpleAggregationQuery FILTER_FIRST_KEY =
+			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build();
+	public static SimpleAggregationQuery DD_FIRST_KEY = AggregateQueryBuilder.wildcard(FIRST_KEY).build();
 
-	public static AggregateQuery FILTER_FIRST_FILTER_SECOND_KEY = AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE)
-			.addFilter(SECOND_KEY, SECOND_VALUE).build();
-	public static AggregateQuery DD_FIRST_DD_SECOND_KEY = AggregateQueryBuilder.wildcard(FIRST_KEY).addWildcard(SECOND_KEY).build();
-	public static AggregateQuery FILTER_FIRST_DD_SECOND_KEY = AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addWildcard(SECOND_KEY).build();
+	public static SimpleAggregationQuery FILTER_FIRST_FILTER_SECOND_KEY =
+			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addFilter(SECOND_KEY, SECOND_VALUE).build();
+	public static SimpleAggregationQuery DD_FIRST_DD_SECOND_KEY =
+			AggregateQueryBuilder.wildcard(FIRST_KEY).addWildcard(SECOND_KEY).build();
+	public static SimpleAggregationQuery FILTER_FIRST_DD_SECOND_KEY =
+			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addWildcard(SECOND_KEY).build();
 
-	protected List<AggregateQuery> getAllQueries() {
-		List<AggregateQuery> queries = new ArrayList<>();
+	protected List<IAggregationQuery> getAllQueries() {
+		List<IAggregationQuery> queries = new ArrayList<>();
 
 		queries.add(GRAND_TOTAL);
 
@@ -64,69 +68,80 @@ public class TestAggregation {
 
 	@Test
 	public void testEmptyCube() {
-		RoaringCube cube = new RoaringCube();
+		HolyCube cube = new HolyCube();
 
 		Assert.assertEquals(0, cube.getNbRows());
 		Assert.assertEquals(Collections.emptySet(), cube.getIndex().keySet());
 
-		for (AggregateQuery query : getAllQueries()) {
-			Assert.assertEquals(new TreeMap<>(), AggregateHelper.cumulateInNavigableMap(cube, query, new SingleColumnAggregationLogic(
-					DOUBLE_FIRSY_KEY, IDoubleBinaryOperator.SUM)));
+		for (IAggregationQuery query : getAllQueries()) {
+			Assert.assertEquals(new TreeMap<>(),
+					AggregateHelper.cumulateInNavigableMap(cube,
+							query,
+							new SingleColumnAggregationLogic(DOUBLE_FIRSY_KEY, IStandardOperators.SUM)));
 		}
 	}
 
 	@Test
 	public void testAddOneEmptyEntry() {
-		IHolyCube cube = new RoaringSink().sink(new FastEntry(new Object[] {}), new ObjectOnlySinkContext(new Object[] {}));
+		IHolyCube cube =
+				new RoaringSink().sink(new FastEntry(new Object[] {}), new ObjectOnlySinkContext(new String[] {}));
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(Collections.emptySet(), cube.getIndex().keySet());
 
-		for (AggregateQuery query : getAllQueries()) {
-			Assert.assertEquals(new TreeMap<>(), AggregateHelper.cumulateInNavigableMap(cube, query, new SingleColumnAggregationLogic(
-					DOUBLE_FIRSY_KEY, IDoubleBinaryOperator.SUM)));
+		for (IAggregationQuery query : getAllQueries()) {
+			Assert.assertEquals(new TreeMap<>(),
+					AggregateHelper.cumulateInNavigableMap(cube,
+							query,
+							new SingleColumnAggregationLogic(DOUBLE_FIRSY_KEY, IStandardOperators.SUM)));
 		}
 	}
 
 	@Test
 	public void testAddOneEntryAggregateNotDoubleKey() {
-		IHolyCube cube = new RoaringSink()
-				.sink(new FastEntry(new Object[] { FIRST_VALUE }), new ObjectOnlySinkContext(new Object[] { FIRST_KEY }));
+		IHolyCube cube = new RoaringSink().sink(new FastEntry(new Object[] { FIRST_VALUE }),
+				new ObjectOnlySinkContext(new String[] { FIRST_KEY }));
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY)), cube.getIndex().keySet());
 
-		Assert.assertEquals(new TreeMap<>(), AggregateHelper.cumulateInNavigableMap(cube, AggregateQuery.GRAND_TOTAL,
-				new SingleColumnAggregationLogic(DOUBLE_FIRSY_KEY, IDoubleBinaryOperator.SUM)));
+		Assert.assertEquals(new TreeMap<>(),
+				AggregateHelper.cumulateInNavigableMap(cube,
+						SimpleAggregationQuery.GRAND_TOTAL,
+						new SingleColumnAggregationLogic(DOUBLE_FIRSY_KEY, IStandardOperators.SUM)));
 
 		// There is no double on FirstKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ? extends Double> resultAsMap = AggregateHelper.cumulateInNavigableMap(cube,
-					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addAggregation(FIRST_KEY).build(), new SingleColumnAggregationLogic(
-							FIRST_KEY, IDoubleBinaryOperator.SUM));
+			NavigableMap<? extends NavigableMap<?, ?>, ? extends Double> resultAsMap =
+					AggregateHelper.cumulateInNavigableMap(cube,
+							AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).sum(FIRST_KEY).build(),
+							new SingleColumnAggregationLogic(FIRST_KEY, IStandardOperators.SUM));
 			Assertions.assertThat(resultAsMap).hasSize(1);
 
 			Assert.assertTrue(resultAsMap.containsKey(new TreeMap<>()));
-			Assert.assertEquals(IDoubleBinaryOperator.SUM.neutral(), resultAsMap.get(new TreeMap<>()), 0.001D);
+			Assert.assertEquals(IStandardOperators.SUM.neutral(), resultAsMap.get(new TreeMap<>()), 0.001D);
 		}
 	}
 
 	@Test
 	public void testAddOneEntryAggregateDoubleKey() {
-		IHolyCube cube = new RoaringSink().sink(new FastEntry(new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }), new ObjectOnlySinkContext(
-				new Object[] { FIRST_KEY, DOUBLE_FIRSY_KEY }));
+		IHolyCube cube = new RoaringSink().sink(new FastEntry(new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }),
+				new ObjectOnlySinkContext(new String[] { FIRST_KEY, DOUBLE_FIRSY_KEY }));
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)), cube.getIndex().keySet());
 
-		Assert.assertEquals(new TreeMap<>(), AggregateHelper.cumulateInNavigableMap(cube, AggregateQuery.GRAND_TOTAL,
-				new SingleColumnAggregationLogic(DOUBLE_FIRSY_KEY, IDoubleBinaryOperator.SUM)));
+		Assert.assertEquals(new TreeMap<>(),
+				AggregateHelper.cumulateInNavigableMap(cube,
+						SimpleAggregationQuery.GRAND_TOTAL,
+						new SingleColumnAggregationLogic(DOUBLE_FIRSY_KEY, IStandardOperators.SUM)));
 
 		// THere is a single fact for DoubleKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ? extends Double> resultAsMap = AggregateHelper.cumulateInNavigableMap(cube,
-					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addAggregation(DOUBLE_FIRSY_KEY).build(), new SingleColumnAggregationLogic(
-							DOUBLE_FIRSY_KEY, IDoubleBinaryOperator.SUM));
+			NavigableMap<? extends NavigableMap<?, ?>, ? extends Double> resultAsMap =
+					AggregateHelper.cumulateInNavigableMap(cube,
+							AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).sum(DOUBLE_FIRSY_KEY).build(),
+							new SingleColumnAggregationLogic(DOUBLE_FIRSY_KEY, IStandardOperators.SUM));
 			Assertions.assertThat(resultAsMap).hasSize(1);
 
 			// https://github.com/joel-costigliola/assertj-core/issues/315

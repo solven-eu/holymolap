@@ -1,9 +1,5 @@
 package eu.solven.holymolap;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntLists;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -14,8 +10,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-
-import javolution.util.function.Consumer;
 
 import org.roaringbitmap.FastAggregation;
 import org.roaringbitmap.IntIterator;
@@ -30,6 +24,10 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Sets;
 
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntLists;
+import javolution.util.function.Consumer;
 
 @ManagedResource
 public class PositionIndexBuilder {
@@ -41,8 +39,8 @@ public class PositionIndexBuilder {
 	protected final AtomicLong rowsBeingActiveIndexed = new AtomicLong();
 
 	/**
-	 * The number of rows which have been already indexed in an index operation
-	 * which is still active (i.e. which have more rows to index)
+	 * The number of rows which have been already indexed in an index operation which is still active (i.e. which have
+	 * more rows to index)
 	 */
 	protected final AtomicLong rowsDoneActiveIndexed = new AtomicLong();
 
@@ -87,8 +85,11 @@ public class PositionIndexBuilder {
 
 					if (previousValueIndex != IRoaringCubeIndex.NOT_INDEXED) {
 						if (previousValueIndex != valueIndex) {
-							throw new RuntimeException("The row " + nextRow + " is associated to several values for the same row: " + valueIndex
-									+ " and " + previousValueIndex);
+							throw new RuntimeException("The row " + nextRow
+									+ " is associated to several values for the same row: "
+									+ valueIndex
+									+ " and "
+									+ previousValueIndex);
 						} else {
 							LOGGER.debug("We unexpectedly indexed again {}", nextRow);
 						}
@@ -110,7 +111,9 @@ public class PositionIndexBuilder {
 	 * @return
 	 * @return the matching rows
 	 */
-	public RoaringBitmap computeNextCellRows(IRoaringCubeIndex index, Collection<?> wildcardKeys, RoaringBitmap candidateRows,
+	public RoaringBitmap computeNextCellRows(IRoaringCubeIndex index,
+			Collection<String> wildcardKeys,
+			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
 		if (candidateRows.isEmpty()) {
 			return candidateRows;
@@ -138,7 +141,7 @@ public class PositionIndexBuilder {
 			matchingRowsBitmaps.add(candidateRows);
 
 			int i = -1;
-			for (Object wildcardKey : wildcardKeys) {
+			for (String wildcardKey : wildcardKeys) {
 				i++;
 
 				int wildcardKeyIndex = index.getKeyIndex(wildcardKey);
@@ -146,7 +149,8 @@ public class PositionIndexBuilder {
 				int valueIndex = index.getValueIndex(wildcardKeyIndex, rowToConsider);
 
 				if (valueIndex == IRoaringCubeIndex.NOT_INDEXED) {
-					throw new IllegalStateException("We are considering a row (" + rowToConsider + ") which does not contribute to key: "
+					throw new IllegalStateException("We are considering a row (" + rowToConsider
+							+ ") which does not contribute to key: "
 							+ wildcardKey);
 				}
 
@@ -169,13 +173,18 @@ public class PositionIndexBuilder {
 		return matchingRowsBitmap;
 	}
 
-	public void computeParallelNextCellRows(IRoaringCubeIndex index, List<?> wildcardKeys, RoaringBitmap candidateRows,
+	public void computeParallelNextCellRows(IRoaringCubeIndex index,
+			List<String> wildcardKeys,
+			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
 		computeParallelNextCellRows(index, wildcardKeys, IntLists.EMPTY_LIST, candidateRows, rowAggregateConsumer);
 	}
 
-	protected void computeParallelNextCellRows(final IRoaringCubeIndex index, final List<?> wildcardKeys, final IntList valueIndexes,
-			final RoaringBitmap candidateRows, final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
+	protected void computeParallelNextCellRows(final IRoaringCubeIndex index,
+			final List<String> wildcardKeys,
+			final IntList valueIndexes,
+			final RoaringBitmap candidateRows,
+			final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
 		ExecutorService es = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 		AtomicLong nbAsyncTasks = new AtomicLong();
 
@@ -183,7 +192,14 @@ public class PositionIndexBuilder {
 		activeGroupBy.add(status);
 
 		try {
-			computeParallelNextCellRows(index, wildcardKeys, valueIndexes, candidateRows, rowAggregateConsumer, es, nbAsyncTasks, status);
+			computeParallelNextCellRows(index,
+					wildcardKeys,
+					valueIndexes,
+					candidateRows,
+					rowAggregateConsumer,
+					es,
+					nbAsyncTasks,
+					status);
 		} finally {
 			// TODO a proper mechanism to know async tasks have been consumed
 			while (nbAsyncTasks.get() > 0) {
@@ -204,9 +220,14 @@ public class PositionIndexBuilder {
 		}
 	}
 
-	protected void computeParallelNextCellRows(final IRoaringCubeIndex index, final List<?> wildcardKeys, final IntList valueIndexes,
-			final RoaringBitmap candidateRows, final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer, final Executor es,
-			final AtomicLong nbAsyncTasks, final RowsConsumerStatus status) {
+	protected void computeParallelNextCellRows(final IRoaringCubeIndex index,
+			final List<String> wildcardKeys,
+			final IntList valueIndexes,
+			final RoaringBitmap candidateRows,
+			final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
+			final Executor es,
+			final AtomicLong nbAsyncTasks,
+			final RowsConsumerStatus status) {
 		if (wildcardKeys.size() == valueIndexes.size()) {
 			// All rows match as we requested the grand total
 			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(candidateRows, valueIndexes.toIntArray()));
@@ -232,14 +253,15 @@ public class PositionIndexBuilder {
 				// This array will hold the indexes of the values of the next
 				// coordinate matching the selected wildcards
 				{
-					Object wildcardKey = wildcardKeys.get(valueIndexes.size());
+					String wildcardKey = wildcardKeys.get(valueIndexes.size());
 
 					int wildcardKeyIndex = index.getKeyIndex(wildcardKey);
 
 					final int valueIndex = index.getValueIndex(wildcardKeyIndex, rowToConsider);
 
 					if (valueIndex == IRoaringCubeIndex.NOT_INDEXED) {
-						throw new IllegalStateException("We are considering a row (" + rowToConsider + ") which does not contribute to key: "
+						throw new IllegalStateException("We are considering a row (" + rowToConsider
+								+ ") which does not contribute to key: "
 								+ wildcardKey);
 					}
 
@@ -255,16 +277,34 @@ public class PositionIndexBuilder {
 							@Override
 							public void run() {
 								try {
-									computeOnMatchingRows(finalCandidateRowsLeft, valueBitmap, rowToConsider, valueIndexes, valueIndex, index,
-											wildcardKeys, rowAggregateConsumer, es, nbAsyncTasks, status);
+									computeOnMatchingRows(finalCandidateRowsLeft,
+											valueBitmap,
+											rowToConsider,
+											valueIndexes,
+											valueIndex,
+											index,
+											wildcardKeys,
+											rowAggregateConsumer,
+											es,
+											nbAsyncTasks,
+											status);
 								} finally {
 									nbAsyncTasks.decrementAndGet();
 								}
 							}
 						});
 					} else {
-						computeOnMatchingRows(candidateRowsLeft, valueBitmap, rowToConsider, valueIndexes, valueIndex, index, wildcardKeys,
-								rowAggregateConsumer, es, nbAsyncTasks, status);
+						computeOnMatchingRows(candidateRowsLeft,
+								valueBitmap,
+								rowToConsider,
+								valueIndexes,
+								valueIndex,
+								index,
+								wildcardKeys,
+								rowAggregateConsumer,
+								es,
+								nbAsyncTasks,
+								status);
 					}
 
 					{
@@ -280,9 +320,17 @@ public class PositionIndexBuilder {
 		}
 	}
 
-	protected void computeOnMatchingRows(RoaringBitmap candidateRowsLeft, RoaringBitmap valueBitmap, int rowToConsider, IntList valueIndexes,
-			int valueIndex, IRoaringCubeIndex index, List<?> wildcardKeys, Consumer<RawCoordinatesToBitmap> rowAggregateConsumer, Executor es,
-			AtomicLong nbAsyncTasks, RowsConsumerStatus status) {
+	protected void computeOnMatchingRows(RoaringBitmap candidateRowsLeft,
+			RoaringBitmap valueBitmap,
+			int rowToConsider,
+			IntList valueIndexes,
+			int valueIndex,
+			IRoaringCubeIndex index,
+			List<String> wildcardKeys,
+			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
+			Executor es,
+			AtomicLong nbAsyncTasks,
+			RowsConsumerStatus status) {
 		RoaringBitmap matchingRowsBitmap = RoaringBitmap.and(candidateRowsLeft, valueBitmap);
 
 		if (!matchingRowsBitmap.contains(rowToConsider)) {
@@ -291,7 +339,14 @@ public class PositionIndexBuilder {
 
 		IntList matchingValueIndexes = new IntArrayList(valueIndexes);
 		matchingValueIndexes.add(valueIndex);
-		computeParallelNextCellRows(index, wildcardKeys, matchingValueIndexes, matchingRowsBitmap, rowAggregateConsumer, es, nbAsyncTasks, status);
+		computeParallelNextCellRows(index,
+				wildcardKeys,
+				matchingValueIndexes,
+				matchingRowsBitmap,
+				rowAggregateConsumer,
+				es,
+				nbAsyncTasks,
+				status);
 	}
 
 	/**
@@ -302,7 +357,9 @@ public class PositionIndexBuilder {
 	 * @param consumer
 	 * @return rows left to process
 	 */
-	public RoaringBitmap consumeNextCellRows(final IRoaringCubeIndex index, final Set<?> wildcards, final RoaringBitmap rows,
+	public RoaringBitmap consumeNextCellRows(final IRoaringCubeIndex index,
+			final Collection<String> wildcards,
+			final RoaringBitmap rows,
 			Consumer<RawCoordinatesToBitmap> consumer) {
 		if (rows.isEmpty()) {
 			return rows;
@@ -319,7 +376,9 @@ public class PositionIndexBuilder {
 		}
 	}
 
-	public Iterator<RawCoordinatesToBitmap> nextCellRows(final IRoaringCubeIndex index, final Set<?> wildcards, final RoaringBitmap rows) {
+	public Iterator<RawCoordinatesToBitmap> nextCellRows(final IRoaringCubeIndex index,
+			final Collection<String> wildcards,
+			final RoaringBitmap rows) {
 		final AtomicReference<RawCoordinatesToBitmap> nextAggregate = new AtomicReference<>();
 
 		final Consumer<RawCoordinatesToBitmap> consumer = new Consumer<RawCoordinatesToBitmap>() {
@@ -359,8 +418,11 @@ public class PositionIndexBuilder {
 
 					long now = System.currentTimeMillis();
 					if (now > start.get() + 1000) {
-						LOGGER.debug("We consumed {} rows out of {} at rate {}rows/sec, {}agg/sec", initialNbRows - nbLeftRows, initialNbRows,
-								meter.getMeanRate(), aggregateMeter.getMeanRate());
+						LOGGER.debug("We consumed {} rows out of {} at rate {}rows/sec, {}agg/sec",
+								initialNbRows - nbLeftRows,
+								initialNbRows,
+								meter.getMeanRate(),
+								aggregateMeter.getMeanRate());
 						start.set(now);
 					}
 
