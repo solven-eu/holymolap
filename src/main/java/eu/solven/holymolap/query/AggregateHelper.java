@@ -6,6 +6,7 @@ import java.util.NavigableMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Consumer;
 
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
@@ -18,7 +19,6 @@ import eu.solven.holymolap.aggregate.RawPointToAggregates;
 import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
-import javolution.util.function.Consumer;
 
 public class AggregateHelper {
 
@@ -39,8 +39,9 @@ public class AggregateHelper {
 
 	protected static <T> Function<RawCoordinatesToBitmap, T> rowsToAggregates(final IHolyCube cube,
 			final IAggregationLogic<T> aggregationLogic) {
-		return coordinatesToRows -> aggregationLogic
-				.aggregateTo(cube, coordinatesToRows.matchingRows.getIntIterator(), coordinatesToRows.valueIndexes);
+		return coordinatesToRows -> aggregationLogic.aggregateTo(cube,
+				coordinatesToRows.matchingRows.getIntIterator(),
+				coordinatesToRows.axisIndexToValueIndex);
 	}
 
 	protected static <S, T> Function<RawCoordinatesToBitmap, RawPointToAggregates<T>> rowsToAggregates2(
@@ -50,10 +51,10 @@ public class AggregateHelper {
 		final Function<RawCoordinatesToBitmap, T> baseFunction = rowsToAggregates(cube, aggregationLogic);
 
 		return coordinatesToRows -> new RawPointToAggregates<T>(baseFunction.apply(coordinatesToRows),
-				coordinatesToRows.valueIndexes);
+				coordinatesToRows.axisIndexToValueIndex);
 	}
 
-	protected static Function<int[], NavigableMap<String, Object>> rawToNiceCoordinates(final IHolyCube cube,
+	protected static Function<long[], NavigableMap<String, Object>> rawToNiceCoordinates(final IHolyCube cube,
 			final IAggregationQuery query) {
 		final int[] wildcardIndexes =
 				computeWildcardIndexes(query.getColumns(), new TreeSet<Object>(cube.getIndex().keySet()));
@@ -62,8 +63,9 @@ public class AggregateHelper {
 			NavigableMap<String, Object> coordinates = new ConcurrentSkipListMap<>();
 
 			for (int i = 0; i < wildcardIndexes.length; i++) {
-				String key = cube.indexToColumn(wildcardIndexes[i]);
-				coordinates.put(key, cube.getIndex().convertValueIndexToValue(key, valueIndexes[i]));
+				int axisIndex = wildcardIndexes[i];
+				String key = cube.getIndex().indexToAxis(axisIndex);
+				coordinates.put(key, cube.getIndex().dereferenceCoordinate(axisIndex, valueIndexes[i]));
 			}
 
 			return coordinates;
@@ -73,7 +75,7 @@ public class AggregateHelper {
 	protected static <T> Function<RawPointToAggregates<T>, NicePointToAggregates<T>> rawToNicePoint(
 			final IHolyCube cube,
 			final IAggregationQuery query) {
-		final Function<int[], NavigableMap<String, Object>> baseFunction = rawToNiceCoordinates(cube, query);
+		final Function<long[], NavigableMap<String, Object>> baseFunction = rawToNiceCoordinates(cube, query);
 
 		return pointToAggregates -> new NicePointToAggregates<T>(pointToAggregates.keyToAggregates,
 				baseFunction.apply(pointToAggregates.valueIndexes));

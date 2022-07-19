@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import eu.solven.holymolap.query.operator.IStandardOperators;
 import eu.solven.holymolap.query.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IAggregatedAxis;
 

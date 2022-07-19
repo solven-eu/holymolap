@@ -8,9 +8,9 @@ public interface IDataHolder {
 	 * @param keyIndex 
 	 * @return the number of different values hold by a key
 	 */
-	int getKeyCardinality(int keyIndex);
+	long getKeyCardinality(int keyIndex);
 
-	RoaringBitmap getValueIndexToBitmap(int keyIndex, int valueIndex);
+	RoaringBitmap getValueIndexToBitmap(int keyIndex, long valueIndex);
 
 	// List<? extends RoaringBitmap> getValueIndexToBitmap(int keyIndex);
 

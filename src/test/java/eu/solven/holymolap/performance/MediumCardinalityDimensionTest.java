@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,13 +27,11 @@ import eu.solven.holymolap.sink.IFastEntry;
 import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
 import eu.solven.holymolap.sink.RoaringSink;
-import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import javolution.util.function.Consumer;
 
 public class MediumCardinalityDimensionTest {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(MediumCardinalityDimensionTest.class);
@@ -115,14 +114,7 @@ public class MediumCardinalityDimensionTest {
 						AggregateQueryBuilder.wildcard(key)
 								.addAggregation(new AggregatedAxis(doubleKey, OperatorFactory.SUM))
 								.build(),
-						new Consumer<RawCoordinatesToBitmap>() {
-
-							@Override
-							public void accept(RawCoordinatesToBitmap param) {
-								resultSize.incrementAndGet();
-							}
-
-						});
+						param -> resultSize.incrementAndGet());
 
 				Assert.assertEquals(keyToValues.get(i).size(), resultSize.get());
 
@@ -141,9 +133,7 @@ public class MediumCardinalityDimensionTest {
 
 				final AtomicInteger resultSize = new AtomicInteger();
 				AggregateHelper.consumeQueryResult(cube,
-						AggregateQueryBuilder.wildcards(subKeys)
-								.addAggregation(OperatorFactory.sum(doubleKey) )
-								.build(),
+						AggregateQueryBuilder.wildcards(subKeys).addAggregation(OperatorFactory.sum(doubleKey)).build(),
 						new Consumer<RawCoordinatesToBitmap>() {
 
 							@Override

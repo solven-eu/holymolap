@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Meter;
+import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
@@ -121,14 +122,14 @@ public class RoaringSink implements IHolySink {
 						keyIndexToValueIndex.set(keyIndex, keyValueIndexes);
 					}
 
-					int valueIndex = keyValueIndexes.mapValueIndex(value);
+					long valueIndex = keyValueIndexes.mapValueIndex(value);
 
 					if (valueIndex == valueToBitmap.size()) {
 						// This is the first time we encountered this value
 						valueToBitmap.add(new RoaringBitmap());
 					}
 
-					RoaringBitmap valueBitmap = valueToBitmap.get(valueIndex);
+					RoaringBitmap valueBitmap = valueToBitmap.get(Ints.checkedCast(valueIndex));
 
 					valueBitmap.add(currentRowIndex);
 				}

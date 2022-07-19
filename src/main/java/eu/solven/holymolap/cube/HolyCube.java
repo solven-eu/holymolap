@@ -3,7 +3,6 @@ package eu.solven.holymolap.cube;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +14,7 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
 import eu.solven.holymolap.DataHolder;
-import eu.solven.holymolap.IRoaringCubeIndex;
+import eu.solven.holymolap.IHolyCubeIndex;
 import eu.solven.holymolap.RoaringCubeIndex;
 import eu.solven.holymolap.sink.IKeyValuesIndex;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
@@ -46,7 +45,7 @@ public class HolyCube implements IHolyCube {
 	 */
 	protected final List<DoubleList> keyToDoubles;
 
-	protected final IRoaringCubeIndex index;
+	protected final IHolyCubeIndex index;
 
 	public HolyCube(int nbRows,
 			List<String> keyIndexToKey,
@@ -90,30 +89,30 @@ public class HolyCube implements IHolyCube {
 				Collections.<IntList>emptyList());
 	}
 
-	@Override
-	public Collection<? extends RoaringBitmap> getAxesBitmaps(IHasColumns hasColumns) {
-		List<RoaringBitmap> bitmaps = new ArrayList<>();
-
-		for (String wildcardKey : hasColumns.getColumns()) {
-			int keyIndex = index.getKeyIndex(wildcardKey);
-
-			if (keyIndex < 0) {
-				bitmaps.add(IRoaringCubeIndex.EMPTY_BITMAP);
-			} else {
-				RoaringBitmap bitmap = keyToBitmap.get(keyIndex);
-
-				if (bitmap == null) {
-					LOGGER.debug("Requesting to aggregate a not-existing key: {}", wildcardKey);
-					// This key can not be wildcarded: the view is empty
-					bitmaps.add(IRoaringCubeIndex.EMPTY_BITMAP);
-				} else {
-					bitmaps.add(bitmap);
-				}
-			}
-		}
-
-		return bitmaps;
-	}
+	// @Override
+	// public Collection<? extends RoaringBitmap> getAxesBitmaps(IHasColumns hasColumns) {
+	// List<RoaringBitmap> bitmaps = new ArrayList<>();
+	//
+	// for (String wildcardKey : hasColumns.getColumns()) {
+	// int keyIndex = index.getKeyIndex(wildcardKey);
+	//
+	// if (keyIndex < 0) {
+	// bitmaps.add(IRoaringCubeIndex.EMPTY_BITMAP);
+	// } else {
+	// RoaringBitmap bitmap = keyToBitmap.get(keyIndex);
+	//
+	// if (bitmap == null) {
+	// LOGGER.debug("Requesting to aggregate a not-existing key: {}", wildcardKey);
+	// // This key can not be wildcarded: the view is empty
+	// bitmaps.add(IRoaringCubeIndex.EMPTY_BITMAP);
+	// } else {
+	// bitmaps.add(bitmap);
+	// }
+	// }
+	// }
+	//
+	// return bitmaps;
+	// }
 
 	@Override
 	public RoaringBitmap getFiltersBitmap(IHasFilters hasFilters) {
@@ -194,10 +193,10 @@ public class HolyCube implements IHolyCube {
 	// return coordinates;
 	// }
 
-	@Override
-	public String indexToColumn(int keyIndex) {
-		return index.getKeyAtIndex(keyIndex);
-	}
+//	@Override
+//	public String indexToAxis(int keyIndex) {
+//		return index.indexToAxis(keyIndex);
+//	}
 
 	@Override
 	public long getNbRows() {
@@ -237,7 +236,7 @@ public class HolyCube implements IHolyCube {
 	}
 
 	@Override
-	public IRoaringCubeIndex getIndex() {
+	public IHolyCubeIndex getIndex() {
 		return index;
 	}
 

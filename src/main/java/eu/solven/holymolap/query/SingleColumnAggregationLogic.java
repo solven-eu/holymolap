@@ -16,7 +16,7 @@ public class SingleColumnAggregationLogic implements IAggregationLogic<Double> {
 	}
 
 	@Override
-	public Double aggregateTo(IHolyCube roaringCube, IntIterator it, int[] valueIndexes) {
+	public Double aggregateTo(IHolyCube roaringCube, IntIterator it, long[] axisIndexToValueIndex) {
 		// Initialize ourself with the aggregation neutral element
 		double neutral = operator.neutral();
 

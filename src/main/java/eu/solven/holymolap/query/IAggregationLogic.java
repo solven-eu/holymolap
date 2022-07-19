@@ -6,6 +6,6 @@ import eu.solven.holymolap.cube.IHolyCube;
 
 public interface IAggregationLogic<T> {
 
-	T aggregateTo(IHolyCube roaringCube, IntIterator it, int[] valueIndexes);
+	T aggregateTo(IHolyCube roaringCube, IntIterator it, long[] valueIndexes);
 
 }

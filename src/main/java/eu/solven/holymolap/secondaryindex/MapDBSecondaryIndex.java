@@ -1,17 +1,5 @@
 package eu.solven.holymolap.secondaryindex;
 
-import java.util.Map;
-import java.util.NavigableSet;
-import java.util.TreeSet;
-
-//import org.mapdb.Bind;
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-//import org.mapdb.Fun;
-import org.mapdb.HTreeMap;
-
-import com.google.common.collect.ImmutableMap;
-
 public class MapDBSecondaryIndex {
 //	public void index() {
 //		DB db = DBMaker.heapDB().make();

@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.roaringbitmap.RoaringBitmap;
 
+import com.google.common.primitives.Ints;
+
 import eu.solven.holymolap.sink.IKeyValuesIndex;
 import eu.solven.holymolap.sink.KeyValuesIndex;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -20,8 +22,11 @@ public class DataHolder implements IDataHolder {
 
 	// protected final List<IntList> keyIndexToValueIndexToFirstRow;
 
-	public DataHolder(int nbRow, List<? extends List<? extends RoaringBitmap>> keyIndexToValueIndexToBitmap, List<IntList> keyIndexToInts,
-			List<? extends RoaringBitmap> keyToBitmap, List<IKeyValuesIndex> keyIndexToValueIndex) {
+	public DataHolder(int nbRow,
+			List<? extends List<? extends RoaringBitmap>> keyIndexToValueIndexToBitmap,
+			List<IntList> keyIndexToInts,
+			List<? extends RoaringBitmap> keyToBitmap,
+			List<IKeyValuesIndex> keyIndexToValueIndex) {
 		this.nbRow = nbRow;
 		this.keyIndexToValueIndexToBitmap = new ArrayList<>(keyIndexToValueIndexToBitmap);
 		this.keyIndexToInts = keyIndexToInts;
@@ -37,7 +42,7 @@ public class DataHolder implements IDataHolder {
 	}
 
 	@Override
-	public int getKeyCardinality(int keyIndex) {
+	public long getKeyCardinality(int keyIndex) {
 		List<? extends RoaringBitmap> valueIndexToBitmap = keyIndexToValueIndexToBitmap.get(keyIndex);
 
 		if (valueIndexToBitmap == null) {
@@ -57,16 +62,16 @@ public class DataHolder implements IDataHolder {
 						for (int rowWithValue : keyToBitmap.get(keyIndex)) {
 							int currentValue = rowIndexToInt.getInt(rowWithValue);
 
-							int curretnValueIndex = keyValuesIndex.getValueIndex(currentValue);
-							if (curretnValueIndex == IKeyValuesIndex.NOT_INDEXED) {
+							long currentValueIndex = keyValuesIndex.getValueIndex(currentValue);
+							if (currentValueIndex == IKeyValuesIndex.NOT_INDEXED) {
 								// This is the first encounter of this value
-								curretnValueIndex = keyValuesIndex.mapValueIndex(currentValue);
+								currentValueIndex = keyValuesIndex.mapValueIndex(currentValue);
 
-								assert curretnValueIndex == valueIndexToBitmap.size();
+								assert currentValueIndex == valueIndexToBitmap.size();
 								newValueIndexToBitmap.add(new RoaringBitmap());
 							}
 
-							newValueIndexToBitmap.get(curretnValueIndex).add(rowWithValue);
+							newValueIndexToBitmap.get(Ints.checkedCast(currentValueIndex)).add(rowWithValue);
 						}
 
 						keyIndexToValueIndexToBitmap.set(keyIndex, valueIndexToBitmap);
@@ -79,7 +84,7 @@ public class DataHolder implements IDataHolder {
 	}
 
 	@Override
-	public RoaringBitmap getValueIndexToBitmap(int keyIndex, int valueIndex) {
+	public RoaringBitmap getValueIndexToBitmap(int keyIndex, long valueIndex) {
 		List<? extends RoaringBitmap> valueIndexToBitmap = keyIndexToValueIndexToBitmap.get(keyIndex);
 
 		if (valueIndexToBitmap == null) {
@@ -95,7 +100,7 @@ public class DataHolder implements IDataHolder {
 				}
 			}
 		} else {
-			return valueIndexToBitmap.get(valueIndex);
+			return valueIndexToBitmap.get(Ints.checkedCast(valueIndex));
 		}
 	}
 

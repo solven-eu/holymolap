@@ -25,6 +25,6 @@ public class SinkController {
 
 	@GetMapping
 	public ResponseEntity<IAggregationResult> aggregate(IAggregationQuery query) {
-
+		return ResponseEntity.internalServerError().build();
 	}
 }

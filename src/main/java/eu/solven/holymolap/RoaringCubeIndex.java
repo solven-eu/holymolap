@@ -1,27 +1,29 @@
 package eu.solven.holymolap;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.roaringbitmap.RoaringBitmap;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
+import com.google.common.primitives.Ints;
+
 import eu.solven.holymolap.sink.IKeyValuesIndex;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import javolution.util.function.Consumer;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 
 @ManagedResource
-public class RoaringCubeIndex implements IRoaringCubeIndex {
+public class RoaringCubeIndex implements IHolyCubeIndex {
 
-	protected final int nbRows;
+	protected final long nbRows;
 	protected final List<String> keyIndexToKey;
 
-	protected final List<IntList> keyToRowToValueIndex;
-	protected final List<IntList> keysBeingIndexed;
+	protected final List<LongList> keyToRowToValueIndex;
+	protected final List<LongList> keysBeingIndexed;
 
 	protected final List<? extends IKeyValuesIndex> keyIndexToValueIndex;
 
@@ -36,8 +38,8 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 
 		int nbKeys = keyIndexToKey.size();
 
-		this.keyToRowToValueIndex = Arrays.asList(new IntList[nbKeys]);
-		this.keysBeingIndexed = Arrays.asList(new IntList[nbKeys]);
+		this.keyToRowToValueIndex = Arrays.asList(new LongList[nbKeys]);
+		this.keysBeingIndexed = Arrays.asList(new LongList[nbKeys]);
 
 		this.keyIndexToValueIndex = keyIndexToValueIndex;
 		this.dataHolder = dataHolder;
@@ -64,19 +66,16 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 				// Check if there is no index yet, and it is not being
 				// computed
 				if (keyToRowToValueIndex.get(keyIndex) == null && keysBeingIndexed.get(keyIndex) == null) {
-					int[] rawIndex = new int[nbRows];
+					long[] rawIndex = new long[Ints.checkedCast(nbRows)];
 					Arrays.fill(rawIndex, NOT_INDEXED);
 
-					IntList valuesIndex = new IntArrayList(rawIndex);
+					LongList valuesIndex = new LongArrayList(rawIndex);
 					keysBeingIndexed.set(keyIndex, valuesIndex);
 
-					new PositionIndexBuilder().buildIndex(keyIndex, valuesIndex, dataHolder, new Consumer<Integer>() {
-
-						@Override
-						public void accept(Integer indexedKey) {
-							onIndexingCompleted(indexedKey);
-						}
-					});
+					new PositionIndexBuilder().buildIndex(keyIndex,
+							valuesIndex,
+							dataHolder,
+							indexedKey -> onIndexingCompleted(indexedKey));
 				}
 			}
 		}
@@ -85,7 +84,7 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 	protected void onIndexingCompleted(int indexedKey) {
 		synchronized (keyToRowToValueIndex) {
 			// This key has finished being indexed
-			IntList index = keysBeingIndexed.get(indexedKey);
+			LongList index = keysBeingIndexed.get(indexedKey);
 
 			// Put in keyToRowToValueIndex BEFORE removing from
 			// keysBeingIndexed, else startIndexing could believe this key
@@ -100,9 +99,9 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		for (IntList primitives : keyToRowToValueIndex) {
-			if (primitives instanceof IntArrayList) {
-				sizeInBytes += 4 * ((IntArrayList) primitives).elements().length;
+		for (LongList primitives : keyToRowToValueIndex) {
+			if (primitives instanceof LongArrayList) {
+				sizeInBytes += 4 * ((LongArrayList) primitives).elements().length;
 			} else {
 				sizeInBytes += 4 * primitives.size();
 			}
@@ -112,11 +111,11 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 	}
 
 	@Override
-	public int getValueIndex(int keyIndex, int rowToConsider) {
+	public long getCoordinateIndex(int keyIndex, long rowToConsider) {
 		if (keyIndex < 0) {
 			return NOT_INDEXED;
 		} else {
-			IntList rowToValueIndex = keyToRowToValueIndex.get(keyIndex);
+			LongList rowToValueIndex = keyToRowToValueIndex.get(keyIndex);
 
 			if (rowToValueIndex == null) {
 				startIndexing(keyIndex);
@@ -132,18 +131,23 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 				rowToValueIndex = keyToRowToValueIndex.get(keyIndex);
 			}
 
-			return rowToValueIndex.getInt(rowToConsider);
+			return rowToValueIndex.getLong(Ints.checkedCast(rowToConsider));
 		}
 	}
 
 	@Override
-	public RoaringBitmap getValueIndexToBitmap(int keyIndex, int valueIndex) {
+	public RoaringBitmap getValueIndexToBitmap(int keyIndex, long valueIndex) {
 		return dataHolder.getValueIndexToBitmap(keyIndex, valueIndex);
 	}
 
 	@Override
-	public Object convertValueIndexToValue(String key, int valueIndex) {
-		return keyIndexToValueIndex.get(getKeyIndex(key)).getValue(valueIndex);
+	public Object dereferenceCoordinate(int axisIndex, long valueIndex) {
+		return keyIndexToValueIndex.get(axisIndex).getValue(valueIndex);
+	}
+
+	@Override
+	public long getCoordinateRef(String axis, Object coordinate) {
+		return keyIndexToValueIndex.get(getKeyIndex(axis)).getValueIndex(coordinate);
 	}
 
 	@Override
@@ -156,44 +160,45 @@ public class RoaringCubeIndex implements IRoaringCubeIndex {
 
 		IKeyValuesIndex keyValuesIndex = keyIndexToValueIndex.get(keyIndex);
 
-		int valueIndex = keyValuesIndex.getValueIndex(value);
+		long valueIndex = keyValuesIndex.getValueIndex(value);
 
 		return getValueIndexToBitmap(keyIndex, valueIndex);
 	}
 
 	// Slow
+//	@Override
+//	public Object getValueAtRow(String key, long row) {
+//		int keyIndex = getKeyIndex(key);
+//
+//		// TODO: check keyBitmap
+//
+//		// Slow
+//		for (int valueIndex = 0; valueIndex < dataHolder.getKeyCardinality(keyIndex); valueIndex++) {
+//			if (dataHolder.getValueIndexToBitmap(keyIndex, valueIndex).contains(Ints.checkedCast(row))) {
+//
+//				IKeyValuesIndex keyValuesIndex = keyIndexToValueIndex.get(keyIndex);
+//				return keyValuesIndex.getValue(valueIndex);
+//			}
+//		}
+//
+//		// We found no matching value
+//		return null;
+//	}
+
+	// @Override
+	// public List<?> getValuesForKey(String key) {
+	// return keyIndexToValueIndex.get(getKeyIndex(key)).values();
+	// }
+
 	@Override
-	public Object getValueAtRow(String key, int row) {
-		int keyIndex = getKeyIndex(key);
-
-		// TODO: check keyBitmap
-
-		// Slow
-		for (int valueIndex = 0; valueIndex < dataHolder.getKeyCardinality(keyIndex); valueIndex++) {
-			if (dataHolder.getValueIndexToBitmap(keyIndex, valueIndex).contains(row)) {
-
-				IKeyValuesIndex keyValuesIndex = keyIndexToValueIndex.get(keyIndex);
-				return keyValuesIndex.getValue(valueIndex);
-			}
-		}
-
-		// We found no matching value
-		return null;
+	public NavigableSet<String> keySet() {
+		return new TreeSet<>(this.keyIndexToKey);
 	}
 
 	@Override
-	public List<?> getValuesForKey(String key) {
-		return keyIndexToValueIndex.get(getKeyIndex(key)).values();
-	}
-
-	@Override
-	public Set<?> keySet() {
-		return new HashSet<>(this.keyIndexToKey);
-	}
-
-	@Override
-	public String getKeyAtIndex(int keyIndex) {
+	public String indexToAxis(int keyIndex) {
 		return keyIndexToKey.get(keyIndex);
 	}
+
 
 }

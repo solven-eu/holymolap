@@ -4,16 +4,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import com.google.common.primitives.Ints;
+
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
 public class KeyValuesIndex implements IKeyValuesIndex {
 
-	protected final Object2IntMap<Object> valueToIndex;
+	protected final Object2LongMap<Object> valueToIndex;
 	protected final List<Object> valueIndexToValue;
 
 	public KeyValuesIndex() {
-		valueToIndex = new Object2IntOpenHashMap<>();
+		valueToIndex = new Object2LongOpenHashMap<>();
 
 		// Value indexes will only be positive values: we use a negative default
 		// value for detection of values not-indexed yet
@@ -23,8 +25,8 @@ public class KeyValuesIndex implements IKeyValuesIndex {
 	}
 
 	@Override
-	public int mapValueIndex(Object value) {
-		int valueIndex = valueToIndex.getInt(value);
+	public long mapValueIndex(Object value) {
+		long valueIndex = getValueIndex(value);
 
 		if (valueIndex == NOT_INDEXED) {
 			valueIndex = valueToIndex.size();
@@ -36,13 +38,13 @@ public class KeyValuesIndex implements IKeyValuesIndex {
 	}
 
 	@Override
-	public int getValueIndex(Object value) {
-		return valueToIndex.getInt(value);
+	public long getValueIndex(Object value) {
+		return valueToIndex.getLong(value);
 	}
 
 	@Override
-	public Object getValue(int valueIndex) {
-		return valueIndexToValue.get(valueIndex);
+	public Object getValue(long valueIndex) {
+		return valueIndexToValue.get(Ints.checkedCast(valueIndex));
 	}
 
 	@Override
