@@ -16,17 +16,17 @@ public class DataHolder implements IDataHolder {
 
 	protected final int nbRow;
 	protected final List<List<? extends RoaringBitmap>> keyIndexToValueIndexToBitmap;
-	protected final List<IntList> keyIndexToInts;
+	protected final List<? extends IntList> keyIndexToInts;
 	protected final List<? extends RoaringBitmap> keyToBitmap;
-	protected final List<IKeyValuesIndex> keyIndexToValueIndex;
+	protected final List<? extends IKeyValuesIndex> keyIndexToValueIndex;
 
 	// protected final List<IntList> keyIndexToValueIndexToFirstRow;
 
 	public DataHolder(int nbRow,
 			List<? extends List<? extends RoaringBitmap>> keyIndexToValueIndexToBitmap,
-			List<IntList> keyIndexToInts,
+			List<? extends IntList> keyIndexToInts,
 			List<? extends RoaringBitmap> keyToBitmap,
-			List<IKeyValuesIndex> keyIndexToValueIndex) {
+			List<? extends IKeyValuesIndex> keyIndexToValueIndex) {
 		this.nbRow = nbRow;
 		this.keyIndexToValueIndexToBitmap = new ArrayList<>(keyIndexToValueIndexToBitmap);
 		this.keyIndexToInts = keyIndexToInts;

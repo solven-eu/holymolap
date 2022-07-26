@@ -21,8 +21,9 @@ import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.query.SingleColumnAggregationLogic;
 import eu.solven.holymolap.query.operator.IStandardOperators;
 import eu.solven.holymolap.sink.FastEntry;
+import eu.solven.holymolap.sink.ISinkContext;
 import eu.solven.holymolap.sink.ObjectOnlySinkContext;
-import eu.solven.holymolap.sink.RoaringSink;
+import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 
 public class TestAggregation {
@@ -83,8 +84,8 @@ public class TestAggregation {
 
 	@Test
 	public void testAddOneEmptyEntry() {
-		IHolyCube cube =
-				new RoaringSink().sink(new FastEntry(new Object[] {}), new ObjectOnlySinkContext(new String[] {}));
+		ObjectOnlySinkContext context = new ObjectOnlySinkContext(new String[] {});
+		IHolyCube cube = new HolyCubeSink().sink(context, new FastEntry(new Object[] {}));
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(Collections.emptySet(), cube.getIndex().keySet());
@@ -99,8 +100,8 @@ public class TestAggregation {
 
 	@Test
 	public void testAddOneEntryAggregateNotDoubleKey() {
-		IHolyCube cube = new RoaringSink().sink(new FastEntry(new Object[] { FIRST_VALUE }),
-				new ObjectOnlySinkContext(new String[] { FIRST_KEY }));
+		IHolyCube cube = new HolyCubeSink().sink(new ObjectOnlySinkContext(new String[] { FIRST_KEY }),
+				new FastEntry(new Object[] { FIRST_VALUE }));
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY)), cube.getIndex().keySet());
@@ -125,8 +126,9 @@ public class TestAggregation {
 
 	@Test
 	public void testAddOneEntryAggregateDoubleKey() {
-		IHolyCube cube = new RoaringSink().sink(new FastEntry(new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }),
-				new ObjectOnlySinkContext(new String[] { FIRST_KEY, DOUBLE_FIRSY_KEY }));
+		ISinkContext context = new ObjectOnlySinkContext(new String[] { FIRST_KEY, DOUBLE_FIRSY_KEY });
+		IHolyCube cube =
+				new HolyCubeSink().sink(context, new FastEntry(new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }));
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)), cube.getIndex().keySet());

@@ -20,11 +20,11 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
-public class RoaringSink implements IHolySink {
-	protected static final Logger LOGGER = LoggerFactory.getLogger(RoaringSink.class);
+public class HolyCubeSink implements IHolySink {
+	protected static final Logger LOGGER = LoggerFactory.getLogger(HolyCubeSink.class);
 
 	@Override
-	public IHolyCube sink(Stream<? extends IFastEntry> toAdd, ISinkContext context) {
+	public IHolyCube sink(ISinkContext context, Stream<? extends IFastEntry> toAdd) {
 		int nbKeys = context.keyIndexToKey().size();
 
 		List<RoaringBitmap> keyIndexToBitmap;

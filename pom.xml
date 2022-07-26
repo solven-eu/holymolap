@@ -24,7 +24,8 @@
 		<!-- set encoding to something not platform dependent -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-		<compiler.targetVersion>11</compiler.targetVersion>
+	    <maven.compiler.source>11</maven.compiler.source>
+	    <maven.compiler.target>11</maven.compiler.target>
 	</properties>
 	<dependencies>
 		<dependency>

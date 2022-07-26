@@ -26,7 +26,7 @@ import eu.solven.holymolap.sink.FastEntry;
 import eu.solven.holymolap.sink.IFastEntry;
 import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
-import eu.solven.holymolap.sink.RoaringSink;
+import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -38,7 +38,7 @@ public class MediumCardinalityDimensionTest {
 
 	@Test
 	public void testOneHighCardinality() {
-		IHolySink sink = new RoaringSink();
+		IHolySink sink = new HolyCubeSink();
 
 		final int nbRows = 1000000;
 		final float cardinalityFactor = 1;
@@ -93,7 +93,8 @@ public class MediumCardinalityDimensionTest {
 			}
 		};
 
-		IHolyCube cube = sink.sink(rows, new ImmutableSinkContext(keys, doubleKeys, Collections.emptySet()));
+		ImmutableSinkContext context = new ImmutableSinkContext(keys, doubleKeys, Collections.emptySet());
+		IHolyCube cube = sink.sink(context, rows);
 
 		Assert.assertEquals(nbRows, cube.getNbRows());
 		Assert.assertEquals(nbKeys + nbDouble, cube.getIndex().keySet().size());

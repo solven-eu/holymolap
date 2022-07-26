@@ -20,7 +20,7 @@ public class SingleColumnAggregationLogic implements IAggregationLogic<Double> {
 		// Initialize ourself with the aggregation neutral element
 		double neutral = operator.neutral();
 
-		DoubleIterator doubleIt = roaringCube.readDouble(it, roaringCube.getIndex().getKeyIndex(aggregatedKey), neutral);
+		DoubleIterator doubleIt = roaringCube.readDouble(it, roaringCube.getIndex().getAxisIndex(aggregatedKey), neutral);
 
 		double aggregate = neutral;
 

@@ -3,7 +3,7 @@ package eu.solven.holymolap.cube;
 import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
 
-import eu.solven.holymolap.IHolyCubeIndex;
+import eu.solven.holymolap.cube.index.IHolyCubeIndex;
 import eu.solven.holymolap.query.IAggregationLogic;
 import eu.solven.holymolap.stable.v1.IHasFilters;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;

@@ -12,15 +12,16 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 
 import com.google.common.primitives.Ints;
 
+import eu.solven.holymolap.cube.index.ILazyHolyCubeIndex;
 import eu.solven.holymolap.sink.IKeyValuesIndex;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 
 @ManagedResource
-public class RoaringCubeIndex implements IHolyCubeIndex {
+public class RoaringCubeIndex implements ILazyHolyCubeIndex {
 
 	protected final long nbRows;
-	protected final List<String> keyIndexToKey;
+	protected final List<? extends String> keyIndexToKey;
 
 	protected final List<LongList> keyToRowToValueIndex;
 	protected final List<LongList> keysBeingIndexed;
@@ -30,7 +31,7 @@ public class RoaringCubeIndex implements IHolyCubeIndex {
 	protected final IDataHolder dataHolder;
 
 	public RoaringCubeIndex(int nbRows,
-			List<String> keyIndexToKey,
+			List<? extends String> keyIndexToKey,
 			List<? extends IKeyValuesIndex> keyIndexToValueIndex,
 			IDataHolder dataHolder) {
 		this.nbRows = nbRows;
@@ -46,14 +47,14 @@ public class RoaringCubeIndex implements IHolyCubeIndex {
 	}
 
 	@Override
-	public int getKeyIndex(String key) {
+	public int getAxisIndex(String key) {
 		return keyIndexToKey.indexOf(key);
 	}
 
 	@Override
 	public void startIndexing(Set<String> keysToIndex) {
 		for (String keyToIndex : keysToIndex) {
-			int keyIndex = getKeyIndex(keyToIndex);
+			int keyIndex = getAxisIndex(keyToIndex);
 
 			startIndexing(keyIndex);
 		}
@@ -72,13 +73,17 @@ public class RoaringCubeIndex implements IHolyCubeIndex {
 					LongList valuesIndex = new LongArrayList(rawIndex);
 					keysBeingIndexed.set(keyIndex, valuesIndex);
 
-					new PositionIndexBuilder().buildIndex(keyIndex,
-							valuesIndex,
+					indexBuilder().buildIndex(keyIndex,
 							dataHolder,
+							valuesIndex,
 							indexedKey -> onIndexingCompleted(indexedKey));
 				}
 			}
 		}
+	}
+
+	protected PositionIndexBuilder indexBuilder() {
+		return new PositionIndexBuilder();
 	}
 
 	protected void onIndexingCompleted(int indexedKey) {
@@ -146,44 +151,43 @@ public class RoaringCubeIndex implements IHolyCubeIndex {
 	}
 
 	@Override
-	public long getCoordinateRef(String axis, Object coordinate) {
-		return keyIndexToValueIndex.get(getKeyIndex(axis)).getValueIndex(coordinate);
+	public long getCoordinateRef(int axisIndex, Object coordinate) {
+		return keyIndexToValueIndex.get(axisIndex).getValueIndex(coordinate);
 	}
 
 	@Override
 	public RoaringBitmap getBitmap(String key, Object value) {
-		int keyIndex = getKeyIndex(key);
+		int keyIndex = getAxisIndex(key);
 
 		if (keyIndex < 0) {
 			return EMPTY_BITMAP;
 		}
 
 		IKeyValuesIndex keyValuesIndex = keyIndexToValueIndex.get(keyIndex);
-
 		long valueIndex = keyValuesIndex.getValueIndex(value);
 
 		return getValueIndexToBitmap(keyIndex, valueIndex);
 	}
 
 	// Slow
-//	@Override
-//	public Object getValueAtRow(String key, long row) {
-//		int keyIndex = getKeyIndex(key);
-//
-//		// TODO: check keyBitmap
-//
-//		// Slow
-//		for (int valueIndex = 0; valueIndex < dataHolder.getKeyCardinality(keyIndex); valueIndex++) {
-//			if (dataHolder.getValueIndexToBitmap(keyIndex, valueIndex).contains(Ints.checkedCast(row))) {
-//
-//				IKeyValuesIndex keyValuesIndex = keyIndexToValueIndex.get(keyIndex);
-//				return keyValuesIndex.getValue(valueIndex);
-//			}
-//		}
-//
-//		// We found no matching value
-//		return null;
-//	}
+	// @Override
+	// public Object getValueAtRow(String key, long row) {
+	// int keyIndex = getKeyIndex(key);
+	//
+	// // TODO: check keyBitmap
+	//
+	// // Slow
+	// for (int valueIndex = 0; valueIndex < dataHolder.getKeyCardinality(keyIndex); valueIndex++) {
+	// if (dataHolder.getValueIndexToBitmap(keyIndex, valueIndex).contains(Ints.checkedCast(row))) {
+	//
+	// IKeyValuesIndex keyValuesIndex = keyIndexToValueIndex.get(keyIndex);
+	// return keyValuesIndex.getValue(valueIndex);
+	// }
+	// }
+	//
+	// // We found no matching value
+	// return null;
+	// }
 
 	// @Override
 	// public List<?> getValuesForKey(String key) {
@@ -199,6 +203,5 @@ public class RoaringCubeIndex implements IHolyCubeIndex {
 	public String indexToAxis(int keyIndex) {
 		return keyIndexToKey.get(keyIndex);
 	}
-
 
 }

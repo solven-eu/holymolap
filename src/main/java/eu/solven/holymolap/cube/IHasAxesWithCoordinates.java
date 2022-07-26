@@ -16,11 +16,15 @@ public interface IHasAxesWithCoordinates extends IHasAxes {
 	 */
 	Object dereferenceCoordinate(int axisIndex, long coordinateIndex);
 
+	long getCoordinateRef(int axisIndex, Object coordinate);
+
 	/**
 	 * 
 	 * @param axis
 	 * @param coordinate
 	 * @return the existing reference of given coordinate
 	 */
-	long getCoordinateRef(String axis, Object coordinate);
+	default long getCoordinateRef(String axis, Object coordinate) {
+		return getCoordinateRef(getAxisIndex(axis), coordinate);
+	}
 }

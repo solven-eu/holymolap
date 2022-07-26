@@ -1,6 +1,5 @@
 package eu.solven.holymolap.sink;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
@@ -15,17 +14,17 @@ import eu.solven.holymolap.cube.IHolyCube;
  *
  */
 public interface IHolySink {
-	default IHolyCube sink(IFastEntry toAdd, ISinkContext context) {
-		return sink(Collections.singleton(toAdd), context);
+	default IHolyCube sink(ISinkContext context, IFastEntry... toAdd) {
+		return sink(context, Stream.of(toAdd));
 	}
 
-	default IHolyCube sink(Iterable<? extends IFastEntry> toAdd, ISinkContext context) {
-		return sink(toAdd.iterator(), context);
+	default IHolyCube sink(ISinkContext context, Iterable<? extends IFastEntry> toAdd) {
+		return sink(context, toAdd.iterator());
 	}
 
-	default IHolyCube sink(Iterator<? extends IFastEntry> toAdd, ISinkContext context) {
-		return sink(Streams.stream(toAdd), context);
+	default IHolyCube sink(ISinkContext context, Iterator<? extends IFastEntry> toAdd) {
+		return sink(context, Streams.stream(toAdd));
 	}
 
-	IHolyCube sink(Stream<? extends IFastEntry> toAdd, ISinkContext context);
+	IHolyCube sink(ISinkContext context, Stream<? extends IFastEntry> toAdd);
 }

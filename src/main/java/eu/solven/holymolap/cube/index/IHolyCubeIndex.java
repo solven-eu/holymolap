@@ -1,6 +1,4 @@
-package eu.solven.holymolap;
-
-import java.util.Set;
+package eu.solven.holymolap.cube.index;
 
 import org.roaringbitmap.RoaringBitmap;
 
@@ -12,18 +10,12 @@ public interface IHolyCubeIndex extends IHasMemoryFootprint, IHasAxesWithCoordin
 	long NOT_INDEXED = -1;
 	RoaringBitmap EMPTY_BITMAP = new RoaringBitmap();
 
-	void startIndexing(int axisIndex);
-
-	void startIndexing(Set<String> keysToIndex);
-
 	RoaringBitmap getValueIndexToBitmap(int axisIndex, long coordinateIndex);
 
-	RoaringBitmap getBitmap(String axis, Object coordinate);
-
-	// Slow
-	// Object getValueAtRow(String axis, long row);
-
-	// List<?> getValuesForKey(String axis);
+	default RoaringBitmap getBitmap(String axis, Object coordinate) {
+		int axisIndex = getAxisIndex(axis);
+		return getValueIndexToBitmap(axisIndex, getCoordinateRef(axis, coordinate));
+	}
 
 	long getCoordinateIndex(int axisIndex, long rowToConsider);
 

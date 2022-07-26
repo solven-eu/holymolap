@@ -1,7 +1,6 @@
 package eu.solven.holymolap.cube;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -14,11 +13,10 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
 import eu.solven.holymolap.DataHolder;
-import eu.solven.holymolap.IHolyCubeIndex;
 import eu.solven.holymolap.RoaringCubeIndex;
+import eu.solven.holymolap.cube.index.IHolyCubeIndex;
 import eu.solven.holymolap.sink.IKeyValuesIndex;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
-import eu.solven.holymolap.stable.v1.IHasColumns;
 import eu.solven.holymolap.stable.v1.IHasFilters;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterAnd;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterAxisEquals;
@@ -43,17 +41,17 @@ public class HolyCube implements IHolyCube {
 	/**
 	 * For each key, gives the value as double, which would be valid only where the key-bitmap is true
 	 */
-	protected final List<DoubleList> keyToDoubles;
+	protected final List<? extends DoubleList> keyToDoubles;
 
-	protected final IHolyCubeIndex index;
+	protected final IHolyCubeIndex ²;
 
 	public HolyCube(int nbRows,
-			List<String> keyIndexToKey,
-			List<RoaringBitmap> keyIndexToBitmap,
-			List<IKeyValuesIndex> keyIndexToValueIndex,
+			List<? extends String> keyIndexToKey,
+			List<? extends RoaringBitmap> keyIndexToBitmap,
+			List<? extends IKeyValuesIndex> keyIndexToValueIndex,
 			List<? extends List<RoaringBitmap>> keyIndexToValueIndexToBitmap,
-			List<DoubleList> keyIndexToDoubles,
-			List<IntList> keyIndexToInts) {
+			List<? extends DoubleList> keyIndexToDoubles,
+			List<? extends IntList> keyIndexToInts) {
 		this.nbRows = nbRows;
 		// this.keyIndexToKey = keyIndexToKey;
 		this.keyToBitmap = keyIndexToBitmap;
@@ -82,11 +80,11 @@ public class HolyCube implements IHolyCube {
 	public HolyCube() {
 		this(0,
 				Collections.emptyList(),
-				Collections.<RoaringBitmap>emptyList(),
-				Collections.<IKeyValuesIndex>emptyList(),
-				Collections.<List<RoaringBitmap>>emptyList(),
-				Collections.<DoubleList>emptyList(),
-				Collections.<IntList>emptyList());
+				Collections.emptyList(),
+				Collections.emptyList(),
+				Collections.emptyList(),
+				Collections.emptyList(),
+				Collections.emptyList());
 	}
 
 	// @Override
@@ -193,10 +191,10 @@ public class HolyCube implements IHolyCube {
 	// return coordinates;
 	// }
 
-//	@Override
-//	public String indexToAxis(int keyIndex) {
-//		return index.indexToAxis(keyIndex);
-//	}
+	// @Override
+	// public String indexToAxis(int keyIndex) {
+	// return index.indexToAxis(keyIndex);
+	// }
 
 	@Override
 	public long getNbRows() {
@@ -241,17 +239,17 @@ public class HolyCube implements IHolyCube {
 	}
 
 	@Override
-	public DoubleIterator readDouble(final IntIterator it, final int keyIndex, final double defaultValue) {
+	public DoubleIterator readDouble(final IntIterator rowIterator, final int keyIndex, final double defaultValue) {
 		return new AbstractDoubleIterator() {
 
 			@Override
 			public boolean hasNext() {
-				return it.hasNext();
+				return rowIterator.hasNext();
 			}
 
 			@Override
 			public double nextDouble() {
-				int row = it.next();
+				int row = rowIterator.next();
 
 				DoubleList doubles = keyToDoubles.get(keyIndex);
 

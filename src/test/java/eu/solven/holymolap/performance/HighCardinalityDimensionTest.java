@@ -11,18 +11,18 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableSet;
 
 import eu.solven.holymolap.TestAggregation;
-import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.cube.ILazyHolyCube;
 import eu.solven.holymolap.sink.FastEntry;
 import eu.solven.holymolap.sink.IFastEntry;
 import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
-import eu.solven.holymolap.sink.RoaringSink;
+import eu.solven.holymolap.sink.HolyCubeSink;
 
 public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testOneHighCardinality() {
-		IHolySink sink = new RoaringSink();
+		IHolySink sink = new HolyCubeSink();
 
 		final int cardinality = 10000000;
 
@@ -50,8 +50,11 @@ public class HighCardinalityDimensionTest {
 			}
 		};
 
-		IHolyCube cube = sink.sink(rows, new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
-				Collections.emptySet(), Collections.emptySet()));
+		ImmutableSinkContext context =
+				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
+						Collections.emptySet(),
+						Collections.emptySet());
+		ILazyHolyCube cube = (ILazyHolyCube) sink.sink(context, rows);
 
 		// final ArrayIndexedMap<String, Comparable<?>> buffer = new
 		// ArrayIndexedMap<>(
@@ -96,7 +99,7 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testTwoHighCardinality() {
-		IHolySink sink = new RoaringSink();
+		IHolySink sink = new HolyCubeSink();
 
 		final int cardinality = 1000000;
 
@@ -129,9 +132,12 @@ public class HighCardinalityDimensionTest {
 			}
 		};
 
-		IHolyCube cube = sink.sink(rows,
-				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
-						Collections.emptySet(), Collections.emptySet()));
+		ImmutableSinkContext context = new ImmutableSinkContext(
+				ImmutableSet
+						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
+				Collections.emptySet(),
+				Collections.emptySet());
+		ILazyHolyCube cube = (ILazyHolyCube) sink.sink(context, rows);
 
 		// Iterator<Map<? extends Comparable<?>, ? extends Comparable<?>>> rows
 		// = new Iterator<Map<? extends Comparable<?>, ? extends
@@ -171,11 +177,14 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testIndexAllKeysOneByOne() {
-		IHolySink sink = new RoaringSink();
+		IHolySink sink = new HolyCubeSink();
 
-		IHolyCube cube = sink.sink(new FastEntry(new Object[] { "a", "b", "c" }),
-				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
-						Collections.emptySet(), Collections.emptySet()));
+		ImmutableSinkContext context = new ImmutableSinkContext(
+				ImmutableSet
+						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
+				Collections.emptySet(),
+				Collections.emptySet());
+		ILazyHolyCube cube = (ILazyHolyCube) sink.sink(context, new FastEntry(new Object[] { "a", "b", "c" }));
 
 		// IRoaringCube cube = sink.sink(rows);
 

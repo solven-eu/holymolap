@@ -8,5 +8,5 @@ public interface IHasAxes {
 
 	String indexToAxis(int keyIndex);
 
-	int getKeyIndex(String wildcardKey);
+	int getAxisIndex(String wildcardKey);
 }

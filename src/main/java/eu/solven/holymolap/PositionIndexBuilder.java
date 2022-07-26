@@ -27,6 +27,7 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
+import eu.solven.holymolap.cube.index.IHolyCubeIndex;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.longs.LongLists;
@@ -58,8 +59,8 @@ public class PositionIndexBuilder {
 		return rowsDoneActiveIndexed.get();
 	}
 
-	public void buildIndex(int keyIndex, LongList valuesIndex, IDataHolder dataHolder, Consumer<Integer> onKeyIndexed) {
-		buildIndex(keyIndex, valuesIndex, dataHolder);
+	public void buildIndex(int keyIndex, IDataHolder dataHolder, LongList valuesIndex, Consumer<Integer> onKeyIndexed) {
+		buildIndex(keyIndex, dataHolder, valuesIndex);
 
 		onKeyIndexed.accept(keyIndex);
 		// TODO: we should be able to tell indexed rows while indexing
@@ -67,7 +68,7 @@ public class PositionIndexBuilder {
 		// indexRow.set(nbRows);
 	}
 
-	public void buildIndex(int keyIndex, LongList valuesIndex, IDataHolder dataHolder) {
+	public void buildIndex(int keyIndex, IDataHolder dataHolder, LongList valuesIndex) {
 		LOGGER.debug("Start building index for key {}", keyIndex);
 
 		for (int valueIndex = 0; valueIndex < dataHolder.getKeyCardinality(keyIndex); valueIndex++) {
@@ -87,7 +88,7 @@ public class PositionIndexBuilder {
 
 					if (previousValueIndex != IHolyCubeIndex.NOT_INDEXED) {
 						if (previousValueIndex != valueIndex) {
-							throw new RuntimeException("The row " + nextRow
+							throw new IllegalStateException("The row " + nextRow
 									+ " is associated to several values for the same row: "
 									+ valueIndex
 									+ " and "
@@ -146,7 +147,7 @@ public class PositionIndexBuilder {
 			for (String wildcardKey : wildcardKeys) {
 				i++;
 
-				int wildcardKeyIndex = index.getKeyIndex(wildcardKey);
+				int wildcardKeyIndex = index.getAxisIndex(wildcardKey);
 
 				long valueIndex = index.getCoordinateIndex(wildcardKeyIndex, rowToConsider);
 
@@ -257,7 +258,7 @@ public class PositionIndexBuilder {
 				{
 					String wildcardKey = wildcardKeys.get(valueIndexes.size());
 
-					int wildcardKeyIndex = index.getKeyIndex(wildcardKey);
+					int wildcardKeyIndex = index.getAxisIndex(wildcardKey);
 
 					final long valueIndex = index.getCoordinateIndex(wildcardKeyIndex, rowToConsider);
 
