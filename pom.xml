@@ -24,8 +24,8 @@
 		<!-- set encoding to something not platform dependent -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-	    <maven.compiler.source>11</maven.compiler.source>
-	    <maven.compiler.target>11</maven.compiler.target>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -50,11 +50,11 @@
 			<artifactId>JavaFastPFOR</artifactId>
 			<version>0.1.12</version>
 		</dependency>
-		<dependency>
-			<groupId>org.mapdb</groupId>
-			<artifactId>mapdb</artifactId>
-			<version>3.0.8</version>
-		</dependency>
+		<!-- <dependency> -->
+		<!-- <groupId>org.mapdb</groupId> -->
+		<!-- <artifactId>mapdb</artifactId> -->
+		<!-- <version>3.0.8</version> -->
+		<!-- </dependency> -->
 
 		<dependency>
 			<groupId>it.unimi.dsi</groupId>

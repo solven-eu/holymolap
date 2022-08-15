@@ -1,4 +1,4 @@
-package eu.solven.holymolap;
+package eu.solven.holymolap.query;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,17 +8,16 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.roaringbitmap.FastAggregation;
-import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
 import org.roaringbitmap.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
 import com.codahale.metrics.Meter;
@@ -26,103 +25,36 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
+import eu.solven.holymolap.RowsConsumerStatus;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
-import eu.solven.holymolap.cube.index.IHolyCubeIndex;
+import eu.solven.holymolap.cube.index.IHolyCellSet;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.longs.LongLists;
 
 @ManagedResource
-public class PositionIndexBuilder {
-	protected static final Logger LOGGER = LoggerFactory.getLogger(PositionIndexBuilder.class);
-
-	/**
-	 * The number of rows of currently active index operations
-	 */
-	protected final AtomicLong rowsBeingActiveIndexed = new AtomicLong();
-
-	/**
-	 * The number of rows which have been already indexed in an index operation which is still active (i.e. which have
-	 * more rows to index)
-	 */
-	protected final AtomicLong rowsDoneActiveIndexed = new AtomicLong();
+public class AggregationHelper2 {
+	protected static final Logger LOGGER = LoggerFactory.getLogger(AggregationHelper2.class);
 
 	protected final Set<RowsConsumerStatus> activeGroupBy = Sets.newConcurrentHashSet();
 
-	@ManagedAttribute
-	public long getRowsBeingActiveIndexed() {
-		return rowsBeingActiveIndexed.get();
-	}
-
-	@ManagedAttribute
-	public long getRowsDoneActiveIndexed() {
-		return rowsDoneActiveIndexed.get();
-	}
-
-	public void buildIndex(int keyIndex, IDataHolder dataHolder, LongList valuesIndex, Consumer<Integer> onKeyIndexed) {
-		buildIndex(keyIndex, dataHolder, valuesIndex);
-
-		onKeyIndexed.accept(keyIndex);
-		// TODO: we should be able to tell indexed rows while indexing
-		// This would enable querying even before end of indexation
-		// indexRow.set(nbRows);
-	}
-
-	public void buildIndex(int keyIndex, IDataHolder dataHolder, LongList valuesIndex) {
-		LOGGER.debug("Start building index for key {}", keyIndex);
-
-		for (int valueIndex = 0; valueIndex < dataHolder.getKeyCardinality(keyIndex); valueIndex++) {
-			RoaringBitmap valueIndexToBitmap = dataHolder.getValueIndexToBitmap(keyIndex, valueIndex);
-
-			int nbRows = valueIndexToBitmap.getCardinality();
-
-			rowsBeingActiveIndexed.addAndGet(nbRows);
-			try {
-				IntIterator valueRowsIterator = valueIndexToBitmap.getIntIterator();
-
-				while (valueRowsIterator.hasNext()) {
-					int nextRow = valueRowsIterator.next();
-					rowsDoneActiveIndexed.incrementAndGet();
-
-					long previousValueIndex = valuesIndex.set(nextRow, valueIndex);
-
-					if (previousValueIndex != IHolyCubeIndex.NOT_INDEXED) {
-						if (previousValueIndex != valueIndex) {
-							throw new IllegalStateException("The row " + nextRow
-									+ " is associated to several values for the same row: "
-									+ valueIndex
-									+ " and "
-									+ previousValueIndex);
-						} else {
-							LOGGER.debug("We unexpectedly indexed again {}", nextRow);
-						}
-					}
-				}
-			} finally {
-				rowsBeingActiveIndexed.addAndGet(-nbRows);
-				rowsDoneActiveIndexed.addAndGet(-nbRows);
-			}
-		}
-	}
-
 	/**
 	 * 
-	 * @param index
-	 * @param wildards
+	 * @param cellSet
+	 * @param axesKeys
 	 * @param candidateRows
-	 * @param keyToValueIndexToBitmap
-	 * @return
+	 * @param rowAggregateConsumer
 	 * @return the matching rows
 	 */
-	public RoaringBitmap computeNextCellRows(IHolyCubeIndex index,
-			Collection<String> wildcardKeys,
+	public RoaringBitmap computeNextCellRows(IHolyCellSet cellSet,
+			Collection<String> axesKeys,
 			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
 		if (candidateRows.isEmpty()) {
 			return candidateRows;
 		}
 
-		if (wildcardKeys.isEmpty()) {
+		if (axesKeys.isEmpty()) {
 			// All rows match as we requested the grand total
 			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(candidateRows, new long[0]));
 
@@ -137,21 +69,21 @@ public class PositionIndexBuilder {
 		final long[] valueIndexes;
 		final List<RoaringBitmap> matchingRowsBitmaps;
 		{
-			valueIndexes = new long[wildcardKeys.size()];
+			valueIndexes = new long[axesKeys.size()];
 
 			// The list of bitmaps matching next row siblings
-			matchingRowsBitmaps = new ArrayList<>(1 + wildcardKeys.size());
+			matchingRowsBitmaps = new ArrayList<>(1 + axesKeys.size());
 			matchingRowsBitmaps.add(candidateRows);
 
 			int i = -1;
-			for (String wildcardKey : wildcardKeys) {
+			for (String wildcardKey : axesKeys) {
 				i++;
 
-				int wildcardKeyIndex = index.getAxisIndex(wildcardKey);
+				int wildcardKeyIndex = cellSet.getAxisIndex(wildcardKey);
 
-				long valueIndex = index.getCoordinateIndex(wildcardKeyIndex, rowToConsider);
+				long valueIndex = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
 
-				if (valueIndex == IHolyCubeIndex.NOT_INDEXED) {
+				if (valueIndex == IHolyCellSet.NOT_INDEXED) {
 					throw new IllegalStateException("We are considering a row (" + rowToConsider
 							+ ") which does not contribute to key: "
 							+ wildcardKey);
@@ -159,7 +91,7 @@ public class PositionIndexBuilder {
 
 				valueIndexes[i] = valueIndex;
 
-				RoaringBitmap valueBitmap = index.getValueIndexToBitmap(wildcardKeyIndex, valueIndex);
+				RoaringBitmap valueBitmap = cellSet.getCoordinateToBitmap(wildcardKeyIndex, valueIndex);
 
 				matchingRowsBitmaps.add(valueBitmap);
 			}
@@ -176,14 +108,14 @@ public class PositionIndexBuilder {
 		return matchingRowsBitmap;
 	}
 
-	public void computeParallelNextCellRows(IHolyCubeIndex index,
+	public void computeParallelNextCellRows(IHolyCellSet index,
 			List<String> wildcardKeys,
 			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
 		computeParallelNextCellRows(index, wildcardKeys, LongLists.EMPTY_LIST, candidateRows, rowAggregateConsumer);
 	}
 
-	protected void computeParallelNextCellRows(final IHolyCubeIndex index,
+	protected void computeParallelNextCellRows(final IHolyCellSet index,
 			final List<String> wildcardKeys,
 			final LongList valueIndexes,
 			final RoaringBitmap candidateRows,
@@ -223,17 +155,17 @@ public class PositionIndexBuilder {
 		}
 	}
 
-	protected void computeParallelNextCellRows(final IHolyCubeIndex index,
-			final List<String> wildcardKeys,
-			final LongList valueIndexes,
+	protected void computeParallelNextCellRows(final IHolyCellSet cellSet,
+			final List<String> axes,
+			final LongList coordinateRefs,
 			final RoaringBitmap candidateRows,
 			final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
 			final Executor es,
 			final AtomicLong nbAsyncTasks,
 			final RowsConsumerStatus status) {
-		if (wildcardKeys.size() == valueIndexes.size()) {
+		if (axes.size() == coordinateRefs.size()) {
 			// All rows match as we requested the grand total
-			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(candidateRows, valueIndexes.toLongArray()));
+			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(candidateRows, coordinateRefs.toLongArray()));
 
 			// Register these rows as consumed
 			status.addAsConsidered(candidateRows.getCardinality());
@@ -256,58 +188,50 @@ public class PositionIndexBuilder {
 				// This array will hold the indexes of the values of the next
 				// coordinate matching the selected wildcards
 				{
-					String wildcardKey = wildcardKeys.get(valueIndexes.size());
+					String wildcardKey = axes.get(coordinateRefs.size());
 
-					int wildcardKeyIndex = index.getAxisIndex(wildcardKey);
+					int wildcardKeyIndex = cellSet.getAxisIndex(wildcardKey);
 
-					final long valueIndex = index.getCoordinateIndex(wildcardKeyIndex, rowToConsider);
+					final long valueIndex = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
 
-					if (valueIndex == IHolyCubeIndex.NOT_INDEXED) {
+					if (valueIndex == IHolyCellSet.NOT_INDEXED) {
 						throw new IllegalStateException("We are considering a row (" + rowToConsider
 								+ ") which does not contribute to key: "
 								+ wildcardKey);
 					}
 
-					final RoaringBitmap valueBitmap = index.getValueIndexToBitmap(wildcardKeyIndex, valueIndex);
+					final RoaringBitmap valueBitmap = cellSet.getCoordinateToBitmap(wildcardKeyIndex, valueIndex);
+
+					final RoaringBitmap finalCandidateRowsLeft = candidateRowsLeft;
+					Runnable command = new Runnable() {
+
+						@Override
+						public void run() {
+							try {
+								computeOnMatchingRows(finalCandidateRowsLeft,
+										valueBitmap,
+										rowToConsider,
+										coordinateRefs,
+										valueIndex,
+										cellSet,
+										axes,
+										rowAggregateConsumer,
+										es,
+										nbAsyncTasks,
+										status);
+							} finally {
+								nbAsyncTasks.decrementAndGet();
+							}
+						}
+					};
 
 					if (candidateRowsLeft.getCardinality() > 1024) {
 						// Fork only if there is enough rows to consider
-						final RoaringBitmap finalCandidateRowsLeft = candidateRowsLeft;
 
 						nbAsyncTasks.incrementAndGet();
-						es.execute(new Runnable() {
-
-							@Override
-							public void run() {
-								try {
-									computeOnMatchingRows(finalCandidateRowsLeft,
-											valueBitmap,
-											rowToConsider,
-											valueIndexes,
-											valueIndex,
-											index,
-											wildcardKeys,
-											rowAggregateConsumer,
-											es,
-											nbAsyncTasks,
-											status);
-								} finally {
-									nbAsyncTasks.decrementAndGet();
-								}
-							}
-						});
+						es.execute(command);
 					} else {
-						computeOnMatchingRows(candidateRowsLeft,
-								valueBitmap,
-								rowToConsider,
-								valueIndexes,
-								valueIndex,
-								index,
-								wildcardKeys,
-								rowAggregateConsumer,
-								es,
-								nbAsyncTasks,
-								status);
+						command.run();
 					}
 
 					{
@@ -328,7 +252,7 @@ public class PositionIndexBuilder {
 			long rowToConsider,
 			LongList valueIndexes,
 			long valueIndex,
-			IHolyCubeIndex index,
+			IHolyCellSet index,
 			List<String> wildcardKeys,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
 			Executor es,
@@ -360,7 +284,7 @@ public class PositionIndexBuilder {
 	 * @param consumer
 	 * @return rows left to process
 	 */
-	public RoaringBitmap consumeNextCellRows(final IHolyCubeIndex index,
+	public RoaringBitmap consumeNextCellRows(final IHolyCellSet index,
 			final Collection<String> wildcards,
 			final RoaringBitmap rows,
 			Consumer<RawCoordinatesToBitmap> consumer) {
@@ -379,7 +303,7 @@ public class PositionIndexBuilder {
 		}
 	}
 
-	public Iterator<RawCoordinatesToBitmap> nextCellRows(final IHolyCubeIndex index,
+	public Iterator<RawCoordinatesToBitmap> nextCellRows(final IHolyCellSet index,
 			final Collection<String> wildcards,
 			final RoaringBitmap rows) {
 		final AtomicReference<RawCoordinatesToBitmap> nextAggregate = new AtomicReference<>();
@@ -416,7 +340,7 @@ public class PositionIndexBuilder {
 					aggregateMeter.mark();
 
 					long now = System.currentTimeMillis();
-					if (now > start.get() + 1000) {
+					if (now > start.get() + TimeUnit.SECONDS.toMillis(1)) {
 						LOGGER.debug("We consumed {} rows out of {} at rate {}rows/sec, {}agg/sec",
 								initialNbRows - nbLeftRows,
 								initialNbRows,

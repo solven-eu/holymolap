@@ -11,12 +11,13 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableSet;
 
 import eu.solven.holymolap.TestAggregation;
+import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.ILazyHolyCube;
 import eu.solven.holymolap.sink.FastEntry;
+import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IFastEntry;
 import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
-import eu.solven.holymolap.sink.HolyCubeSink;
 
 public class HighCardinalityDimensionTest {
 
@@ -54,7 +55,7 @@ public class HighCardinalityDimensionTest {
 				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
 						Collections.emptySet(),
 						Collections.emptySet());
-		ILazyHolyCube cube = (ILazyHolyCube) sink.sink(context, rows);
+		IHolyCube cube = sink.sink(context, rows);
 
 		// final ArrayIndexedMap<String, Comparable<?>> buffer = new
 		// ArrayIndexedMap<>(
@@ -92,9 +93,12 @@ public class HighCardinalityDimensionTest {
 		// IRoaringCube cube = sink.sink(rows);
 
 		Assert.assertEquals(cardinality, cube.getNbRows());
-		Assert.assertEquals(2, cube.getIndex().keySet().size());
+		Assert.assertEquals(2, cube.getCellSet().axes().size());
 
-		cube.getIndex().startIndexing(Collections.singleton(TestAggregation.FIRST_KEY));
+		if (cube instanceof ILazyHolyCube) {
+			ILazyHolyCube lazyCube = (ILazyHolyCube) cube;
+			lazyCube.getCellSet().startIndexing(Collections.singleton(TestAggregation.FIRST_KEY));
+		}
 	}
 
 	@Test
@@ -137,7 +141,7 @@ public class HighCardinalityDimensionTest {
 						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
 				Collections.emptySet(),
 				Collections.emptySet());
-		ILazyHolyCube cube = (ILazyHolyCube) sink.sink(context, rows);
+		IHolyCube cube = sink.sink(context, rows);
 
 		// Iterator<Map<? extends Comparable<?>, ? extends Comparable<?>>> rows
 		// = new Iterator<Map<? extends Comparable<?>, ? extends
@@ -170,9 +174,12 @@ public class HighCardinalityDimensionTest {
 		// IRoaringCube cube = sink.sink(rows);
 
 		Assert.assertEquals(cardinality, cube.getNbRows());
-		Assert.assertEquals(3, cube.getIndex().keySet().size());
+		Assert.assertEquals(3, cube.getCellSet().axes().size());
 
-		cube.getIndex().startIndexing(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY));
+		if (cube instanceof ILazyHolyCube) {
+			ILazyHolyCube lazyCube = (ILazyHolyCube) cube;
+			lazyCube.getCellSet().startIndexing(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY));
+		}
 	}
 
 	@Test
@@ -184,15 +191,18 @@ public class HighCardinalityDimensionTest {
 						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
 				Collections.emptySet(),
 				Collections.emptySet());
-		ILazyHolyCube cube = (ILazyHolyCube) sink.sink(context, new FastEntry(new Object[] { "a", "b", "c" }));
+		IHolyCube cube = sink.sink(context, new FastEntry(new Object[] { "a", "b", "c" }));
 
 		// IRoaringCube cube = sink.sink(rows);
 
 		Assert.assertEquals(1, cube.getNbRows());
-		Assert.assertEquals(3, cube.getIndex().keySet().size());
+		Assert.assertEquals(3, cube.getCellSet().axes().size());
 
-		cube.getIndex().startIndexing(ImmutableSet.of(TestAggregation.FIRST_KEY));
-		cube.getIndex().startIndexing(ImmutableSet.of(TestAggregation.SECOND_KEY));
-		cube.getIndex().startIndexing(ImmutableSet.of(TestAggregation.DOUBLE_FIRSY_KEY));
+		if (cube instanceof ILazyHolyCube) {
+			ILazyHolyCube lazyCube = (ILazyHolyCube) cube;
+			lazyCube.getCellSet().startIndexing(ImmutableSet.of(TestAggregation.FIRST_KEY));
+			lazyCube.getCellSet().startIndexing(ImmutableSet.of(TestAggregation.SECOND_KEY));
+			lazyCube.getCellSet().startIndexing(ImmutableSet.of(TestAggregation.DOUBLE_FIRSY_KEY));
+		}
 	}
 }

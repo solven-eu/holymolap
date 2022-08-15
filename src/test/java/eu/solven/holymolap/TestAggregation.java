@@ -72,7 +72,7 @@ public class TestAggregation {
 		HolyCube cube = new HolyCube();
 
 		Assert.assertEquals(0, cube.getNbRows());
-		Assert.assertEquals(Collections.emptySet(), cube.getIndex().keySet());
+		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().axes());
 
 		for (IAggregationQuery query : getAllQueries()) {
 			Assert.assertEquals(new TreeMap<>(),
@@ -88,7 +88,7 @@ public class TestAggregation {
 		IHolyCube cube = new HolyCubeSink().sink(context, new FastEntry(new Object[] {}));
 
 		Assert.assertEquals(1, cube.getNbRows());
-		Assert.assertEquals(Collections.emptySet(), cube.getIndex().keySet());
+		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().axes());
 
 		for (IAggregationQuery query : getAllQueries()) {
 			Assert.assertEquals(new TreeMap<>(),
@@ -104,7 +104,7 @@ public class TestAggregation {
 				new FastEntry(new Object[] { FIRST_VALUE }));
 
 		Assert.assertEquals(1, cube.getNbRows());
-		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY)), cube.getIndex().keySet());
+		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY)), cube.getCellSet().axes());
 
 		Assert.assertEquals(new TreeMap<>(),
 				AggregateHelper.cumulateInNavigableMap(cube,
@@ -131,7 +131,7 @@ public class TestAggregation {
 				new HolyCubeSink().sink(context, new FastEntry(new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }));
 
 		Assert.assertEquals(1, cube.getNbRows());
-		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)), cube.getIndex().keySet());
+		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)), cube.getCellSet().axes());
 
 		Assert.assertEquals(new TreeMap<>(),
 				AggregateHelper.cumulateInNavigableMap(cube,

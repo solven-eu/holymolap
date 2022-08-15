@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,65 +12,42 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
 import eu.solven.holymolap.DataHolder;
-import eu.solven.holymolap.RoaringCubeIndex;
-import eu.solven.holymolap.cube.index.IHolyCubeIndex;
-import eu.solven.holymolap.sink.IKeyValuesIndex;
+import eu.solven.holymolap.cube.aggregates.HolyAggregateTable;
+import eu.solven.holymolap.cube.aggregates.IHolyAggregateTable;
+import eu.solven.holymolap.cube.index.HolyCellSet;
+import eu.solven.holymolap.cube.index.IHolyCellSet;
+import eu.solven.holymolap.exception.HolyExceptionManagement;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasFilters;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterAnd;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterAxisEquals;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterOr;
-import it.unimi.dsi.fastutil.doubles.AbstractDoubleIterator;
-import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.doubles.DoubleIterator;
-import it.unimi.dsi.fastutil.doubles.DoubleList;
-import it.unimi.dsi.fastutil.ints.IntList;
 
+/**
+ * The default implementation of an {@link IHolyCube}. It relies on an {@link IHolyCellSet} describing the cells, and an
+ * {@link IHolyAggregateTable} describing the aggregates.
+ * 
+ * @author Benoit Lacelle
+ *
+ */
 @ManagedResource
 public class HolyCube implements IHolyCube {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(HolyCube.class);
 
 	protected final int nbRows;
 
-	/**
-	 * The bitmap tells which rows express given key
-	 */
-	protected final List<? extends RoaringBitmap> keyToBitmap;
+	protected final IHolyCellSet cellSet;
+	protected final IHolyAggregateTable aggregateTable;
 
-	/**
-	 * For each key, gives the value as double, which would be valid only where the key-bitmap is true
-	 */
-	protected final List<? extends DoubleList> keyToDoubles;
-
-	protected final IHolyCubeIndex ²;
-
-	public HolyCube(int nbRows,
-			List<? extends String> keyIndexToKey,
-			List<? extends RoaringBitmap> keyIndexToBitmap,
-			List<? extends IKeyValuesIndex> keyIndexToValueIndex,
-			List<? extends List<RoaringBitmap>> keyIndexToValueIndexToBitmap,
-			List<? extends DoubleList> keyIndexToDoubles,
-			List<? extends IntList> keyIndexToInts) {
+	public HolyCube(int nbRows, IHolyCellSet cellSet, IHolyAggregateTable aggregateTable) {
 		this.nbRows = nbRows;
-		// this.keyIndexToKey = keyIndexToKey;
-		this.keyToBitmap = keyIndexToBitmap;
-		// this.keyToValueToBitmap = keyIndexToValueIndexToBitmap;
-		this.keyToDoubles = keyIndexToDoubles;
-		// this.keyToInts = keyIndexToInts;
-
-		this.index = new RoaringCubeIndex(nbRows,
-				keyIndexToKey,
-				keyIndexToValueIndex,
-				new DataHolder(nbRows,
-						keyIndexToValueIndexToBitmap,
-						keyIndexToInts,
-						keyToBitmap,
-						keyIndexToValueIndex));
+		this.cellSet = cellSet;
+		this.aggregateTable = aggregateTable;
 	}
 
 	@Override
 	public String toString() {
-		return "#Rows: " + nbRows + ", Keys=" + index.keySet();
+		return "#Rows: " + nbRows + ", Keys=" + cellSet.axes();
 	}
 
 	/**
@@ -79,38 +55,12 @@ public class HolyCube implements IHolyCube {
 	 */
 	public HolyCube() {
 		this(0,
-				Collections.emptyList(),
-				Collections.emptyList(),
-				Collections.emptyList(),
-				Collections.emptyList(),
-				Collections.emptyList(),
-				Collections.emptyList());
+				new HolyCellSet(0,
+						Collections.emptyList(),
+						Collections.emptyList(),
+						new DataHolder(0, Collections.emptyList(), Collections.emptyList(), Collections.emptyList())),
+				new HolyAggregateTable(Collections.emptyList()));
 	}
-
-	// @Override
-	// public Collection<? extends RoaringBitmap> getAxesBitmaps(IHasColumns hasColumns) {
-	// List<RoaringBitmap> bitmaps = new ArrayList<>();
-	//
-	// for (String wildcardKey : hasColumns.getColumns()) {
-	// int keyIndex = index.getKeyIndex(wildcardKey);
-	//
-	// if (keyIndex < 0) {
-	// bitmaps.add(IRoaringCubeIndex.EMPTY_BITMAP);
-	// } else {
-	// RoaringBitmap bitmap = keyToBitmap.get(keyIndex);
-	//
-	// if (bitmap == null) {
-	// LOGGER.debug("Requesting to aggregate a not-existing key: {}", wildcardKey);
-	// // This key can not be wildcarded: the view is empty
-	// bitmaps.add(IRoaringCubeIndex.EMPTY_BITMAP);
-	// } else {
-	// bitmaps.add(bitmap);
-	// }
-	// }
-	// }
-	//
-	// return bitmaps;
-	// }
 
 	@Override
 	public RoaringBitmap getFiltersBitmap(IHasFilters hasFilters) {
@@ -122,14 +72,15 @@ public class HolyCube implements IHolyCube {
 		if (axesFilter.isMatchAll()) {
 			if (axesFilter.isExclusion()) {
 				// Empty
-				return new RoaringBitmap();
+				return HolyExceptionManagement.immutableEmptyBitmap();
 			} else {
 				return all;
 			}
 		} else if (axesFilter.isAxisEquals()) {
 			IAxesFilterAxisEquals equalsFilter = (IAxesFilterAxisEquals) axesFilter;
 
-			RoaringBitmap valueBitmap = index.getBitmap(equalsFilter.getAxis(), equalsFilter.getFiltered());
+			RoaringBitmap valueBitmap =
+					cellSet.getCoordinateToBitmap(equalsFilter.getAxis(), equalsFilter.getFiltered());
 
 			if (axesFilter.isExclusion()) {
 				return RoaringBitmap.andNot(all, valueBitmap);
@@ -177,89 +128,31 @@ public class HolyCube implements IHolyCube {
 		} else {
 			throw new UnsupportedOperationException("filter: " + axesFilter);
 		}
-
 	}
-
-	// @Override
-	// public NavigableMap<?, ?> convertToCoordinates(int row, Set<?> keys) {
-	// NavigableMap<Object, Object> coordinates = new ConcurrentSkipListMap<>();
-	//
-	// for (Object key : keys) {
-	// coordinates.put(key, index.getValueAtRow(key, row));
-	// }
-	//
-	// return coordinates;
-	// }
-
-	// @Override
-	// public String indexToAxis(int keyIndex) {
-	// return index.indexToAxis(keyIndex);
-	// }
 
 	@Override
 	public long getNbRows() {
 		return nbRows;
 	}
 
-	// @Override
-	// public RoaringBitmap getAllRows() {
-	// RoaringBitmap allRows = new RoaringBitmap();
-	// allRows.add(0, nbRows);
-	// return allRows;
-	// }
-
-	// @Override
-	// public List<?> getValuesForKey(String key) {
-	// return index.getValuesForKey(key);
-	// }
-
 	@ManagedAttribute
 	@Override
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		for (RoaringBitmap bitmap : keyToBitmap) {
-			sizeInBytes += bitmap.getSizeInBytes();
-		}
-
-		for (DoubleList primitives : keyToDoubles) {
-			if (primitives instanceof DoubleArrayList) {
-				sizeInBytes += 8 * ((DoubleArrayList) primitives).elements().length;
-			} else {
-				sizeInBytes += 8 * primitives.size();
-			}
-		}
+		sizeInBytes += cellSet.getSizeInBytes();
+		sizeInBytes += aggregateTable.getSizeInBytes();
 
 		return sizeInBytes;
 	}
 
 	@Override
-	public IHolyCubeIndex getIndex() {
-		return index;
+	public IHolyCellSet getCellSet() {
+		return cellSet;
 	}
 
 	@Override
-	public DoubleIterator readDouble(final IntIterator rowIterator, final int keyIndex, final double defaultValue) {
-		return new AbstractDoubleIterator() {
-
-			@Override
-			public boolean hasNext() {
-				return rowIterator.hasNext();
-			}
-
-			@Override
-			public double nextDouble() {
-				int row = rowIterator.next();
-
-				DoubleList doubles = keyToDoubles.get(keyIndex);
-
-				if (doubles == null) {
-					return defaultValue;
-				} else {
-					return doubles.getDouble(row);
-				}
-
-			}
-		};
+	public IHolyAggregateTable getAggregateTable() {
+		return aggregateTable;
 	}
 }

@@ -13,8 +13,11 @@ import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
 import com.google.common.primitives.Ints;
 
+import eu.solven.holymolap.DataHolder;
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.cube.aggregates.HolyAggregateTable;
+import eu.solven.holymolap.cube.index.HolyCellSet;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -27,21 +30,22 @@ public class HolyCubeSink implements IHolySink {
 	public IHolyCube sink(ISinkContext context, Stream<? extends IFastEntry> toAdd) {
 		int nbKeys = context.keyIndexToKey().size();
 
-		List<RoaringBitmap> keyIndexToBitmap;
+		List<RoaringBitmap> axisIndexToBitmap;
 		{
-			keyIndexToBitmap = Arrays.asList(new RoaringBitmap[nbKeys]);
+			axisIndexToBitmap = Arrays.asList(new RoaringBitmap[nbKeys]);
 			for (int i = 0; i < nbKeys; i++) {
-				keyIndexToBitmap.set(i, new RoaringBitmap());
+				axisIndexToBitmap.set(i, new RoaringBitmap());
 			}
 		}
 
-		List<DoubleList> keyIndexToDoubles = Arrays.asList(new DoubleList[nbKeys]);
-		List<IntList> keyIndexToInts = Arrays.asList(new IntList[nbKeys]);
+		List<DoubleList> axisIndexToDoubles = Arrays.asList(new DoubleList[nbKeys]);
+		List<IntList> axisIndexToInts = Arrays.asList(new IntList[nbKeys]);
 
-		List<IKeyValuesIndex> keyIndexToValueIndex = Arrays.asList(new IKeyValuesIndex[nbKeys]);
+		List<IAxisCoordinatesDictionary> axisIndexToCoordinatesIndex =
+				Arrays.asList(new IAxisCoordinatesDictionary[nbKeys]);
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		List<List<RoaringBitmap>> keyIndexToValueIndexToBitmap = (List) Arrays.asList(new List[nbKeys]);
+		List<List<RoaringBitmap>> axisIndexToValueIndexToBitmap = (List) Arrays.asList(new List[nbKeys]);
 
 		final Meter requests = new Meter();
 		AtomicInteger rowIndex = new AtomicInteger(-1);
@@ -64,36 +68,36 @@ public class HolyCubeSink implements IHolySink {
 				throw new UnsupportedOperationException("TODO");
 			}
 
-			for (int keyIndex : next.expressedDoubleIndexes()) {
-				keyIndexToBitmap.get(keyIndex).add(currentRowIndex);
+			for (int keyIndex : next.doubleAxesIndexes()) {
+				axisIndexToBitmap.get(keyIndex).add(currentRowIndex);
 
 				double value = next.getDouble(keyIndex);
 
-				contributeDoubleToRow(value, keyIndex, keyIndexToDoubles, context.expectedNbRows(), currentRowIndex);
+				contributeDoubleToRow(value, keyIndex, axisIndexToDoubles, context.expectedNbRows(), currentRowIndex);
 			}
 
-			for (int keyIndex : next.expressedIntIndexes()) {
-				keyIndexToBitmap.get(keyIndex).add(currentRowIndex);
+			for (int keyIndex : next.intAxesIndexes()) {
+				axisIndexToBitmap.get(keyIndex).add(currentRowIndex);
 
 				int value = next.getInt(keyIndex);
 
-				contributeIntToRow(value, keyIndex, keyIndexToInts, context.expectedNbRows(), currentRowIndex);
+				contributeIntToRow(value, keyIndex, axisIndexToInts, context.expectedNbRows(), currentRowIndex);
 			}
 
-			for (int keyIndex : next.expressedObjectIndexes()) {
-				if (keyIndex >= keyIndexToBitmap.size()) {
+			for (int axisIndex : next.objectAxesIndexes()) {
+				if (axisIndex >= axisIndexToBitmap.size()) {
 					throw new RuntimeException("The entry " + next
 							+ " express index "
-							+ keyIndex
+							+ axisIndex
 							+ " while the context has "
 							+ nbKeys
 							+ " keys");
 				}
 
-				RoaringBitmap bitmap = keyIndexToBitmap.get(keyIndex);
+				RoaringBitmap bitmap = axisIndexToBitmap.get(axisIndex);
 				bitmap.add(currentRowIndex);
 
-				Comparable<?> value = next.getValue(keyIndex);
+				Object value = next.getObject(axisIndex);
 
 				if (value == null) {
 					LOGGER.trace("Skip null value");
@@ -102,27 +106,30 @@ public class HolyCubeSink implements IHolySink {
 					// index them
 					if (value instanceof Integer) {
 						contributeIntToRow(((Number) value)
-								.intValue(), keyIndex, keyIndexToInts, context.expectedNbRows(), currentRowIndex);
+								.intValue(), axisIndex, axisIndexToInts, context.expectedNbRows(), currentRowIndex);
 					} else {
-						contributeDoubleToRow(((Number) value)
-								.doubleValue(), keyIndex, keyIndexToDoubles, context.expectedNbRows(), currentRowIndex);
+						contributeDoubleToRow(((Number) value).doubleValue(),
+								axisIndex,
+								axisIndexToDoubles,
+								context.expectedNbRows(),
+								currentRowIndex);
 					}
 				} else {
-					List<RoaringBitmap> valueToBitmap = keyIndexToValueIndexToBitmap.get(keyIndex);
+					List<RoaringBitmap> valueToBitmap = axisIndexToValueIndexToBitmap.get(axisIndex);
 					if (valueToBitmap == null) {
 						valueToBitmap = new ArrayList<RoaringBitmap>();
-						keyIndexToValueIndexToBitmap.set(keyIndex, valueToBitmap);
+						axisIndexToValueIndexToBitmap.set(axisIndex, valueToBitmap);
 					}
 
 					// We consider Object have low cardinality: always index
 					// them
-					IKeyValuesIndex keyValueIndexes = keyIndexToValueIndex.get(keyIndex);
-					if (keyValueIndexes == null) {
-						keyValueIndexes = new KeyValuesIndex();
-						keyIndexToValueIndex.set(keyIndex, keyValueIndexes);
+					IAxisCoordinatesDictionary axisCoordinatesIndex = axisIndexToCoordinatesIndex.get(axisIndex);
+					if (axisCoordinatesIndex == null) {
+						axisCoordinatesIndex = new AxisCoordinatesDictionary();
+						axisIndexToCoordinatesIndex.set(axisIndex, axisCoordinatesIndex);
 					}
 
-					long valueIndex = keyValueIndexes.mapValueIndex(value);
+					long valueIndex = axisCoordinatesIndex.mapCoordinateIndex(value);
 
 					if (valueIndex == valueToBitmap.size()) {
 						// This is the first time we encountered this value
@@ -139,12 +146,25 @@ public class HolyCubeSink implements IHolySink {
 		// NbRows is rowIndex + 1
 		int nbRows = rowIndex.get() + 1;
 		return new HolyCube(nbRows,
-				context.keyIndexToKey(),
-				keyIndexToBitmap,
-				keyIndexToValueIndex,
-				keyIndexToValueIndexToBitmap,
-				keyIndexToDoubles,
-				keyIndexToInts);
+				makeCellset(nbRows,
+						context.keyIndexToKey(),
+						axisIndexToBitmap,
+						axisIndexToCoordinatesIndex,
+						axisIndexToValueIndexToBitmap,
+						axisIndexToInts),
+				new HolyAggregateTable(axisIndexToDoubles));
+	}
+
+	private HolyCellSet makeCellset(int nbRows,
+			List<? extends String> axisIndexToAxis,
+			List<? extends RoaringBitmap> axisIndexToBitmap,
+			List<? extends IAxisCoordinatesDictionary> axisIndexToAxisCoordinatesDictionary,
+			List<? extends List<RoaringBitmap>> axisIndexToCoordinateRefToRows,
+			List<? extends IntList> axisIndexToRowToInts) {
+		return new HolyCellSet(nbRows,
+				axisIndexToAxis,
+				axisIndexToAxisCoordinatesDictionary,
+				new DataHolder(nbRows, axisIndexToCoordinateRefToRows, axisIndexToRowToInts, axisIndexToBitmap));
 	}
 
 	protected void contributeDoubleToRow(double value,

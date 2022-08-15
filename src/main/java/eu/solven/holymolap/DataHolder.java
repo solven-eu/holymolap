@@ -7,108 +7,102 @@ import org.roaringbitmap.RoaringBitmap;
 
 import com.google.common.primitives.Ints;
 
-import eu.solven.holymolap.sink.IKeyValuesIndex;
-import eu.solven.holymolap.sink.KeyValuesIndex;
+import eu.solven.holymolap.exception.HolyExceptionManagement;
+import eu.solven.holymolap.sink.IAxisCoordinatesDictionary;
+import eu.solven.holymolap.sink.AxisCoordinatesDictionary;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
 public class DataHolder implements IDataHolder {
 
 	protected final int nbRow;
-	protected final List<List<? extends RoaringBitmap>> keyIndexToValueIndexToBitmap;
-	protected final List<? extends IntList> keyIndexToInts;
-	protected final List<? extends RoaringBitmap> keyToBitmap;
-	protected final List<? extends IKeyValuesIndex> keyIndexToValueIndex;
-
-	// protected final List<IntList> keyIndexToValueIndexToFirstRow;
+	protected final List<List<? extends RoaringBitmap>> axisIndexToCoordinateRefToRows;
+	protected final List<? extends IntList> axisIndexToRowToInts;
+	protected final List<? extends RoaringBitmap> axisIndexToRows;
 
 	public DataHolder(int nbRow,
 			List<? extends List<? extends RoaringBitmap>> keyIndexToValueIndexToBitmap,
-			List<? extends IntList> keyIndexToInts,
-			List<? extends RoaringBitmap> keyToBitmap,
-			List<? extends IKeyValuesIndex> keyIndexToValueIndex) {
+			List<? extends IntList> axisIndexToRowToInts,
+			List<? extends RoaringBitmap> axisIndexToRows) {
 		this.nbRow = nbRow;
-		this.keyIndexToValueIndexToBitmap = new ArrayList<>(keyIndexToValueIndexToBitmap);
-		this.keyIndexToInts = keyIndexToInts;
+		this.axisIndexToCoordinateRefToRows = new ArrayList<>(keyIndexToValueIndexToBitmap);
+		this.axisIndexToRowToInts = axisIndexToRowToInts;
 
-		this.keyToBitmap = keyToBitmap;
-		this.keyIndexToValueIndex = keyIndexToValueIndex;
-
-		// keyIndexToIntCardinality = new
-		// Int2IntOpenHashMap(keyIndexToInts.size());
-		// keyIndexToIntCardinality.defaultReturnValue(IRoaringCubeIndex.NOT_INDEXED);
-		// keyIndexToValueIndexToFirstRow = Arrays.asList(new
-		// IntList[keyIndexToInts.size()]);
+		this.axisIndexToRows = axisIndexToRows;
 	}
 
 	@Override
-	public long getKeyCardinality(int keyIndex) {
-		List<? extends RoaringBitmap> valueIndexToBitmap = keyIndexToValueIndexToBitmap.get(keyIndex);
+	public long getAxisCardinality(int axisIndex) {
+		List<? extends RoaringBitmap> coordinateRefToRows = axisIndexToCoordinateRefToRows.get(axisIndex);
 
-		if (valueIndexToBitmap == null) {
-			IntList rowIndexToInt = keyIndexToInts.get(keyIndex);
+		if (coordinateRefToRows == null) {
+			IntList rowIndexToInt = axisIndexToRowToInts.get(axisIndex);
 
 			if (rowIndexToInt == null) {
-				throw new RuntimeException("We can not index the keyIndex: " + keyIndex);
+				throw new RuntimeException("We can not index the axisIndex: " + axisIndex);
 			} else {
-				synchronized (keyIndexToValueIndexToBitmap) {
-					valueIndexToBitmap = keyIndexToValueIndexToBitmap.get(keyIndex);
-					if (valueIndexToBitmap == null) {
-						List<RoaringBitmap> newValueIndexToBitmap = new ArrayList<>();
-						valueIndexToBitmap = newValueIndexToBitmap;
+				synchronized (axisIndexToCoordinateRefToRows) {
+					coordinateRefToRows = axisIndexToCoordinateRefToRows.get(axisIndex);
+					if (coordinateRefToRows == null) {
+						List<RoaringBitmap> newCoordinateRefToBitmap = new ArrayList<>();
+						coordinateRefToRows = newCoordinateRefToBitmap;
 
-						IKeyValuesIndex keyValuesIndex = new KeyValuesIndex();
-						// IntSet consideredValues = new IntOpenHashSet();
-						for (int rowWithValue : keyToBitmap.get(keyIndex)) {
+						IAxisCoordinatesDictionary axisCoordinatesDictionary = new AxisCoordinatesDictionary();
+						for (int rowWithValue : axisIndexToRows.get(axisIndex)) {
 							int currentValue = rowIndexToInt.getInt(rowWithValue);
 
-							long currentValueIndex = keyValuesIndex.getValueIndex(currentValue);
-							if (currentValueIndex == IKeyValuesIndex.NOT_INDEXED) {
+							long currentValueIndex = axisCoordinatesDictionary.getCoordinateIndex(currentValue);
+							if (currentValueIndex == IAxisCoordinatesDictionary.NOT_INDEXED) {
 								// This is the first encounter of this value
-								currentValueIndex = keyValuesIndex.mapValueIndex(currentValue);
+								currentValueIndex = axisCoordinatesDictionary.mapCoordinateIndex(currentValue);
 
-								assert currentValueIndex == valueIndexToBitmap.size();
-								newValueIndexToBitmap.add(new RoaringBitmap());
+								assert currentValueIndex == coordinateRefToRows.size();
+								newCoordinateRefToBitmap.add(new RoaringBitmap());
 							}
 
-							newValueIndexToBitmap.get(Ints.checkedCast(currentValueIndex)).add(rowWithValue);
+							newCoordinateRefToBitmap.get(Ints.checkedCast(currentValueIndex)).add(rowWithValue);
 						}
 
-						keyIndexToValueIndexToBitmap.set(keyIndex, valueIndexToBitmap);
+						axisIndexToCoordinateRefToRows.set(axisIndex, coordinateRefToRows);
 					}
 				}
 			}
 		}
 
-		return valueIndexToBitmap.size();
+		return coordinateRefToRows.size();
 	}
 
 	@Override
-	public RoaringBitmap getValueIndexToBitmap(int keyIndex, long valueIndex) {
-		List<? extends RoaringBitmap> valueIndexToBitmap = keyIndexToValueIndexToBitmap.get(keyIndex);
-
-		if (valueIndexToBitmap == null) {
-			IntList rowIndexToInt = keyIndexToInts.get(keyIndex);
-
-			if (rowIndexToInt == null) {
-				throw new RuntimeException("We can not index the keyIndex: " + keyIndex);
-			} else {
-				if (rowIndexToInt instanceof IntArrayList) {
-					return RoaringBitmap.bitmapOf(((IntArrayList) rowIndexToInt).elements());
-				} else {
-					return RoaringBitmap.bitmapOf(rowIndexToInt.toIntArray());
-				}
-			}
-		} else {
-			return valueIndexToBitmap.get(Ints.checkedCast(valueIndex));
+	public RoaringBitmap getCoordinateToBitmap(int axisIndex, long coordinateRef) {
+		if (axisIndex < 0) {
+			return HolyExceptionManagement.immutableEmptyBitmap();
+		} else if (coordinateRef < 0) {
+			return HolyExceptionManagement.immutableEmptyBitmap();
 		}
+
+		List<? extends RoaringBitmap> valueIndexToBitmap = axisIndexToCoordinateRefToRows.get(axisIndex);
+
+		if (valueIndexToBitmap != null) {
+			return valueIndexToBitmap.get(Ints.checkedCast(coordinateRef));
+		}
+
+		IntList rowIndexToInt = axisIndexToRowToInts.get(axisIndex);
+		if (rowIndexToInt != null) {
+			if (rowIndexToInt instanceof IntArrayList) {
+				return RoaringBitmap.bitmapOf(((IntArrayList) rowIndexToInt).elements());
+			} else {
+				return RoaringBitmap.bitmapOf(rowIndexToInt.toIntArray());
+			}
+		}
+
+		throw new IllegalArgumentException("We can not index the axisIndex: " + axisIndex);
 	}
 
 	@Override
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		for (List<? extends RoaringBitmap> bitmapList : keyIndexToValueIndexToBitmap) {
+		for (List<? extends RoaringBitmap> bitmapList : axisIndexToCoordinateRefToRows) {
 			for (RoaringBitmap bitmap : bitmapList) {
 				sizeInBytes += bitmap.getSizeInBytes();
 			}

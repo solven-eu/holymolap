@@ -1,11 +1,10 @@
 package eu.solven.holymolap.query;
 
-import org.roaringbitmap.IntIterator;
-
 import eu.solven.holymolap.cube.IHolyCube;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 
 public interface IAggregationLogic<T> {
 
-	T aggregateTo(IHolyCube roaringCube, IntIterator it, long[] valueIndexes);
+	T aggregateTo(IHolyCube roaringCube, LongIterator rowsIterator, long[] valueIndexes);
 
 }

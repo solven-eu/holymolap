@@ -4,9 +4,9 @@ import java.util.NavigableSet;
 
 public interface IHasAxes {
 
-	NavigableSet<String> keySet();
+	NavigableSet<String> axes();
 
-	String indexToAxis(int keyIndex);
+	String indexToAxis(int axisIndex);
 
-	int getAxisIndex(String wildcardKey);
+	int getAxisIndex(String axis);
 }

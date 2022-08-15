@@ -9,12 +9,12 @@ import com.google.common.primitives.Ints;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
-public class KeyValuesIndex implements IKeyValuesIndex {
+public class AxisCoordinatesDictionary implements IAxisCoordinatesDictionary {
 
 	protected final Object2LongMap<Object> valueToIndex;
 	protected final List<Object> valueIndexToValue;
 
-	public KeyValuesIndex() {
+	public AxisCoordinatesDictionary() {
 		valueToIndex = new Object2LongOpenHashMap<>();
 
 		// Value indexes will only be positive values: we use a negative default
@@ -25,8 +25,8 @@ public class KeyValuesIndex implements IKeyValuesIndex {
 	}
 
 	@Override
-	public long mapValueIndex(Object value) {
-		long valueIndex = getValueIndex(value);
+	public long mapCoordinateIndex(Object value) {
+		long valueIndex = getCoordinateIndex(value);
 
 		if (valueIndex == NOT_INDEXED) {
 			valueIndex = valueToIndex.size();
@@ -38,17 +38,20 @@ public class KeyValuesIndex implements IKeyValuesIndex {
 	}
 
 	@Override
-	public long getValueIndex(Object value) {
+	public long getCoordinateIndex(Object value) {
 		return valueToIndex.getLong(value);
 	}
 
 	@Override
-	public Object getValue(long valueIndex) {
+	public Object getCoordinate(long valueIndex) {
+		if (valueIndex < 0) {
+			return NO_REFERENCE;
+		}
 		return valueIndexToValue.get(Ints.checkedCast(valueIndex));
 	}
 
 	@Override
-	public List<?> values() {
+	public List<?> coordinates() {
 		return Collections.unmodifiableList(valueIndexToValue);
 	}
 }

@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 /**
  * A column of double aggregates. Each row is typically associated to a cell (i.e. a {@link Set} of coordinates).
@@ -15,7 +14,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
  * @author Benoit Lacelle
  *
  */
-public class MutableAggregateColumn implements IMutableDoubleAggregateColumn {
+public class MutableAggregatesColumn implements IMutableDoubleAggregatesColumn {
 	final IDoubleBinaryOperator operator;
 	final DoubleList rowToAggregate;
 
@@ -23,12 +22,12 @@ public class MutableAggregateColumn implements IMutableDoubleAggregateColumn {
 
 	final AtomicBoolean hasBeenRead = new AtomicBoolean();
 
-	protected MutableAggregateColumn(IDoubleBinaryOperator operator, final DoubleList rowToAggregate) {
+	protected MutableAggregatesColumn(IDoubleBinaryOperator operator, final DoubleList rowToAggregate) {
 		this.operator = operator;
 		this.rowToAggregate = rowToAggregate;
 	}
 
-	public MutableAggregateColumn(IDoubleBinaryOperator operator) {
+	public MutableAggregatesColumn(IDoubleBinaryOperator operator) {
 		this.operator = operator;
 		this.rowToAggregate = new DoubleArrayList();
 	}

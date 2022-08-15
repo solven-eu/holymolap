@@ -10,10 +10,22 @@ public class RowsConsumerStatus {
 
 	protected final AtomicLong nbConsidered = new AtomicLong();
 
+	/**
+	 * 
+	 * @param nbToConsider
+	 *            the maximum count, to reach
+	 */
 	public RowsConsumerStatus(long nbToConsider) {
 		this(nbToConsider, new Date());
 	}
 
+	/**
+	 * 
+	 * @param nbToConsider
+	 *            the maximum count, to reach
+	 * @param startDate
+	 *            the startDate, typically now()
+	 */
 	public RowsConsumerStatus(long nbToConsider, Date startDate) {
 		this.startDate = startDate;
 		this.nbToConsider = nbToConsider;
@@ -33,7 +45,12 @@ public class RowsConsumerStatus {
 
 	@Override
 	public String toString() {
-		return "RowsConsumerStatus [startDate=" + startDate + ", nbToConsider=" + nbToConsider + ", nbConsidered=" + nbConsidered + "]";
+		return "RowsConsumerStatus [startDate=" + startDate
+				+ ", nbToConsider="
+				+ nbToConsider
+				+ ", nbConsidered="
+				+ nbConsidered
+				+ "]";
 	}
 
 }

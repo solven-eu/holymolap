@@ -48,17 +48,17 @@ public class FastEntry implements IFastEntry {
 	}
 
 	@Override
-	public int[] expressedObjectIndexes() {
+	public int[] objectAxesIndexes() {
 		return objectIndexes;
 	}
 
 	@Override
-	public Comparable<?> getValue(int keyIndex) {
+	public Comparable<?> getObject(int keyIndex) {
 		return (Comparable<?>) objects[keyIndex];
 	}
 
 	@Override
-	public int[] expressedDoubleIndexes() {
+	public int[] doubleAxesIndexes() {
 		return doubleIndexes;
 	}
 
@@ -68,7 +68,7 @@ public class FastEntry implements IFastEntry {
 	}
 
 	@Override
-	public int[] expressedIntIndexes() {
+	public int[] intAxesIndexes() {
 		return intIndexes;
 	}
 

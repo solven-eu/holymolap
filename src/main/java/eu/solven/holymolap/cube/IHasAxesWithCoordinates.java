@@ -1,5 +1,7 @@
 package eu.solven.holymolap.cube;
 
+import org.roaringbitmap.RoaringBitmap;
+
 /**
  * Read-only operations
  * 
@@ -11,11 +13,17 @@ public interface IHasAxesWithCoordinates extends IHasAxes {
 	/**
 	 * 
 	 * @param axisIndex
-	 * @param coordinateIndex
+	 * @param coordinateRef
 	 * @return the coordinate associated to given reference.
 	 */
-	Object dereferenceCoordinate(int axisIndex, long coordinateIndex);
+	Object dereferenceCoordinate(int axisIndex, long coordinateRef);
 
+	/**
+	 * 
+	 * @param axis
+	 * @param coordinate
+	 * @return the index of given coordinate, or -1.
+	 */
 	long getCoordinateRef(int axisIndex, Object coordinate);
 
 	/**
@@ -25,6 +33,8 @@ public interface IHasAxesWithCoordinates extends IHasAxes {
 	 * @return the existing reference of given coordinate
 	 */
 	default long getCoordinateRef(String axis, Object coordinate) {
-		return getCoordinateRef(getAxisIndex(axis), coordinate);
+		int axisIndex = getAxisIndex(axis);
+
+		return getCoordinateRef(axisIndex, coordinate);
 	}
 }

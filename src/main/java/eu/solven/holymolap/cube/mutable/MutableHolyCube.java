@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 
+import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.query.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IAggregatedAxis;
@@ -29,7 +30,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  *
  */
 public class MutableHolyCube implements IMutableHolyCube {
-	final Map<IAggregatedAxis, IMutableDoubleAggregateColumn> aggregationToColumn;
+	final Map<IAggregatedAxis, IMutableDoubleAggregatesColumn> aggregationToColumn;
 	// The Set of axes with at least one aggregation
 	final Set<String> aggregatedAxes;
 
@@ -43,7 +44,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 	final AtomicLong brokenRows = new AtomicLong();
 
-	protected MutableHolyCube(Map<IAggregatedAxis, IMutableDoubleAggregateColumn> aggregationToColumn,
+	protected MutableHolyCube(Map<IAggregatedAxis, IMutableDoubleAggregatesColumn> aggregationToColumn,
 			List<String> orderedAxis,
 			Map<String, IMutableAxisColumn> axisToColumn,
 			Object2IntMap<IntList> cellToRow) {
@@ -90,7 +91,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 		return new CopyOnWriteArrayList<String>();
 	}
 
-	private static Map<IAggregatedAxis, IMutableDoubleAggregateColumn> prepareAggregationColumns(
+	private static Map<IAggregatedAxis, IMutableDoubleAggregatesColumn> prepareAggregationColumns(
 			Set<IAggregatedAxis> aggregations) {
 		OperatorFactory operatorFactory = new OperatorFactory();
 
@@ -98,9 +99,14 @@ public class MutableHolyCube implements IMutableHolyCube {
 				.collect(Collectors.toMap(a -> a, a -> provisionAggregateColumn(operatorFactory, a)));
 	}
 
-	protected static MutableAggregateColumn provisionAggregateColumn(OperatorFactory operatorFactory,
+	protected static MutableAggregatesColumn provisionAggregateColumn(OperatorFactory operatorFactory,
 			IAggregatedAxis a) {
-		return new MutableAggregateColumn(operatorFactory.getDoubleBinaryOperator(a.getOperator()));
+		return new MutableAggregatesColumn(operatorFactory.getDoubleBinaryOperator(a.getOperator()));
+	}
+	
+	@Override
+	public IHasAxesWithCoordinates getAxes() {
+		return null;
 	}
 
 	/**

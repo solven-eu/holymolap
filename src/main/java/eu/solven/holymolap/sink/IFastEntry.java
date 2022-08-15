@@ -1,15 +1,15 @@
 package eu.solven.holymolap.sink;
 
 public interface IFastEntry {
-	int[] expressedObjectIndexes();
+	int[] objectAxesIndexes();
 
-	Comparable<?> getValue(int keyIndex);
+	Object getObject(int axisIndex);
 
-	int[] expressedIntIndexes();
+	int[] intAxesIndexes();
 
-	int getInt(int keyIndex);
+	int getInt(int axisIndex);
 
-	int[] expressedDoubleIndexes();
+	int[] doubleAxesIndexes();
 
-	double getDouble(int keyIndex);
+	double getDouble(int axisIndex);
 }

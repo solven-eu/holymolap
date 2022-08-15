@@ -8,22 +8,22 @@ import org.roaringbitmap.RoaringBitmap;
  * @author Benoit Lacelle
  *
  */
-@Deprecated(sin)
+@Deprecated()
 public interface IDataHolder {
 	/**
 	 * 
 	 * @param keyIndex
 	 * @return the number of different values hold by a key
 	 */
-	long getKeyCardinality(int keyIndex);
+	long getAxisCardinality(int keyIndex);
 
 	/**
 	 * 
 	 * @param axisIndex
-	 * @param valueIndex
-	 * @return the bitmap of positions for given (Axis, Coordinate)
+	 * @param coordinateRef
+	 * @return the rowIndexes matching given coordinate for given axis
 	 */
-	RoaringBitmap getValueIndexToBitmap(int axisIndex, long valueIndex);
+	RoaringBitmap getCoordinateToBitmap(int axisIndex, long coordinateRef);
 
 	// List<? extends RoaringBitmap> getValueIndexToBitmap(int keyIndex);
 

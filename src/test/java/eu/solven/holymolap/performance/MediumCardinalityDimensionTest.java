@@ -23,10 +23,10 @@ import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.operator.OperatorFactory;
 import eu.solven.holymolap.sink.FastEntry;
+import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IFastEntry;
 import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
-import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -40,95 +40,66 @@ public class MediumCardinalityDimensionTest {
 	public void testOneHighCardinality() {
 		IHolySink sink = new HolyCubeSink();
 
-		final int nbRows = 1000000;
+		final int nbRows = 1_000_000;
 		final float cardinalityFactor = 1;
-		final int nbKeys = 100;
-		final int nbDouble = 5;
+		final int nbAxis = 100;
+		final int nbDoubleAxis = 5;
 
 		Set<String> keys = new LinkedHashSet<>();
-		for (int i = 0; i < nbKeys; i++) {
+		for (int i = 0; i < nbAxis; i++) {
 			keys.add("Key_" + i);
 		}
 
 		Set<String> doubleKeys = new LinkedHashSet<>();
-		for (int i = 0; i < nbDouble; i++) {
+		for (int i = 0; i < nbDoubleAxis; i++) {
 			doubleKeys.add("Double_" + i);
 		}
 
-		final int[] values = new int[nbKeys];
-		final double[] doubles = new double[nbDouble];
-		// final ArrayIndexedMap<String, Comparable<?>> buffer = new
-		// ArrayIndexedMap<>(keys, values);
-
-		final Int2ObjectMap<IntSet> keyToValues = new Int2ObjectOpenHashMap<IntSet>();
-		for (int i = 0; i < nbKeys; i++) {
-			keyToValues.put(i, new IntLinkedOpenHashSet(1 + (int) (i * cardinalityFactor)));
+		final Int2ObjectMap<IntSet> axisToValues = new Int2ObjectOpenHashMap<IntSet>();
+		for (int axisIndex = 0; axisIndex < nbAxis; axisIndex++) {
+			int expectedSize = 1 + (int) (axisIndex * cardinalityFactor);
+			axisToValues.put(axisIndex, new IntLinkedOpenHashSet(expectedSize));
 		}
 
-		final FastEntry reused = new FastEntry(new Object[0], doubles, values);
-
-		Iterator<IFastEntry> rows = new AbstractIterator<IFastEntry>() {
-			int rowIndex = 0;
-
-			@Override
-			protected IFastEntry computeNext() {
-				if (rowIndex < nbRows) {
-					rowIndex++;
-
-					for (int i = 0; i < nbKeys; i++) {
-						int itemIndex = 1 + (int) (i * cardinalityFactor);
-
-						values[i] = ThreadLocalRandom.current().nextInt(itemIndex);
-						keyToValues.get(i).add(values[i]);
-					}
-
-					for (int i = 0; i < nbDouble; i++) {
-						doubles[i] = ThreadLocalRandom.current().nextDouble();
-					}
-
-					return reused;
-				} else {
-					return endOfData();
-				}
-			}
-		};
+		Iterator<IFastEntry> rowIterator =
+				makeRowsIterator(nbRows, cardinalityFactor, nbAxis, nbDoubleAxis, axisToValues);
 
 		ImmutableSinkContext context = new ImmutableSinkContext(keys, doubleKeys, Collections.emptySet());
-		IHolyCube cube = sink.sink(context, rows);
+		IHolyCube cube = sink.sink(context, rowIterator);
 
 		Assert.assertEquals(nbRows, cube.getNbRows());
-		Assert.assertEquals(nbKeys + nbDouble, cube.getIndex().keySet().size());
+		Assert.assertEquals(nbAxis + nbDoubleAxis, cube.getCellSet().axes().size());
 
 		List<String> keyIterator = new ArrayList<>(keys);
 		List<String> doubleIterator = new ArrayList<>(doubleKeys);
 
-		for (int i = 0; i < nbKeys; i++) {
+		for (int axisIndex = 0; axisIndex < nbAxis; axisIndex++) {
 
 			{
-				String key = keyIterator.get(i);
-				String doubleKey = doubleIterator.get(i % doubleIterator.size());
+				String axis = keyIterator.get(axisIndex);
+				String doubleKey = doubleIterator.get(axisIndex % doubleIterator.size());
 
 				long start = System.currentTimeMillis();
 
 				final AtomicInteger resultSize = new AtomicInteger();
 				AggregateHelper.consumeQueryResult(cube,
-						AggregateQueryBuilder.wildcard(key)
+						AggregateQueryBuilder.wildcard(axis)
 								.addAggregation(new AggregatedAxis(doubleKey, OperatorFactory.SUM))
 								.build(),
 						param -> resultSize.incrementAndGet());
 
-				Assert.assertEquals(keyToValues.get(i).size(), resultSize.get());
+				Assert.assertEquals(axisToValues.get(axisIndex).size(), resultSize.get());
 
 				LOGGER.info("It took {} ms for {} aggregates for key={}",
 						System.currentTimeMillis() - start,
 						resultSize,
-						key);
+						axis);
 			}
 
 			{
 				// Keep 5 keys
-				List<String> subKeys = keyIterator.subList(Math.max(0, i - 5), i + 1);
-				String doubleKey = doubleIterator.get(i % doubleIterator.size());
+				List<String> subKeys = keyIterator.subList(Math.max(0, axisIndex - 5), axisIndex + 1);
+				String doubleKey = doubleIterator.get(axisIndex % doubleIterator.size());
 
 				long start = System.currentTimeMillis();
 
@@ -144,7 +115,7 @@ public class MediumCardinalityDimensionTest {
 
 						});
 
-				Assert.assertTrue(keyToValues.get(i).size() <= resultSize.get());
+				Assert.assertTrue(axisToValues.get(axisIndex).size() <= resultSize.get());
 
 				LOGGER.info("It took {} ms for {} aggregates for wildcards: {}",
 						System.currentTimeMillis() - start,
@@ -152,5 +123,45 @@ public class MediumCardinalityDimensionTest {
 						subKeys);
 			}
 		}
+	}
+
+	private Iterator<IFastEntry> makeRowsIterator(final int nbRows,
+			final float cardinalityFactor,
+			final int nbAxis,
+			final int nbDoubleAxis,
+			final Int2ObjectMap<IntSet> axisToValues) {
+		final int[] values = new int[nbAxis];
+		final double[] doubles = new double[nbDoubleAxis];
+		// final ArrayIndexedMap<String, Comparable<?>> buffer = new
+		// ArrayIndexedMap<>(keys, values);
+
+		final FastEntry reused = new FastEntry(new Object[0], doubles, values);
+
+		Iterator<IFastEntry> rows = new AbstractIterator<IFastEntry>() {
+			int rowIndex = 0;
+
+			@Override
+			protected IFastEntry computeNext() {
+				if (rowIndex < nbRows) {
+					rowIndex++;
+
+					for (int i = 0; i < nbAxis; i++) {
+						int itemIndex = 1 + (int) (i * cardinalityFactor);
+
+						values[i] = ThreadLocalRandom.current().nextInt(itemIndex);
+						axisToValues.get(i).add(values[i]);
+					}
+
+					for (int i = 0; i < nbDoubleAxis; i++) {
+						doubles[i] = ThreadLocalRandom.current().nextDouble();
+					}
+
+					return reused;
+				} else {
+					return endOfData();
+				}
+			}
+		};
+		return rows;
 	}
 }
