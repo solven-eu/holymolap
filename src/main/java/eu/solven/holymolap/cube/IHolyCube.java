@@ -3,7 +3,7 @@ package eu.solven.holymolap.cube;
 import org.roaringbitmap.RoaringBitmap;
 
 import eu.solven.holymolap.cube.aggregates.IHolyAggregateTable;
-import eu.solven.holymolap.cube.index.IHolyCellSet;
+import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.stable.v1.IHasFilters;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
@@ -17,7 +17,7 @@ public interface IHolyCube extends IHasMemoryFootprint {
 
 	long getNbRows();
 
-	IHolyCellSet getCellSet();
+	IHolyCellMultiSet getCellSet();
 
 	IHolyAggregateTable getAggregateTable();
 

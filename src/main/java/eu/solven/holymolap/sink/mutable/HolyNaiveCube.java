@@ -7,7 +7,7 @@ import org.roaringbitmap.RoaringBitmap;
 
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.aggregates.IHolyAggregateTable;
-import eu.solven.holymolap.cube.index.IHolyCellSet;
+import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.sink.IFastEntry;
 import eu.solven.holymolap.sink.IHolySink;
 import eu.solven.holymolap.sink.ISinkContext;
@@ -37,7 +37,7 @@ public class HolyNaiveCube implements IHolyCube {
 	}
 
 	@Override
-	public IHolyCellSet getCellSet() {
+	public IHolyCellMultiSet getCellSet() {
 		// TODO Auto-generated method stub
 		return null;
 	}

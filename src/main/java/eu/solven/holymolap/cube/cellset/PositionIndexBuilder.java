@@ -1,7 +1,6 @@
-package eu.solven.holymolap.cube.index;
+package eu.solven.holymolap.cube.cellset;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.IntConsumer;
 
 import org.roaringbitmap.IntIterator;
 import org.roaringbitmap.RoaringBitmap;
@@ -13,7 +12,7 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import eu.solven.holymolap.IDataHolder;
+import eu.solven.holymolap.IHolyDictionarizedTable;
 import it.unimi.dsi.fastutil.longs.LongList;
 
 @ManagedResource
@@ -42,12 +41,12 @@ public class PositionIndexBuilder {
 	}
 
 	public ListenableFuture<?> buildIndex(int axisIndex,
-			IDataHolder dataHolder,
+			IHolyDictionarizedTable dictionarizedTable,
 			LongList cellIndexToCoordinateRef,
-			IntConsumer onAxisIndexed) {
-		buildIndex(axisIndex, dataHolder, cellIndexToCoordinateRef);
+			Runnable onAxisIndexed) {
+		buildIndex(axisIndex, dictionarizedTable, cellIndexToCoordinateRef);
 
-		onAxisIndexed.accept(axisIndex);
+		onAxisIndexed.run();
 		// TODO: we should be able to tell indexed rows while indexing
 		// This would enable querying even before end of indexation
 		// indexRow.set(nbRows);
@@ -62,11 +61,11 @@ public class PositionIndexBuilder {
 	 * @param dataHolder
 	 * @param cellRowToCoordinateRef
 	 */
-	public void buildIndex(int axisIndex, IDataHolder dataHolder, LongList cellRowToCoordinateRef) {
+	public void buildIndex(int axisIndex, IHolyDictionarizedTable dataHolder, LongList cellRowToCoordinateRef) {
 		LOGGER.debug("Start building index for axis {}", axisIndex);
 
 		for (int coordinateRef = 0; coordinateRef < dataHolder.getAxisCardinality(axisIndex); coordinateRef++) {
-			RoaringBitmap cellIndexes = dataHolder.getCoordinateToBitmap(axisIndex, coordinateRef);
+			RoaringBitmap cellIndexes = dataHolder.getCoordinateToRows(axisIndex, coordinateRef);
 
 			int nbRows = cellIndexes.getCardinality();
 
@@ -83,7 +82,7 @@ public class PositionIndexBuilder {
 
 					long previousValueIndex = cellRowToCoordinateRef.set(nextCellIndex, coordinateRef);
 
-					if (previousValueIndex != IHolyCellSet.NOT_INDEXED) {
+					if (previousValueIndex != IHolyCellMultiSet.NOT_INDEXED) {
 						if (previousValueIndex != coordinateRef) {
 							throw new IllegalStateException("The row " + nextCellIndex
 									+ " is associated to several values for the same row: "

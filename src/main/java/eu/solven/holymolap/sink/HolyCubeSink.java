@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
 import com.google.common.primitives.Ints;
 
-import eu.solven.holymolap.DataHolder;
+import eu.solven.holymolap.HolyDictionarizedTable;
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.aggregates.HolyAggregateTable;
-import eu.solven.holymolap.cube.index.HolyCellSet;
+import eu.solven.holymolap.cube.cellset.HolyCellMultiSet;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -39,7 +39,7 @@ public class HolyCubeSink implements IHolySink {
 		}
 
 		List<DoubleList> axisIndexToDoubles = Arrays.asList(new DoubleList[nbKeys]);
-		List<IntList> axisIndexToInts = Arrays.asList(new IntList[nbKeys]);
+		// List<IntList> axisIndexToInts = Arrays.asList(new IntList[nbKeys]);
 
 		List<IAxisCoordinatesDictionary> axisIndexToCoordinatesIndex =
 				Arrays.asList(new IAxisCoordinatesDictionary[nbKeys]);
@@ -150,21 +150,27 @@ public class HolyCubeSink implements IHolySink {
 						context.keyIndexToKey(),
 						axisIndexToBitmap,
 						axisIndexToCoordinatesIndex,
-						axisIndexToValueIndexToBitmap,
-						axisIndexToInts),
+						axisIndexToValueIndexToBitmap
+				// ,
+				// axisIndexToInts
+				),
 				new HolyAggregateTable(axisIndexToDoubles));
 	}
 
-	private HolyCellSet makeCellset(int nbRows,
+	private HolyCellMultiSet makeCellset(int nbRows,
 			List<? extends String> axisIndexToAxis,
 			List<? extends RoaringBitmap> axisIndexToBitmap,
 			List<? extends IAxisCoordinatesDictionary> axisIndexToAxisCoordinatesDictionary,
-			List<? extends List<RoaringBitmap>> axisIndexToCoordinateRefToRows,
-			List<? extends IntList> axisIndexToRowToInts) {
-		return new HolyCellSet(nbRows,
+			List<? extends List<RoaringBitmap>> axisIndexToCoordinateRefToRows
+	// ,
+	// List<? extends IntList> axisIndexToRowToInts
+	) {
+		return new HolyCellMultiSet(nbRows,
 				axisIndexToAxis,
 				axisIndexToAxisCoordinatesDictionary,
-				new DataHolder(nbRows, axisIndexToCoordinateRefToRows, axisIndexToRowToInts, axisIndexToBitmap));
+				new HolyDictionarizedTable(nbRows, axisIndexToCoordinateRefToRows
+				// , axisIndexToRowToInts
+						, axisIndexToBitmap));
 	}
 
 	protected void contributeDoubleToRow(double value,

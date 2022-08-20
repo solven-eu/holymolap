@@ -27,7 +27,7 @@ import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.RowsConsumerStatus;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
-import eu.solven.holymolap.cube.index.IHolyCellSet;
+import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.longs.LongLists;
@@ -46,7 +46,7 @@ public class AggregationHelper2 {
 	 * @param rowAggregateConsumer
 	 * @return the matching rows
 	 */
-	public RoaringBitmap computeNextCellRows(IHolyCellSet cellSet,
+	public RoaringBitmap computeNextCellRows(IHolyCellMultiSet cellSet,
 			Collection<String> axesKeys,
 			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
@@ -83,7 +83,7 @@ public class AggregationHelper2 {
 
 				long valueIndex = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
 
-				if (valueIndex == IHolyCellSet.NOT_INDEXED) {
+				if (valueIndex == IHolyCellMultiSet.NOT_INDEXED) {
 					throw new IllegalStateException("We are considering a row (" + rowToConsider
 							+ ") which does not contribute to key: "
 							+ wildcardKey);
@@ -91,7 +91,7 @@ public class AggregationHelper2 {
 
 				valueIndexes[i] = valueIndex;
 
-				RoaringBitmap valueBitmap = cellSet.getCoordinateToBitmap(wildcardKeyIndex, valueIndex);
+				RoaringBitmap valueBitmap = cellSet.getCoordinateToCells(wildcardKeyIndex, valueIndex);
 
 				matchingRowsBitmaps.add(valueBitmap);
 			}
@@ -108,14 +108,14 @@ public class AggregationHelper2 {
 		return matchingRowsBitmap;
 	}
 
-	public void computeParallelNextCellRows(IHolyCellSet index,
+	public void computeParallelNextCellRows(IHolyCellMultiSet index,
 			List<String> wildcardKeys,
 			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
 		computeParallelNextCellRows(index, wildcardKeys, LongLists.EMPTY_LIST, candidateRows, rowAggregateConsumer);
 	}
 
-	protected void computeParallelNextCellRows(final IHolyCellSet index,
+	protected void computeParallelNextCellRows(final IHolyCellMultiSet index,
 			final List<String> wildcardKeys,
 			final LongList valueIndexes,
 			final RoaringBitmap candidateRows,
@@ -155,7 +155,7 @@ public class AggregationHelper2 {
 		}
 	}
 
-	protected void computeParallelNextCellRows(final IHolyCellSet cellSet,
+	protected void computeParallelNextCellRows(final IHolyCellMultiSet cellSet,
 			final List<String> axes,
 			final LongList coordinateRefs,
 			final RoaringBitmap candidateRows,
@@ -194,13 +194,13 @@ public class AggregationHelper2 {
 
 					final long valueIndex = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
 
-					if (valueIndex == IHolyCellSet.NOT_INDEXED) {
+					if (valueIndex == IHolyCellMultiSet.NOT_INDEXED) {
 						throw new IllegalStateException("We are considering a row (" + rowToConsider
 								+ ") which does not contribute to key: "
 								+ wildcardKey);
 					}
 
-					final RoaringBitmap valueBitmap = cellSet.getCoordinateToBitmap(wildcardKeyIndex, valueIndex);
+					final RoaringBitmap valueBitmap = cellSet.getCoordinateToCells(wildcardKeyIndex, valueIndex);
 
 					final RoaringBitmap finalCandidateRowsLeft = candidateRowsLeft;
 					Runnable command = new Runnable() {
@@ -252,7 +252,7 @@ public class AggregationHelper2 {
 			long rowToConsider,
 			LongList valueIndexes,
 			long valueIndex,
-			IHolyCellSet index,
+			IHolyCellMultiSet index,
 			List<String> wildcardKeys,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
 			Executor es,
@@ -284,7 +284,7 @@ public class AggregationHelper2 {
 	 * @param consumer
 	 * @return rows left to process
 	 */
-	public RoaringBitmap consumeNextCellRows(final IHolyCellSet index,
+	public RoaringBitmap consumeNextCellRows(final IHolyCellMultiSet index,
 			final Collection<String> wildcards,
 			final RoaringBitmap rows,
 			Consumer<RawCoordinatesToBitmap> consumer) {
@@ -303,7 +303,7 @@ public class AggregationHelper2 {
 		}
 	}
 
-	public Iterator<RawCoordinatesToBitmap> nextCellRows(final IHolyCellSet index,
+	public Iterator<RawCoordinatesToBitmap> nextCellRows(final IHolyCellMultiSet index,
 			final Collection<String> wildcards,
 			final RoaringBitmap rows) {
 		final AtomicReference<RawCoordinatesToBitmap> nextAggregate = new AtomicReference<>();

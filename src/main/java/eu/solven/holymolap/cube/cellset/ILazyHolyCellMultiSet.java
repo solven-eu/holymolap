@@ -1,4 +1,4 @@
-package eu.solven.holymolap.cube.index;
+package eu.solven.holymolap.cube.cellset;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,13 +8,14 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 /**
- * Some {@link IHolyCellSet} enables lazy indexation. It means some data-structures can be lazily built to improve
+ * Some {@link IHolyCellMultiSet} enables lazy indexation. It means some data-structures can be lazily built to improve
  * the performance of some queries.
  * 
  * @author Benoit Lacelle
  *
  */
-public interface ILazyHolyCellSet extends IHolyCellSet {
+@Deprecated
+public interface ILazyHolyCellMultiSet extends IHolyCellMultiSet {
 
 	/**
 	 * 

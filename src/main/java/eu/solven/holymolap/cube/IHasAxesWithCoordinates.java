@@ -1,6 +1,6 @@
 package eu.solven.holymolap.cube;
 
-import org.roaringbitmap.RoaringBitmap;
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
 /**
  * Read-only operations
@@ -8,7 +8,9 @@ import org.roaringbitmap.RoaringBitmap;
  * @author Benoit Lacelle
  *
  */
-public interface IHasAxesWithCoordinates extends IHasAxes {
+public interface IHasAxesWithCoordinates extends IHasAxes, IHasMemoryFootprint {
+
+	long NOT_INDEXED = -1;
 
 	/**
 	 * 

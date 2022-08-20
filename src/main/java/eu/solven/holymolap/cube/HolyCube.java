@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import eu.solven.holymolap.DataHolder;
+import eu.solven.holymolap.HolyDictionarizedTable;
 import eu.solven.holymolap.cube.aggregates.HolyAggregateTable;
 import eu.solven.holymolap.cube.aggregates.IHolyAggregateTable;
-import eu.solven.holymolap.cube.index.HolyCellSet;
-import eu.solven.holymolap.cube.index.IHolyCellSet;
+import eu.solven.holymolap.cube.cellset.HolyCellMultiSet;
+import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.exception.HolyExceptionManagement;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasFilters;
@@ -24,8 +24,8 @@ import eu.solven.holymolap.stable.v1.filters.IAxesFilterAxisEquals;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterOr;
 
 /**
- * The default implementation of an {@link IHolyCube}. It relies on an {@link IHolyCellSet} describing the cells, and an
- * {@link IHolyAggregateTable} describing the aggregates.
+ * The default implementation of an {@link IHolyCube}. It relies on an {@link IHolyCellMultiSet} describing the cells,
+ * and an {@link IHolyAggregateTable} describing the aggregates.
  * 
  * @author Benoit Lacelle
  *
@@ -36,10 +36,10 @@ public class HolyCube implements IHolyCube {
 
 	protected final int nbRows;
 
-	protected final IHolyCellSet cellSet;
+	protected final IHolyCellMultiSet cellSet;
 	protected final IHolyAggregateTable aggregateTable;
 
-	public HolyCube(int nbRows, IHolyCellSet cellSet, IHolyAggregateTable aggregateTable) {
+	public HolyCube(int nbRows, IHolyCellMultiSet cellSet, IHolyAggregateTable aggregateTable) {
 		this.nbRows = nbRows;
 		this.cellSet = cellSet;
 		this.aggregateTable = aggregateTable;
@@ -55,10 +55,12 @@ public class HolyCube implements IHolyCube {
 	 */
 	public HolyCube() {
 		this(0,
-				new HolyCellSet(0,
+				new HolyCellMultiSet(0,
 						Collections.emptyList(),
 						Collections.emptyList(),
-						new DataHolder(0, Collections.emptyList(), Collections.emptyList(), Collections.emptyList())),
+						new HolyDictionarizedTable(0, Collections.emptyList()
+						// , Collections.emptyList()
+								, Collections.emptyList())),
 				new HolyAggregateTable(Collections.emptyList()));
 	}
 
@@ -147,7 +149,7 @@ public class HolyCube implements IHolyCube {
 	}
 
 	@Override
-	public IHolyCellSet getCellSet() {
+	public IHolyCellMultiSet getCellSet() {
 		return cellSet;
 	}
 

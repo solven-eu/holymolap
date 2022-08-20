@@ -4,12 +4,17 @@ import java.util.List;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.ImmutableList;
 
 import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
 import eu.solven.holymolap.sink.IAxisCoordinatesDictionary;
 
 public class AxisWithCoordinates implements IHasAxesWithCoordinates {
+	private static final Logger LOGGER = LoggerFactory.getLogger(AxisWithCoordinates.class);
+
 	protected final List<? extends String> axisIndexToAxis;
 	protected final List<? extends IAxisCoordinatesDictionary> axisIndexToCoordinateIndex;
 
@@ -53,6 +58,12 @@ public class AxisWithCoordinates implements IHasAxesWithCoordinates {
 			throw new IllegalArgumentException("axisIndex has to be positive: " + axisIndex);
 		}
 		return axisIndexToCoordinateIndex.get(axisIndex).getCoordinateIndex(coordinate);
+	}
+
+	@Override
+	public long getSizeInBytes() {
+		LOGGER.warn("TODO");
+		return 0;
 	}
 
 }

@@ -3,7 +3,7 @@ package eu.solven.holymolap.cube.aggregates;
 import java.util.function.DoubleConsumer;
 
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.index.IHolyCellSet;
+import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.query.IAggregationLogic;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
 
 /**
  * Holds the aggregates of an {@link IHolyCube}. It should be seen as a table with N rows, each row being attached to a
- * single cell of a {@link IHolyCellSet}. Each row is attached to aggregated values (typically doubles).
+ * single cell of a {@link IHolyCellMultiSet}. Each row is attached to aggregated values (typically doubles).
  * 
  * @author Benoit Lacelle
  *

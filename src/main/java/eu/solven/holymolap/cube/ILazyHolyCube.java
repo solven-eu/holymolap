@@ -1,14 +1,14 @@
 package eu.solven.holymolap.cube;
 
-import eu.solven.holymolap.cube.index.ILazyHolyCellSet;
+import eu.solven.holymolap.cube.cellset.ILazyHolyCellMultiSet;
 
 /**
- * An {@link HolyCube} enabling {@link ILazyHolyCellSet}.
+ * An {@link HolyCube} enabling {@link ILazyHolyCellMultiSet}.
  * 
  * @author Benoit Lacelle
  *
  */
 public interface ILazyHolyCube extends IHolyCube {
 
-	ILazyHolyCellSet getCellSet();
+	ILazyHolyCellMultiSet getCellSet();
 }

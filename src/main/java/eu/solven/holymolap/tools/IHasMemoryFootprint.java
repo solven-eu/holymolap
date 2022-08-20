@@ -1,5 +1,7 @@
 package eu.solven.holymolap.tools;
 
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+
 /**
  * Enable monitoring the memory footprint of current {@link Object}
  * 
@@ -8,5 +10,6 @@ package eu.solven.holymolap.tools;
  */
 public interface IHasMemoryFootprint {
 
+	@ManagedAttribute
 	long getSizeInBytes();
 }
