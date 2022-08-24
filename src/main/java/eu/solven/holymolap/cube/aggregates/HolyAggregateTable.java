@@ -3,13 +3,10 @@ package eu.solven.holymolap.cube.aggregates;
 import java.util.List;
 import java.util.function.DoubleConsumer;
 
-import com.google.common.primitives.Ints;
-
-import it.unimi.dsi.fastutil.doubles.AbstractDoubleIterator;
-import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import eu.solven.holymolap.cube.immutable.IScannableDoubleAggregatesColumn;
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.doubles.DoubleIterators;
-import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
 /**
@@ -18,13 +15,16 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  *
  */
 public class HolyAggregateTable implements IHolyAggregateTable {
+	final IHolyAggregateTableDefinition definition;
 
 	/**
 	 * For each key, gives the value as double, which would be valid only where the key-bitmap is true
 	 */
-	protected final List<? extends DoubleList> axisIndexToDoubles;
+	protected final List<? extends IScannableDoubleAggregatesColumn> axisIndexToDoubles;
 
-	public HolyAggregateTable(List<? extends DoubleList> axisIndexToDoubles) {
+	public HolyAggregateTable(IHolyAggregateTableDefinition definition,
+			List<? extends IScannableDoubleAggregatesColumn> axisIndexToDoubles) {
+		this.definition = definition;
 		this.axisIndexToDoubles = axisIndexToDoubles;
 	}
 
@@ -36,38 +36,19 @@ public class HolyAggregateTable implements IHolyAggregateTable {
 			return DoubleIterators.EMPTY_ITERATOR;
 		}
 
-		DoubleList doubles = axisIndexToDoubles.get(axisIndex);
+		IScannableDoubleAggregatesColumn doubles = axisIndexToDoubles.get(axisIndex);
 		if (doubles == null) {
 			return DoubleIterators.EMPTY_ITERATOR;
 		}
 
-		return new AbstractDoubleIterator() {
-
-			@Override
-			public boolean hasNext() {
-				return rowsIterator.hasNext();
-			}
-
-			@Override
-			public double nextDouble() {
-				long row = rowsIterator.nextLong();
-
-				return doubles.getDouble(Ints.checkedCast(row));
-			}
-		};
+		return doubles.mapToDouble(rowsIterator);
 	}
 
 	@Override
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		for (DoubleList primitives : axisIndexToDoubles) {
-			if (primitives instanceof DoubleArrayList) {
-				sizeInBytes += 8 * ((DoubleArrayList) primitives).elements().length;
-			} else {
-				sizeInBytes += 8 * primitives.size();
-			}
-		}
+		sizeInBytes += axisIndexToDoubles.stream().mapToLong(IHasMemoryFootprint::getSizeInBytes).sum();
 
 		return sizeInBytes;
 	}
@@ -75,5 +56,10 @@ public class HolyAggregateTable implements IHolyAggregateTable {
 	@Override
 	public void acceptDoubles(LongIterator rowsIterator, int axisIndex, DoubleConsumer doubleConsumer) {
 		readDouble(rowsIterator, axisIndex).forEachRemaining(doubleConsumer);
+	}
+
+	@Override
+	public IHolyAggregateTableDefinition getDefinition() {
+		return definition;
 	}
 }

@@ -13,17 +13,20 @@ import com.google.common.collect.ImmutableSet;
 import eu.solven.holymolap.TestAggregation;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.ILazyHolyCube;
-import eu.solven.holymolap.sink.FastEntry;
+import eu.solven.holymolap.cube.aggregates.EmptyHolyAggregateTableDefinition;
+import eu.solven.holymolap.cube.aggregates.IHolyAggregateTableDefinition;
 import eu.solven.holymolap.sink.HolyCubeSink;
-import eu.solven.holymolap.sink.IFastEntry;
-import eu.solven.holymolap.sink.IHolySink;
+import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
+import eu.solven.holymolap.sink.record.FastEntry;
+import eu.solven.holymolap.sink.record.IHolyRecord;
 
 public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testOneHighCardinality() {
-		IHolySink sink = new HolyCubeSink();
+		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		final int cardinality = 10000000;
 
@@ -31,11 +34,11 @@ public class HighCardinalityDimensionTest {
 
 		final FastEntry reused = new FastEntry(values, new double[0], new int[0]);
 
-		Iterator<IFastEntry> rows = new AbstractIterator<IFastEntry>() {
+		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
 			int rowIndex = 0;
 
 			@Override
-			protected IFastEntry computeNext() {
+			protected IHolyRecord computeNext() {
 				if (rowIndex < cardinality) {
 
 					// Each row has as value the rownIndex
@@ -55,42 +58,7 @@ public class HighCardinalityDimensionTest {
 				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
 						Collections.emptySet(),
 						Collections.emptySet());
-		IHolyCube cube = sink.sink(context, rows);
-
-		// final ArrayIndexedMap<String, Comparable<?>> buffer = new
-		// ArrayIndexedMap<>(
-		// ImmutableSet.of(TestAggregation.FIRST_KEY,
-		// TestAggregation.DOUBLE_FIRSY_KEY), values);
-
-		// Iterator<Map<? extends Comparable<?>, ? extends Comparable<?>>> rows
-		// = new Iterator<Map<? extends Comparable<?>, ? extends
-		// Comparable<?>>>() {
-		// int rowIndex = 0;
-		//
-		// @Override
-		// public boolean hasNext() {
-		// return rowIndex < cardinality;
-		// }
-		//
-		// @Override
-		// public Map<? extends Comparable<?>, ? extends Comparable<?>> next() {
-		// int currentRow = rowIndex;
-		// rowIndex++;
-		//
-		// // Each row has as value the rownIndex
-		// buffer.putIndexed(0, currentRow);
-		// buffer.putIndexed(1, ThreadLocalRandom.current().nextDouble());
-		//
-		// return buffer;
-		// }
-		//
-		// @Override
-		// public void remove() {
-		// throw new UnsupportedOperationException();
-		// }
-		// };
-
-		// IRoaringCube cube = sink.sink(rows);
+		IHolyCube cube = sink.sinkDeprecated(context, rows);
 
 		Assert.assertEquals(cardinality, cube.getNbRows());
 		Assert.assertEquals(2, cube.getCellSet().axes().size());
@@ -103,7 +71,8 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testTwoHighCardinality() {
-		IHolySink sink = new HolyCubeSink();
+		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		final int cardinality = 1000000;
 
@@ -116,11 +85,11 @@ public class HighCardinalityDimensionTest {
 
 		final FastEntry reused = new FastEntry(values, new double[0], new int[0]);
 
-		Iterator<IFastEntry> rows = new AbstractIterator<IFastEntry>() {
+		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
 			int rowIndex = 0;
 
 			@Override
-			protected IFastEntry computeNext() {
+			protected IHolyRecord computeNext() {
 				if (rowIndex < cardinality) {
 					// Each row has as value the rownIndex
 					values[0] = rowIndex;
@@ -141,37 +110,7 @@ public class HighCardinalityDimensionTest {
 						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
 				Collections.emptySet(),
 				Collections.emptySet());
-		IHolyCube cube = sink.sink(context, rows);
-
-		// Iterator<Map<? extends Comparable<?>, ? extends Comparable<?>>> rows
-		// = new Iterator<Map<? extends Comparable<?>, ? extends
-		// Comparable<?>>>() {
-		// int rowIndex = 0;
-		//
-		// @Override
-		// public boolean hasNext() {
-		// return rowIndex < cardinality;
-		// }
-		//
-		// @Override
-		// public Map<? extends Comparable<?>, ? extends Comparable<?>> next() {
-		// int currentRow = rowIndex;
-		// rowIndex++;
-		//
-		// buffer.putIndexed(0, currentRow);
-		// buffer.putIndexed(1, currentRow);
-		// buffer.putIndexed(2, ThreadLocalRandom.current().nextDouble());
-		//
-		// return buffer;
-		// }
-		//
-		// @Override
-		// public void remove() {
-		// throw new UnsupportedOperationException();
-		// }
-		// };
-
-		// IRoaringCube cube = sink.sink(rows);
+		IHolyCube cube = sink.sinkDeprecated(context, rows);
 
 		Assert.assertEquals(cardinality, cube.getNbRows());
 		Assert.assertEquals(3, cube.getCellSet().axes().size());
@@ -184,7 +123,8 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testIndexAllKeysOneByOne() {
-		IHolySink sink = new HolyCubeSink();
+		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		ImmutableSinkContext context = new ImmutableSinkContext(
 				ImmutableSet

@@ -1,8 +1,8 @@
-package eu.solven.holymolap.cube.mutable;
+package eu.solven.holymolap.cube.immutable;
 
 import java.util.function.Consumer;
 
-public interface IScannableAggregatesColumn {
+public interface IScannableAxisColumn {
 
 	void acceptCoordinates(Consumer<Object> coordinateConsumer);
 

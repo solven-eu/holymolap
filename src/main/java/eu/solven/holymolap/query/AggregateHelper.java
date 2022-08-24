@@ -2,6 +2,7 @@ package eu.solven.holymolap.query;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -11,12 +12,17 @@ import java.util.function.Consumer;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.SetMultimap;
 
 import eu.solven.holymolap.aggregate.NicePointToAggregates;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
 import eu.solven.holymolap.aggregate.RawPointToAggregates;
 import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.query.operator.OperatorFactory;
+import eu.solven.holymolap.stable.v1.IAggregatedAxis;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.utils.HolyIterator;
 
@@ -83,8 +89,23 @@ public class AggregateHelper {
 
 	public static <T> NavigableMap<? extends NavigableMap<?, ?>, ? extends T> cumulateInNavigableMap(
 			final IHolyCube cube,
-			final IAggregationQuery query,
-			final IAggregationLogic<T> aggregationLogic) {
+			final IAggregationQuery query) {
+		List<IAggregatedAxis> aggregations = query.getAggregations();
+		SetMultimap<String, String> aggregatedToOperators = MultimapBuilder.treeKeys().hashSetValues().build();
+		aggregations.forEach(
+				aggregatedAxis -> aggregatedToOperators.put(aggregatedAxis.getAxis(), aggregatedAxis.getOperator()));
+
+		OperatorFactory operatorFactory = new OperatorFactory();
+		Multimap<String, IAggregationLogic<?>> aggregatedToLogic = MultimapBuilder.treeKeys().arrayListValues().build();
+		aggregatedToOperators.forEach((aggregated, operatorKey) -> {
+			aggregatedToLogic.put(aggregated,
+					new SingleColumnAggregationLogic(aggregated, operatorFactory.getDoubleBinaryOperator(operatorKey)));
+		});
+
+		if (aggregatedToLogic.size() != 2) {
+			throw new UnsupportedOperationException("TODO Manage multiple aggregation in a single query");
+		}
+		IAggregationLogic<T> aggregationLogic = (IAggregationLogic<T>) aggregatedToLogic.values().iterator().next();
 
 		Iterator<RawCoordinatesToBitmap> rawIterator = queryToAggregateIterator(cube, query);
 

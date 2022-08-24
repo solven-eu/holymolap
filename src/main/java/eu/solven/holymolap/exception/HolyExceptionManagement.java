@@ -18,6 +18,7 @@ public class HolyExceptionManagement {
 		// hidden
 	}
 
+	// TODO Return an Immutable thing!
 	public static RoaringBitmap immutableEmptyBitmap() {
 		return new RoaringBitmap();
 	}

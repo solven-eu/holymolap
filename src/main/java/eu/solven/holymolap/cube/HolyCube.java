@@ -1,7 +1,6 @@
 package eu.solven.holymolap.cube;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -11,8 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import eu.solven.holymolap.HolyDictionarizedTable;
-import eu.solven.holymolap.cube.aggregates.HolyAggregateTable;
+import eu.solven.holymolap.EmptyHolyDictionarizedTable;
+import eu.solven.holymolap.axes.EmptyAxisWithCoordinates;
+import eu.solven.holymolap.cube.aggregates.EmptyHolyAggregateTable;
 import eu.solven.holymolap.cube.aggregates.IHolyAggregateTable;
 import eu.solven.holymolap.cube.cellset.HolyCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
@@ -55,13 +55,8 @@ public class HolyCube implements IHolyCube {
 	 */
 	public HolyCube() {
 		this(0,
-				new HolyCellMultiSet(0,
-						Collections.emptyList(),
-						Collections.emptyList(),
-						new HolyDictionarizedTable(0, Collections.emptyList()
-						// , Collections.emptyList()
-								, Collections.emptyList())),
-				new HolyAggregateTable(Collections.emptyList()));
+				new HolyCellMultiSet(new EmptyAxisWithCoordinates(), new EmptyHolyDictionarizedTable()),
+				new EmptyHolyAggregateTable());
 	}
 
 	@Override

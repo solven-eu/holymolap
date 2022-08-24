@@ -23,11 +23,11 @@ public class HolyCellMultiSet implements IHolyCellMultiSet {
 	protected final IHasAxesWithCoordinates axesWithCoordinates;
 	protected final IHolyDictionarizedTable dictionarizedTable;
 
-	public HolyCellMultiSet(int nbRows,
-			List<? extends String> axisIndexToAxis,
-			List<? extends IAxisCoordinatesDictionary> axisToAxisCoordinatesIndex,
+	@Deprecated
+	public HolyCellMultiSet(List<? extends String> axisIndexToAxis,
+			List<? extends IAxisCoordinatesDictionary> axisIndexToAxisCoordinatesDictionary,
 			IHolyDictionarizedTable dictionarizedTable) {
-		this(new AxisWithCoordinates(axisIndexToAxis, axisToAxisCoordinatesIndex), dictionarizedTable);
+		this(new AxisWithCoordinates(axisIndexToAxis, axisIndexToAxisCoordinatesDictionary), dictionarizedTable);
 	}
 
 	public HolyCellMultiSet(IHasAxesWithCoordinates axesWithCoordinates, IHolyDictionarizedTable dictionarizedTable) {

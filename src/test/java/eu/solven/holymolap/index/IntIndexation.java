@@ -10,16 +10,19 @@ import com.google.common.collect.ImmutableSet;
 import eu.solven.holymolap.TestAggregation;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.ILazyHolyCube;
-import eu.solven.holymolap.sink.FastEntry;
+import eu.solven.holymolap.cube.aggregates.EmptyHolyAggregateTableDefinition;
+import eu.solven.holymolap.cube.aggregates.IHolyAggregateTableDefinition;
 import eu.solven.holymolap.sink.HolyCubeSink;
-import eu.solven.holymolap.sink.IHolySink;
+import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
+import eu.solven.holymolap.sink.record.FastEntry;
 
 public class IntIndexation {
 
 	@Test
 	public void testIndexAllKeysOneByOne() {
-		IHolySink sink = new HolyCubeSink();
+		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		ImmutableSinkContext context =
 				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY),

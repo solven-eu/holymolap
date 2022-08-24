@@ -15,15 +15,18 @@ import com.google.common.collect.ImmutableSet;
 
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.cube.aggregates.EmptyHolyAggregateTableDefinition;
+import eu.solven.holymolap.cube.aggregates.IHolyAggregateTableDefinition;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.query.SingleColumnAggregationLogic;
 import eu.solven.holymolap.query.operator.IStandardOperators;
-import eu.solven.holymolap.sink.FastEntry;
 import eu.solven.holymolap.sink.ISinkContext;
 import eu.solven.holymolap.sink.ObjectOnlySinkContext;
+import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.sink.HolyCubeSink;
+import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 
 public class TestAggregation {
@@ -85,7 +88,11 @@ public class TestAggregation {
 	@Test
 	public void testAddOneEmptyEntry() {
 		ObjectOnlySinkContext context = new ObjectOnlySinkContext(new String[] {});
-		IHolyCube cube = new HolyCubeSink().sink(context, new FastEntry(new Object[] {}));
+
+		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyCubeSink sink = new HolyCubeSink(definitions);
+
+		IHolyCube cube = sink.sink(context, new FastEntry(new Object[] {}));
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().axes());
@@ -100,7 +107,9 @@ public class TestAggregation {
 
 	@Test
 	public void testAddOneEntryAggregateNotDoubleKey() {
-		IHolyCube cube = new HolyCubeSink().sink(new ObjectOnlySinkContext(new String[] { FIRST_KEY }),
+		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyCubeSink sink = new HolyCubeSink(definitions);
+		IHolyCube cube = sink.sink(new ObjectOnlySinkContext(new String[] { FIRST_KEY }),
 				new FastEntry(new Object[] { FIRST_VALUE }));
 
 		Assert.assertEquals(1, cube.getNbRows());
@@ -127,8 +136,10 @@ public class TestAggregation {
 	@Test
 	public void testAddOneEntryAggregateDoubleKey() {
 		ISinkContext context = new ObjectOnlySinkContext(new String[] { FIRST_KEY, DOUBLE_FIRSY_KEY });
-		IHolyCube cube =
-				new HolyCubeSink().sink(context, new FastEntry(new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }));
+
+		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyCubeSink sink = new HolyCubeSink(definitions);
+		IHolyCube cube = sink.sink(context, new FastEntry(new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }));
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)), cube.getCellSet().axes());

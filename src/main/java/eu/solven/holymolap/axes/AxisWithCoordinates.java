@@ -19,11 +19,11 @@ public class AxisWithCoordinates implements IHasAxesWithCoordinates {
 	protected final List<? extends IAxisCoordinatesDictionary> axisIndexToCoordinateIndex;
 
 	public AxisWithCoordinates(List<? extends String> axisIndexToAxis,
-			List<? extends IAxisCoordinatesDictionary> axisIndexToValueIndex) {
+			List<? extends IAxisCoordinatesDictionary> axisIndexToAxisCoordinatesDictionary) {
 		this.axisIndexToAxis = ImmutableList.copyOf(axisIndexToAxis);
 
 		// The input may mutate, when new axis are indexes.
-		this.axisIndexToCoordinateIndex = axisIndexToValueIndex;
+		this.axisIndexToCoordinateIndex = axisIndexToAxisCoordinatesDictionary;
 	}
 
 	@Override

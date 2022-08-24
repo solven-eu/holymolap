@@ -7,11 +7,11 @@ import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
 public class OperatorFactory {
 	public static final String SUM = "SUM";
 
-	public IDoubleBinaryOperator getDoubleBinaryOperator(String key) {
-		if (SUM.equalsIgnoreCase(key)) {
+	public IDoubleBinaryOperator getDoubleBinaryOperator(String operator) {
+		if (SUM.equalsIgnoreCase(operator)) {
 			return IStandardOperators.SUM;
 		} else {
-			throw new IllegalArgumentException("Unknown operator: " + key);
+			throw new IllegalArgumentException("Unknown operator: " + operator);
 		}
 	}
 

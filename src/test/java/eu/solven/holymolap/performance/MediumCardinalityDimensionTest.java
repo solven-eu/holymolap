@@ -19,14 +19,16 @@ import com.google.common.collect.AbstractIterator;
 
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
 import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.cube.aggregates.EmptyHolyAggregateTableDefinition;
+import eu.solven.holymolap.cube.aggregates.IHolyAggregateTableDefinition;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.operator.OperatorFactory;
-import eu.solven.holymolap.sink.FastEntry;
 import eu.solven.holymolap.sink.HolyCubeSink;
-import eu.solven.holymolap.sink.IFastEntry;
-import eu.solven.holymolap.sink.IHolySink;
+import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
+import eu.solven.holymolap.sink.record.FastEntry;
+import eu.solven.holymolap.sink.record.IHolyRecord;
 import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -38,7 +40,8 @@ public class MediumCardinalityDimensionTest {
 
 	@Test
 	public void testOneHighCardinality() {
-		IHolySink sink = new HolyCubeSink();
+		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		final int nbRows = 1_000_000;
 		final float cardinalityFactor = 1;
@@ -61,11 +64,11 @@ public class MediumCardinalityDimensionTest {
 			axisToValues.put(axisIndex, new IntLinkedOpenHashSet(expectedSize));
 		}
 
-		Iterator<IFastEntry> rowIterator =
+		Iterator<IHolyRecord> rowIterator =
 				makeRowsIterator(nbRows, cardinalityFactor, nbAxis, nbDoubleAxis, axisToValues);
 
 		ImmutableSinkContext context = new ImmutableSinkContext(keys, doubleKeys, Collections.emptySet());
-		IHolyCube cube = sink.sink(context, rowIterator);
+		IHolyCube cube = sink.sinkDeprecated(context, rowIterator);
 
 		Assert.assertEquals(nbRows, cube.getNbRows());
 		Assert.assertEquals(nbAxis + nbDoubleAxis, cube.getCellSet().axes().size());
@@ -125,7 +128,7 @@ public class MediumCardinalityDimensionTest {
 		}
 	}
 
-	private Iterator<IFastEntry> makeRowsIterator(final int nbRows,
+	private Iterator<IHolyRecord> makeRowsIterator(final int nbRows,
 			final float cardinalityFactor,
 			final int nbAxis,
 			final int nbDoubleAxis,
@@ -137,11 +140,11 @@ public class MediumCardinalityDimensionTest {
 
 		final FastEntry reused = new FastEntry(new Object[0], doubles, values);
 
-		Iterator<IFastEntry> rows = new AbstractIterator<IFastEntry>() {
+		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
 			int rowIndex = 0;
 
 			@Override
-			protected IFastEntry computeNext() {
+			protected IHolyRecord computeNext() {
 				if (rowIndex < nbRows) {
 					rowIndex++;
 

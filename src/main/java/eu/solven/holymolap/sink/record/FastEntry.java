@@ -1,6 +1,6 @@
-package eu.solven.holymolap.sink;
+package eu.solven.holymolap.sink.record;
 
-public class FastEntry implements IFastEntry {
+public class FastEntry implements IHolyRecord {
 	protected final int[] objectIndexes;
 	protected final Object[] objects;
 
@@ -48,7 +48,7 @@ public class FastEntry implements IFastEntry {
 	}
 
 	@Override
-	public int[] objectAxesIndexes() {
+	public int[] objectIndexes() {
 		return objectIndexes;
 	}
 
@@ -58,7 +58,7 @@ public class FastEntry implements IFastEntry {
 	}
 
 	@Override
-	public int[] doubleAxesIndexes() {
+	public int[] doubleIndexes() {
 		return doubleIndexes;
 	}
 
@@ -68,7 +68,7 @@ public class FastEntry implements IFastEntry {
 	}
 
 	@Override
-	public int[] intAxesIndexes() {
+	public int[] intIndexes() {
 		return intIndexes;
 	}
 

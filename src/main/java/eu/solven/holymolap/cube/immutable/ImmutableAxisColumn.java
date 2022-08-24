@@ -8,7 +8,6 @@ import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import eu.solven.holymolap.cube.mutable.IMutableAxisColumn;
-import eu.solven.holymolap.cube.mutable.IScannableAxisColumn;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import me.lemire.integercompression.IntCompressor;
 

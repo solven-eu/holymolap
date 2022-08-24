@@ -4,6 +4,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import eu.solven.holymolap.cube.immutable.IScannableDoubleAggregatesColumn;
+import eu.solven.holymolap.cube.immutable.ImmutableDoubleAggregatesColumn;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
@@ -16,20 +18,22 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
  */
 public class MutableAggregatesColumn implements IMutableDoubleAggregatesColumn {
 	final IDoubleBinaryOperator operator;
-	final DoubleList rowToAggregate;
+	final DoubleList cellToAggregate;
 
 	final AtomicLong brokenRows = new AtomicLong();
 
 	final AtomicBoolean hasBeenRead = new AtomicBoolean();
 
-	protected MutableAggregatesColumn(IDoubleBinaryOperator operator, final DoubleList rowToAggregate) {
+	final AtomicBoolean flushed = new AtomicBoolean();
+
+	protected MutableAggregatesColumn(IDoubleBinaryOperator operator, final DoubleList cellToAggregate) {
 		this.operator = operator;
-		this.rowToAggregate = rowToAggregate;
+		this.cellToAggregate = cellToAggregate;
 	}
 
 	public MutableAggregatesColumn(IDoubleBinaryOperator operator) {
 		this.operator = operator;
-		this.rowToAggregate = new DoubleArrayList();
+		this.cellToAggregate = new DoubleArrayList();
 	}
 
 	@Override
@@ -40,22 +44,30 @@ public class MutableAggregatesColumn implements IMutableDoubleAggregatesColumn {
 
 		ensureCapacity(rowIndex);
 
-		double previousAggregate = rowToAggregate.getDouble(rowIndex);
+		double previousAggregate = cellToAggregate.getDouble(rowIndex);
 		double newAggregate = operator.applyAsDouble(previousAggregate, contribution);
-		rowToAggregate.set(rowIndex, newAggregate);
+		cellToAggregate.set(rowIndex, newAggregate);
 	}
 
 	private void ensureCapacity(int rowIndex) {
-		int initialSize = rowToAggregate.size();
+		int initialSize = cellToAggregate.size();
 		if (initialSize <= rowIndex) {
 			// The underlying array is too small for given row
-			rowToAggregate.size(rowIndex + 1);
+			cellToAggregate.size(rowIndex + 1);
 
 			double neutral = operator.neutral();
 			for (int i = initialSize; i < rowIndex; i++) {
-				rowToAggregate.set(i, neutral);
+				cellToAggregate.set(i, neutral);
 			}
 		}
+	}
+
+	@Override
+	public IScannableDoubleAggregatesColumn flush() {
+		if (!flushed.compareAndSet(false, true)) {
+			throw new IllegalStateException("Already flushed");
+		}
+		return new ImmutableDoubleAggregatesColumn(cellToAggregate);
 	}
 
 }

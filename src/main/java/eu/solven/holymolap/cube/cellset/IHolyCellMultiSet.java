@@ -16,7 +16,7 @@ import eu.solven.holymolap.tools.IHasMemoryFootprint;
  */
 public interface IHolyCellMultiSet extends IHasMemoryFootprint, IHasAxesWithCoordinates {
 
-	RoaringBitmap EMPTY_BITMAP = new RoaringBitmap();
+	RoaringBitmap EMPTY_BITMAP = HolyExceptionManagement.immutableEmptyBitmap();
 
 	/**
 	 * 

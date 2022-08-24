@@ -18,6 +18,8 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  */
 public interface IHolyAggregateTable extends IHasMemoryFootprint {
 
+	IHolyAggregateTableDefinition getDefinition();
+
 	/**
 	 * Used by {@link IAggregationLogic}
 	 * 
