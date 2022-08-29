@@ -2,7 +2,9 @@ package eu.solven.holymolap.cube;
 
 import java.util.NavigableSet;
 
-public interface IHasAxes {
+import eu.solven.holymolap.stable.v1.IHasAxes;
+
+public interface IHasNavigableAxes extends IHasAxes {
 
 	NavigableSet<String> axes();
 

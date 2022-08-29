@@ -1,5 +1,6 @@
 package eu.solven.holymolap.axes;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.TreeSet;
@@ -28,7 +29,12 @@ public class AxisWithCoordinates implements IHasAxesWithCoordinates {
 
 	@Override
 	public NavigableSet<String> axes() {
-		return new TreeSet<>(axisIndexToAxis);
+		return Collections.unmodifiableNavigableSet(new TreeSet<>(axisIndexToAxis));
+	}
+
+	@Override
+	public List<String> getAxes() {
+		return Collections.unmodifiableList(axisIndexToAxis);
 	}
 
 	@Override

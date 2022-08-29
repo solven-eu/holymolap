@@ -1,5 +1,6 @@
 package eu.solven.holymolap.query;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -9,11 +10,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import eu.solven.holymolap.query.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IAggregatedAxis;
+import eu.solven.holymolap.stable.v1.pojo.AxesFilterAnd;
 
 public class AggregateQueryBuilder {
+	// By default, no columns
 	protected final Set<String> wildcards = new ConcurrentSkipListSet<>();
+
+	// By default, no filters
 	protected final Map<String, Object> filters = new ConcurrentSkipListMap<>();
 
+	// By default, no aggregation
 	protected final List<IAggregatedAxis> aggregatesKeys = new CopyOnWriteArrayList<>();
 
 	public AggregateQueryBuilder addWildcard(String wildcard) {
@@ -46,7 +52,9 @@ public class AggregateQueryBuilder {
 	}
 
 	public SimpleAggregationQuery build() {
-		SimpleAggregationQuery query = new SimpleAggregationQuery(filters, wildcards, aggregatesKeys);
+		SimpleAggregationQuery query = new SimpleAggregationQuery(() -> new AxesFilterAnd(filters),
+				() -> new ArrayList<>(wildcards),
+				() -> aggregatesKeys);
 
 		return query;
 	}

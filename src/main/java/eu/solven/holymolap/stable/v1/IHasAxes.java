@@ -10,10 +10,7 @@ import eu.solven.holymolap.cube.IHolyCube;
  * @author Benoit Lacelle
  *
  */
-public interface IHasColumns {
+public interface IHasAxes {
 
-	/**
-	 * @return a {@link List} of columns.
-	 */
-	List<String> getColumns();
+	List<String> getAxes();
 }

@@ -1,5 +1,6 @@
 package eu.solven.holymolap.query;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
@@ -8,8 +9,7 @@ import eu.solven.holymolap.stable.v1.IAggregatedAxis;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasAggregations;
-import eu.solven.holymolap.stable.v1.IHasAxes;
-import eu.solven.holymolap.stable.v1.IHasFilters;
+import eu.solven.holymolap.stable.v1.pojo.AxesFilterAnd;
 
 /**
  * Simple {@link IAggregationQuery}, where the filter is an AND condition.
@@ -17,31 +17,21 @@ import eu.solven.holymolap.stable.v1.IHasFilters;
  * @author Benoit Lacelle
  *
  */
-public class SimpleAggregationQuery implements IAggregationQuery {
-
-	protected final IHasFilters axesFilters;
-	protected final IHasAxes axes;
-	protected final IHasAggregations hasAggregations;
-
-	public SimpleAggregationQuery(IHasFilters hasFilters, IHasAxes axes, IHasAggregations hasAggregations) {
-		this.axesFilters = hasFilters;
-		this.axes = axes;
-		this.hasAggregations = hasAggregations;
-	}
+public class EmptyAggregationQuery implements IAggregationQuery {
 
 	@Override
 	public IAxesFilter getFilters() {
-		return axesFilters.getFilters();
+		return new AxesFilterAnd(Collections.emptyMap());
 	}
 
 	@Override
 	public List<String> getAxes() {
-		return axes.getAxes();
+		return Collections.emptyList();
 	}
 
 	@Override
 	public List<IAggregatedAxis> getAggregations() {
-		return hasAggregations.getAggregations();
+		return Collections.emptyList();
 	}
 
 	@Override

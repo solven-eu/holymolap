@@ -11,5 +11,5 @@ public interface IAxesFilterOr extends IAxesFilter {
 	 * 
 	 * @return
 	 */
-	List<IAxesFilterOr> getOr();
+	List<IAxesFilter> getOr();
 }

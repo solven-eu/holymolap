@@ -1,6 +1,6 @@
 package eu.solven.holymolap.stable.v1.filters;
 
-import java.util.Map;
+import java.util.List;
 
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 
@@ -11,5 +11,5 @@ public interface IAxesFilterAnd extends IAxesFilter {
 	 * 
 	 * @return
 	 */
-	Map<String, IAxesFilter> getAnd();
+	List<IAxesFilter> getAnd();
 }

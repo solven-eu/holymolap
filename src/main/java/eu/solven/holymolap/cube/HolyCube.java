@@ -2,7 +2,6 @@ package eu.solven.holymolap.cube;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.roaringbitmap.RoaringBitmap;
 import org.slf4j.Logger;
@@ -88,8 +87,8 @@ public class HolyCube implements IHolyCube {
 			IAxesFilterAnd andFilter = (IAxesFilterAnd) axesFilter;
 
 			List<RoaringBitmap> andBitmaps = new ArrayList<>();
-			for (Map.Entry<String, IAxesFilter> entry : andFilter.getAnd().entrySet()) {
-				RoaringBitmap entryBitmap = getFiltersBitmap(() -> entry.getValue());
+			for (IAxesFilter andOperand : andFilter.getAnd()) {
+				RoaringBitmap entryBitmap = getFiltersBitmap(() -> andOperand);
 
 				andBitmaps.add(entryBitmap);
 			}

@@ -30,15 +30,14 @@ public class AggregateHelper {
 
 	public static Iterator<RawCoordinatesToBitmap> queryToAggregateIterator(final IHolyCube cube,
 			final IAggregationQuery query) {
-		return new AggregationHelper2()
-				.nextCellRows(cube.getCellSet(), query.getColumns(), cube.getFiltersBitmap(query));
+		return new AggregationHelper2().nextCellRows(cube.getCellSet(), query.getAxes(), cube.getFiltersBitmap(query));
 	}
 
 	public static void consumeQueryResult(IHolyCube cube,
 			SimpleAggregationQuery query,
 			Consumer<RawCoordinatesToBitmap> consumer) {
 		new AggregationHelper2().computeParallelNextCellRows(cube.getCellSet(),
-				query.getColumns(),
+				query.getAxes(),
 				cube.getFiltersBitmap(query),
 				consumer);
 	}
@@ -63,7 +62,7 @@ public class AggregateHelper {
 	protected static Function<long[], NavigableMap<String, Object>> rawToNiceCoordinates(final IHolyCube cube,
 			final IAggregationQuery query) {
 		final int[] wildcardIndexes =
-				computeWildcardIndexes(query.getColumns(), new TreeSet<Object>(cube.getCellSet().axes()));
+				computeWildcardIndexes(query.getAxes(), new TreeSet<Object>(cube.getCellSet().axes()));
 
 		return valueIndexes -> {
 			NavigableMap<String, Object> coordinates = new ConcurrentSkipListMap<>();

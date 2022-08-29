@@ -76,6 +76,11 @@ public class HolyCellMultiSet implements IHolyCellMultiSet {
 	}
 
 	@Override
+	public List<String> getAxes() {
+		return axesWithCoordinates.getAxes();
+	}
+
+	@Override
 	public String indexToAxis(int axisIndex) {
 		return axesWithCoordinates.indexToAxis(axisIndex);
 	}

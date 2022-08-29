@@ -1,6 +1,7 @@
 package eu.solven.holymolap.axes;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.NavigableSet;
 
 import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
@@ -10,6 +11,11 @@ public class EmptyAxisWithCoordinates implements IHasAxesWithCoordinates {
 	@Override
 	public NavigableSet<String> axes() {
 		return Collections.emptyNavigableSet();
+	}
+
+	@Override
+	public List<String> getAxes() {
+		return Collections.emptyList();
 	}
 
 	@Override

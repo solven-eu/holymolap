@@ -8,7 +8,7 @@ import eu.solven.holymolap.tools.IHasMemoryFootprint;
  * @author Benoit Lacelle
  *
  */
-public interface IHasAxesWithCoordinates extends IHasAxes, IHasMemoryFootprint {
+public interface IHasAxesWithCoordinates extends IHasNavigableAxes, IHasMemoryFootprint {
 
 	long NOT_INDEXED = -1;
 

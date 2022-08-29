@@ -2,6 +2,8 @@ package eu.solven.holymolap.stable.v1;
 
 import java.util.List;
 
+import com.google.common.collect.Lists;
+
 /**
  * A aggregation query. It is configured by:
  * 
@@ -10,7 +12,8 @@ import java.util.List;
  * @author Benoit Lacelle
  *
  */
-public interface IAggregationQuery extends IHasFilters, IHasColumns {
+public interface IAggregationQuery extends IHasFilters, IHasAxes, IHasAggregations {
+
 	/**
 	 * The filters of current query. A filter refers to the condition for the data to be included. An empty {@link List}
 	 * means the whole data has to be included. Exclusions can be done through {@link IExclusionFilter}
@@ -26,8 +29,16 @@ public interface IAggregationQuery extends IHasFilters, IHasColumns {
 	 * @return a Set of columns
 	 */
 	@Override
-	List<String> getColumns();
+	List<String> getAxes();
 
-	List<IAggregatedAxis> getAggregations();
+	/**
+	 * 
+	 * @param hasAggregations
+	 * @return a new {@link IAggregationQuery} based on input {@link IHasAggregations}
+	 */
+	IAggregationQuery addAggregations(IHasAggregations hasAggregations);
 
+	default IAggregationQuery addAggregations(IAggregatedAxis first, IAggregatedAxis... rest) {
+		return addAggregations(() -> Lists.asList(first, rest));
+	}
 }
