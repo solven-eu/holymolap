@@ -1,6 +1,7 @@
 package eu.solven.holymolap.performance;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -19,8 +20,8 @@ import com.google.common.collect.AbstractIterator;
 
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.aggregates.EmptyHolyAggregateTableDefinition;
-import eu.solven.holymolap.cube.aggregates.IHolyAggregateTableDefinition;
+import eu.solven.holymolap.cube.aggregates.EmptyHolyMeasureTableDefinition;
+import eu.solven.holymolap.cube.aggregates.IHolyMeasuresTableDefinition;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.operator.OperatorFactory;
@@ -40,7 +41,7 @@ public class MediumCardinalityDimensionTest {
 
 	@Test
 	public void testOneHighCardinality() {
-		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		final int nbRows = 1_000_000;
@@ -71,7 +72,7 @@ public class MediumCardinalityDimensionTest {
 		IHolyCube cube = sink.sinkDeprecated(context, rowIterator);
 
 		Assert.assertEquals(nbRows, cube.getNbRows());
-		Assert.assertEquals(nbAxis + nbDoubleAxis, cube.getCellSet().axes().size());
+		Assert.assertEquals(nbAxis + nbDoubleAxis, cube.getCellSet().getAxesWithCoordinates().axes().size());
 
 		List<String> keyIterator = new ArrayList<>(keys);
 		List<String> doubleIterator = new ArrayList<>(doubleKeys);
@@ -138,7 +139,7 @@ public class MediumCardinalityDimensionTest {
 		// final ArrayIndexedMap<String, Comparable<?>> buffer = new
 		// ArrayIndexedMap<>(keys, values);
 
-		final FastEntry reused = new FastEntry(new Object[0], doubles, values);
+		final FastEntry reused = new FastEntry(Arrays.asList(), new Object[0], doubles, values);
 
 		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
 			int rowIndex = 0;

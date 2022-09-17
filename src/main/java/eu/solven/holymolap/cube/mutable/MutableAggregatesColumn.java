@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import eu.solven.holymolap.cube.immutable.IScannableDoubleAggregatesColumn;
+import eu.solven.holymolap.cube.immutable.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.cube.immutable.ImmutableDoubleAggregatesColumn;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
@@ -63,7 +63,7 @@ public class MutableAggregatesColumn implements IMutableDoubleAggregatesColumn {
 	}
 
 	@Override
-	public IScannableDoubleAggregatesColumn flush() {
+	public IScannableDoubleMeasureColumn flush() {
 		if (!flushed.compareAndSet(false, true)) {
 			throw new IllegalStateException("Already flushed");
 		}

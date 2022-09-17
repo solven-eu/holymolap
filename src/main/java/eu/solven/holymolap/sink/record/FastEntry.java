@@ -1,6 +1,12 @@
 package eu.solven.holymolap.sink.record;
 
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
+
 public class FastEntry implements IHolyRecord {
+	final List<String> axes;
+
 	protected final int[] objectIndexes;
 	protected final Object[] objects;
 
@@ -10,11 +16,13 @@ public class FastEntry implements IHolyRecord {
 	protected final int[] intIndexes;
 	protected final int[] ints;
 
-	public FastEntry(Object[] objects) {
-		this(objects, new double[0], new int[0]);
+	public FastEntry(List<String> axes, Object[] objects) {
+		this(axes, objects, new double[0], new int[0]);
 	}
 
-	public FastEntry(Object[] objects, double[] doubles, int[] ints) {
+	public FastEntry(List<String> axes, Object[] objects, double[] doubles, int[] ints) {
+		this.axes = ImmutableList.copyOf(axes);
+
 		this.objects = objects;
 		this.doubles = doubles;
 		this.ints = ints;
@@ -48,6 +56,11 @@ public class FastEntry implements IHolyRecord {
 	}
 
 	@Override
+	public List<String> getAxes() {
+		return axes;
+	}
+
+	@Override
 	public int[] objectIndexes() {
 		return objectIndexes;
 	}
@@ -75,6 +88,19 @@ public class FastEntry implements IHolyRecord {
 	@Override
 	public int getInt(int keyIndex) {
 		return ints[keyIndex - objectIndexes.length - doubleIndexes.length];
+	}
+
+	@Override
+	public void accept(IHolyRecordVisitor visitor) {
+		for (int i = 0; i < objectIndexes.length; i++) {
+			visitor.onObject(i, objects[i]);
+		}
+		for (int i = 0; i < intIndexes.length; i++) {
+			visitor.onObject(i, ints[i]);
+		}
+		for (int i = 0; i < doubleIndexes.length; i++) {
+			visitor.onObject(i, doubles[i]);
+		}
 	}
 
 }

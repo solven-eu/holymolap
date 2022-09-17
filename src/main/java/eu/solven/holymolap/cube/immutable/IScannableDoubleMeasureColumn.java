@@ -6,7 +6,7 @@ import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
-public interface IScannableDoubleAggregatesColumn extends IHasMemoryFootprint{
+public interface IScannableDoubleMeasureColumn extends IHasMemoryFootprint{
 
 	/**
 	 * 

@@ -43,4 +43,9 @@ public class EmptyAxisWithCoordinates implements IHasAxesWithCoordinates {
 		return -1;
 	}
 
+	@Override
+	public long getCardinality(int axisIndex) {
+		return 0;
+	}
+
 }

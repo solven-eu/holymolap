@@ -9,12 +9,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import eu.solven.holymolap.EmptyHolyDictionarizedTable;
 import eu.solven.holymolap.axes.EmptyAxisWithCoordinates;
-import eu.solven.holymolap.cube.aggregates.EmptyHolyAggregateTable;
-import eu.solven.holymolap.cube.aggregates.IHolyAggregateTable;
-import eu.solven.holymolap.cube.cellset.HolyCellMultiSet;
+import eu.solven.holymolap.cube.aggregates.EmptyHolyMeasureTable;
+import eu.solven.holymolap.cube.aggregates.IHolyMeasureTable;
+import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
+import eu.solven.holymolap.cube.table.EmptyHolyDictionarizedTable;
 import eu.solven.holymolap.exception.HolyExceptionManagement;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasFilters;
@@ -24,7 +24,7 @@ import eu.solven.holymolap.stable.v1.filters.IAxesFilterOr;
 
 /**
  * The default implementation of an {@link IHolyCube}. It relies on an {@link IHolyCellMultiSet} describing the cells,
- * and an {@link IHolyAggregateTable} describing the aggregates.
+ * and an {@link IHolyMeasureTable} describing the aggregates.
  * 
  * @author Benoit Lacelle
  *
@@ -36,9 +36,9 @@ public class HolyCube implements IHolyCube {
 	protected final int nbRows;
 
 	protected final IHolyCellMultiSet cellSet;
-	protected final IHolyAggregateTable aggregateTable;
+	protected final IHolyMeasureTable aggregateTable;
 
-	public HolyCube(int nbRows, IHolyCellMultiSet cellSet, IHolyAggregateTable aggregateTable) {
+	public HolyCube(int nbRows, IHolyCellMultiSet cellSet, IHolyMeasureTable aggregateTable) {
 		this.nbRows = nbRows;
 		this.cellSet = cellSet;
 		this.aggregateTable = aggregateTable;
@@ -46,7 +46,7 @@ public class HolyCube implements IHolyCube {
 
 	@Override
 	public String toString() {
-		return "#Rows: " + nbRows + ", Keys=" + cellSet.axes();
+		return "#Rows: " + nbRows + ", Axes=" + cellSet.getAxesWithCoordinates().axes();
 	}
 
 	/**
@@ -54,8 +54,8 @@ public class HolyCube implements IHolyCube {
 	 */
 	public HolyCube() {
 		this(0,
-				new HolyCellMultiSet(new EmptyAxisWithCoordinates(), new EmptyHolyDictionarizedTable()),
-				new EmptyHolyAggregateTable());
+				new HolyBitmapCellMultiSet(new EmptyAxisWithCoordinates(), new EmptyHolyDictionarizedTable()),
+				new EmptyHolyMeasureTable());
 	}
 
 	@Override
@@ -148,7 +148,7 @@ public class HolyCube implements IHolyCube {
 	}
 
 	@Override
-	public IHolyAggregateTable getAggregateTable() {
+	public IHolyMeasureTable getMeasuresTable() {
 		return aggregateTable;
 	}
 }

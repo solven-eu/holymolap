@@ -1,12 +1,20 @@
 package eu.solven.holymolap.aggregate;
 
 public class RawPointToAggregates<T> {
-	public final T keyToAggregates;
-	public final long[] coordinatesRef;
+	final long[] coordinatesRef;
+	final T measureValue;
 
-	public RawPointToAggregates(T keyToAggregates, long[] coordinatesRef) {
-		this.keyToAggregates = keyToAggregates;
+	public RawPointToAggregates(long[] coordinatesRef, T measureValue) {
 		this.coordinatesRef = coordinatesRef;
+		this.measureValue = measureValue;
+	}
+
+	public T getMeasureValue() {
+		return measureValue;
+	}
+
+	public long[] getCoordinatesRef() {
+		return coordinatesRef;
 	}
 
 }

@@ -25,9 +25,10 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
-import eu.solven.holymolap.RowsConsumerStatus;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
+import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
+import eu.solven.holymolap.cube.table.RowsConsumerStatus;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.longs.LongLists;
@@ -64,46 +65,52 @@ public class AggregationHelper2 {
 		// Pick-up next valid row
 		long rowToConsider = Util.toUnsignedLong(candidateRows.select(0));
 
+		int[] axesIndexes = new int[axesKeys.size()];
+
 		// This array will hold the indexes of the values of the next coordinate
 		// matching the selected wildcards
-		final long[] valueIndexes;
-		final List<RoaringBitmap> matchingRowsBitmaps;
+		final long[] valuesRefs;
+		// final List<RoaringBitmap> matchingRowsBitmaps;
 		{
-			valueIndexes = new long[axesKeys.size()];
+			// valuesRefs = new long[axesKeys.size()];
 
 			// The list of bitmaps matching next row siblings
-			matchingRowsBitmaps = new ArrayList<>(1 + axesKeys.size());
-			matchingRowsBitmaps.add(candidateRows);
+			// matchingRowsBitmaps = new ArrayList<>(1 + axesKeys.size());
+			// matchingRowsBitmaps.add(candidateRows);
 
 			int i = -1;
 			for (String wildcardKey : axesKeys) {
 				i++;
 
-				int wildcardKeyIndex = cellSet.getAxisIndex(wildcardKey);
+				int wildcardKeyIndex = cellSet.getAxesWithCoordinates().getAxisIndex(wildcardKey);
+				axesIndexes[i] = wildcardKeyIndex;
 
-				long valueIndex = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
+				// long valueRef = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
 
-				if (valueIndex == IHolyCellMultiSet.NOT_INDEXED) {
-					throw new IllegalStateException("We are considering a row (" + rowToConsider
-							+ ") which does not contribute to key: "
-							+ wildcardKey);
-				}
+				// if (valueRef == IHolyCellMultiSet.NOT_INDEXED) {
+				// throw new IllegalStateException("We are considering a row (" + rowToConsider
+				// + ") which does not contribute to key: "
+				// + wildcardKey);
+				// }
 
-				valueIndexes[i] = valueIndex;
+				// valuesRefs[i] = valueRef;
 
-				RoaringBitmap valueBitmap = cellSet.getCoordinateToCells(wildcardKeyIndex, valueIndex);
+				// RoaringBitmap valueBitmap = cellSet.getCoordinateToCells(wildcardKeyIndex, valueRef);
 
-				matchingRowsBitmaps.add(valueBitmap);
+				// matchingRowsBitmaps.add(valueBitmap);
 			}
+
+			valuesRefs = cellSet.getTable().getCellCoordinates(rowToConsider, axesIndexes);
 		}
 
-		RoaringBitmap matchingRowsBitmap = FastAggregation.and(matchingRowsBitmaps.iterator());
+		// RoaringBitmap matchingRowsBitmap = FastAggregation.and(matchingRowsBitmaps.iterator());
+		RoaringBitmap matchingRowsBitmap = cellSet.getTable().getCoordinateToRows(axesIndexes, valuesRefs);
 
 		if (!matchingRowsBitmap.contains(Ints.checkedCast(rowToConsider))) {
 			throw new IllegalStateException("We should have spot at least current row");
 		}
 
-		rowAggregateConsumer.accept(new RawCoordinatesToBitmap(matchingRowsBitmap, valueIndexes));
+		rowAggregateConsumer.accept(new RawCoordinatesToBitmap(matchingRowsBitmap, valuesRefs));
 
 		return matchingRowsBitmap;
 	}
@@ -155,17 +162,32 @@ public class AggregationHelper2 {
 		}
 	}
 
+	/**
+	 * The idea of this algorithm is to pick the first row amongst not already groupedBy rows, then mask its coordinates
+	 * along the wildcardAxes (hence materializing the next cell to consider), compute the aggregates for given cell,
+	 * and move to the next cell.
+	 * 
+	 * @param cellSet
+	 * @param wildcardAxes
+	 * @param coordinateRefsForWildcardAxes
+	 * @param candidateRows
+	 * @param rowAggregateConsumer
+	 * @param es
+	 * @param nbAsyncTasks
+	 * @param status
+	 */
 	protected void computeParallelNextCellRows(final IHolyCellMultiSet cellSet,
-			final List<String> axes,
-			final LongList coordinateRefs,
+			final List<String> wildcardAxes,
+			final LongList coordinateRefsForWildcardAxes,
 			final RoaringBitmap candidateRows,
 			final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
 			final Executor es,
 			final AtomicLong nbAsyncTasks,
 			final RowsConsumerStatus status) {
-		if (axes.size() == coordinateRefs.size()) {
-			// All rows match as we requested the grand total
-			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(candidateRows, coordinateRefs.toLongArray()));
+		if (wildcardAxes.size() == coordinateRefsForWildcardAxes.size()) {
+			// We have selected a coordinate for each wildcardAxes
+			rowAggregateConsumer
+					.accept(new RawCoordinatesToBitmap(candidateRows, coordinateRefsForWildcardAxes.toLongArray()));
 
 			// Register these rows as consumed
 			status.addAsConsidered(candidateRows.getCardinality());
@@ -188,19 +210,19 @@ public class AggregationHelper2 {
 				// This array will hold the indexes of the values of the next
 				// coordinate matching the selected wildcards
 				{
-					String wildcardKey = axes.get(coordinateRefs.size());
+					String wildcardKey = wildcardAxes.get(coordinateRefsForWildcardAxes.size());
 
-					int wildcardKeyIndex = cellSet.getAxisIndex(wildcardKey);
+					int axisIndex = cellSet.getAxesWithCoordinates().getAxisIndex(wildcardKey);
 
-					final long valueIndex = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
+					final long valueIndex = cellSet.getTable().getCellCoordinateRef(rowToConsider, axisIndex);
 
-					if (valueIndex == IHolyCellMultiSet.NOT_INDEXED) {
+					if (valueIndex == IHasAxesWithCoordinates.NOT_INDEXED) {
 						throw new IllegalStateException("We are considering a row (" + rowToConsider
 								+ ") which does not contribute to key: "
 								+ wildcardKey);
 					}
 
-					final RoaringBitmap valueBitmap = cellSet.getCoordinateToCells(wildcardKeyIndex, valueIndex);
+					final RoaringBitmap valueBitmap = cellSet.getTable().getCoordinateToRows(axisIndex, valueIndex);
 
 					final RoaringBitmap finalCandidateRowsLeft = candidateRowsLeft;
 					Runnable command = new Runnable() {
@@ -211,10 +233,10 @@ public class AggregationHelper2 {
 								computeOnMatchingRows(finalCandidateRowsLeft,
 										valueBitmap,
 										rowToConsider,
-										coordinateRefs,
+										coordinateRefsForWildcardAxes,
 										valueIndex,
 										cellSet,
-										axes,
+										wildcardAxes,
 										rowAggregateConsumer,
 										es,
 										nbAsyncTasks,
@@ -336,7 +358,9 @@ public class AggregationHelper2 {
 
 					int nbLeftRows = leftRows.getCardinality();
 
+					// N underlying cells
 					meter.mark(nbRowsBefore - nbLeftRows);
+					// For a single aggregate
 					aggregateMeter.mark();
 
 					long now = System.currentTimeMillis();

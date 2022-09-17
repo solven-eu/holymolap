@@ -14,8 +14,8 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  * @author Benoit Lacelle
  *
  */
-public class EmptyHolyAggregateTable implements IHolyAggregateTable {
-	private static final Logger LOGGER = LoggerFactory.getLogger(EmptyHolyAggregateTable.class);
+public class EmptyHolyMeasureTable implements IHolyMeasureTable {
+	private static final Logger LOGGER = LoggerFactory.getLogger(EmptyHolyMeasureTable.class);
 
 	@Override
 	public long getSizeInBytes() {
@@ -33,7 +33,7 @@ public class EmptyHolyAggregateTable implements IHolyAggregateTable {
 	}
 
 	@Override
-	public IHolyAggregateTableDefinition getDefinition() {
-		return new EmptyHolyAggregateTableDefinition();
+	public IHolyMeasuresTableDefinition getDefinition() {
+		return new EmptyHolyMeasureTableDefinition();
 	}
 }

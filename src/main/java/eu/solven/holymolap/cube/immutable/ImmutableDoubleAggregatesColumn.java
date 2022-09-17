@@ -18,7 +18,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  *
  */
 // https://lemire.me/blog/2017/11/10/how-should-you-build-a-high-performance-column-store-for-the-2020s/
-public class ImmutableDoubleAggregatesColumn implements IScannableDoubleAggregatesColumn {
+public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureColumn {
 	final DoubleList cellToAggregate;
 
 	public ImmutableDoubleAggregatesColumn(DoubleList cellToAggregate) {

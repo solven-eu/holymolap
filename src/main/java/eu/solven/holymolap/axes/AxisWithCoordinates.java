@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableList;
 
 import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
-import eu.solven.holymolap.sink.IAxisCoordinatesDictionary;
+import eu.solven.holymolap.cube.immutable.IAxisCoordinatesDictionary;
 
 public class AxisWithCoordinates implements IHasAxesWithCoordinates {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AxisWithCoordinates.class);
@@ -63,13 +63,18 @@ public class AxisWithCoordinates implements IHasAxesWithCoordinates {
 		if (axisIndex < 0) {
 			throw new IllegalArgumentException("axisIndex has to be positive: " + axisIndex);
 		}
-		return axisIndexToCoordinateIndex.get(axisIndex).getCoordinateIndex(coordinate);
+		return axisIndexToCoordinateIndex.get(axisIndex).getCoordinateRef(coordinate);
 	}
 
 	@Override
 	public long getSizeInBytes() {
 		LOGGER.warn("TODO");
 		return 0;
+	}
+
+	@Override
+	public long getCardinality(int axisIndex) {
+		return axisIndexToCoordinateIndex.get(axisIndex).coordinates().size();
 	}
 
 }

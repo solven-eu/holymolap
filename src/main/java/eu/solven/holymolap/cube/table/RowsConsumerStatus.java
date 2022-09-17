@@ -1,4 +1,4 @@
-package eu.solven.holymolap;
+package eu.solven.holymolap.cube.table;
 
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;

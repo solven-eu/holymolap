@@ -1,6 +1,11 @@
 package eu.solven.holymolap.sink.record;
 
+import java.util.List;
+
 public interface IHolyRecord {
+
+	List<String> getAxes();
+
 	int[] objectIndexes();
 
 	Object getObject(int axisIndex);
@@ -12,4 +17,6 @@ public interface IHolyRecord {
 	int[] doubleIndexes();
 
 	double getDouble(int axisIndex);
+
+	void accept(IHolyRecordVisitor visitor);
 }

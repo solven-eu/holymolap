@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 /**
  * A column of coordinates. Each row is typically associated to a cell (i.e. a {@link Set} of coordinates).
@@ -15,15 +14,15 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
  *
  */
 // https://stackoverflow.com/questions/32917973/thread-safe-list-that-only-needs-to-support-random-access-and-appends
-public class MutableAxisColumn implements IMutableAxisColumn {
-	final IMutableAxisDictionary coordinateToIndex;
+public class MutableAxisColumn implements IMutableAxisSmallColumn {
+	final IMutableAxisSmallDictionarySink coordinateToIndex;
 	final IntList rowToCoordinate;
 
 	final AtomicLong brokenRows = new AtomicLong();
 
 	final AtomicBoolean isLocked = new AtomicBoolean();
 
-	protected MutableAxisColumn(IMutableAxisDictionary coordinateToIndex, IntList rowToCoordinate) {
+	protected MutableAxisColumn(IMutableAxisSmallDictionarySink coordinateToIndex, IntList rowToCoordinate) {
 		this.coordinateToIndex = coordinateToIndex;
 		this.rowToCoordinate = rowToCoordinate;
 	}
@@ -62,7 +61,7 @@ public class MutableAxisColumn implements IMutableAxisColumn {
 	}
 
 	@Override
-	public IMutableAxisDictionary getCoordinateToIndex() {
+	public IMutableAxisSmallDictionarySink getCoordinateToIndex() {
 		isLocked.set(true);
 		return coordinateToIndex;
 	}

@@ -8,7 +8,7 @@ package eu.solven.holymolap.cube.mutable;
  * @author Benoit Lacelle
  *
  */
-public interface IMutableAxisDictionary extends IAxisDictionary, IHolyMutable {
+public interface IMutableAxisSmallDictionarySink extends IAxisSmallDictionary, IHolyMutable {
 	// Marker used to inject missing coordinates in inputs not allowing null references.
 	Object NO_COORDINATE = new Object();
 

@@ -3,6 +3,7 @@ package eu.solven.holymolap.cube.cellset;
 import org.roaringbitmap.RoaringBitmap;
 
 import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
+import eu.solven.holymolap.cube.table.IHolyDictionarizedTable;
 import eu.solven.holymolap.exception.HolyExceptionManagement;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
@@ -14,17 +15,13 @@ import eu.solven.holymolap.tools.IHasMemoryFootprint;
  * @author Benoit Lacelle
  *
  */
-public interface IHolyCellMultiSet extends IHasMemoryFootprint, IHasAxesWithCoordinates {
+public interface IHolyCellMultiSet extends IHasMemoryFootprint {
 
 	RoaringBitmap EMPTY_BITMAP = HolyExceptionManagement.immutableEmptyBitmap();
 
-	/**
-	 * 
-	 * @param axis
-	 * @param coordinate
-	 * @return the cellIndexes matching given coordinate on given axis.
-	 */
-	RoaringBitmap getCoordinateToCells(int axisIndex, long coordinateRef);
+	IHasAxesWithCoordinates getAxesWithCoordinates();
+
+	IHolyDictionarizedTable getTable();
 
 	/**
 	 * 
@@ -32,27 +29,14 @@ public interface IHolyCellMultiSet extends IHasMemoryFootprint, IHasAxesWithCoor
 	 * @param coordinate
 	 * @return the cellIndexes matching given coordinate on given axis.
 	 */
+	@Deprecated
 	default RoaringBitmap getCoordinateToBitmap(String axis, Object coordinate) {
-		int axisIndex = getAxisIndex(axis);
+		int axisIndex = getAxesWithCoordinates().getAxisIndex(axis);
 		if (axisIndex < 0) {
 			return HolyExceptionManagement.immutableEmptyBitmap();
 		}
-		long coordinateRef = getCoordinateRef(axis, coordinate);
-		return getCoordinateToCells(axisIndex, coordinateRef);
+		long coordinateRef = getAxesWithCoordinates().getCoordinateRef(axis, coordinate);
+		return getTable().getCoordinateToRows(axisIndex, coordinateRef);
 	}
 
-	/**
-	 * 
-	 * @param cellIndex
-	 *            the index of the cell to consider. A cell is defined by coordinate along all axes.
-	 * @param axesIndexes
-	 *            the axes for which we are interested.
-	 * @return the coordinatesRefs of given cell for given axes. The array has same size as input axesIndexes
-	 */
-	long[] getCellCoordinates(long cellIndex, int... axesIndexes);
-
-	@Deprecated
-	default long getCellCoordinateRef(long cellIndex, int axisIndex) {
-		return getCellCoordinates(cellIndex, axisIndex)[0];
-	}
 }

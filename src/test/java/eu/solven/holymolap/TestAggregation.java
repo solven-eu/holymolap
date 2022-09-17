@@ -16,8 +16,8 @@ import com.google.common.collect.ImmutableSet;
 
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.aggregates.EmptyHolyAggregateTableDefinition;
-import eu.solven.holymolap.cube.aggregates.IHolyAggregateTableDefinition;
+import eu.solven.holymolap.cube.aggregates.EmptyHolyMeasureTableDefinition;
+import eu.solven.holymolap.cube.aggregates.IHolyMeasuresTableDefinition;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.EmptyAggregationQuery;
@@ -28,6 +28,7 @@ import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.ISinkContext;
 import eu.solven.holymolap.sink.ObjectOnlySinkContext;
+import eu.solven.holymolap.sink.record.EmptyHolyRecord;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
@@ -78,7 +79,7 @@ public class TestAggregation {
 		HolyCube cube = new HolyCube();
 
 		Assert.assertEquals(0, cube.getNbRows());
-		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().axes());
+		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().getAxesWithCoordinates().axes());
 
 		for (IAggregationQuery query : getAllQueries()) {
 			Assert.assertEquals(new TreeMap<>(),
@@ -91,13 +92,13 @@ public class TestAggregation {
 	public void testAddOneEmptyEntry() {
 		ObjectOnlySinkContext context = new ObjectOnlySinkContext(new String[] {});
 
-		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
-		IHolyCube cube = sink.sink(context, new FastEntry(new Object[] {}));
+		IHolyCube cube = sink.sink(context, EmptyHolyRecord.INSTANCE);
 
 		Assert.assertEquals(1, cube.getNbRows());
-		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().axes());
+		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().getAxesWithCoordinates().axes());
 
 		for (IAggregationQuery query : getAllQueries()) {
 			Assert.assertEquals(new TreeMap<>(),
@@ -109,13 +110,14 @@ public class TestAggregation {
 
 	@Test
 	public void testAddOneEntryAggregateNotDoubleKey() {
-		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 		IHolyCube cube = sink.sink(new ObjectOnlySinkContext(new String[] { FIRST_KEY }),
-				new FastEntry(new Object[] { FIRST_VALUE }));
+				new FastEntry(Arrays.asList(FIRST_KEY), new Object[] { FIRST_VALUE }));
 
 		Assert.assertEquals(1, cube.getNbRows());
-		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY)), cube.getCellSet().axes());
+		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY)),
+				cube.getCellSet().getAxesWithCoordinates().axes());
 
 		Assert.assertEquals(new TreeMap<>(),
 				AggregateHelper.cumulateInNavigableMap(cube,
@@ -141,12 +143,14 @@ public class TestAggregation {
 	public void testAddOneEntryAggregateDoubleKey() {
 		ISinkContext context = new ObjectOnlySinkContext(new String[] { FIRST_KEY, DOUBLE_FIRSY_KEY });
 
-		IHolyAggregateTableDefinition definitions = new EmptyHolyAggregateTableDefinition();
+		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
-		IHolyCube cube = sink.sink(context, new FastEntry(new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }));
+		IHolyCube cube = sink.sink(context,
+				new FastEntry(Arrays.asList(FIRST_KEY), new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }));
 
 		Assert.assertEquals(1, cube.getNbRows());
-		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)), cube.getCellSet().axes());
+		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)),
+				cube.getCellSet().getAxesWithCoordinates().axes());
 
 		Assert.assertEquals(new TreeMap<>(),
 				AggregateHelper.cumulateInNavigableMap(cube,

@@ -1,6 +1,6 @@
 package eu.solven.holymolap.cube.mutable;
 
-import eu.solven.holymolap.cube.immutable.IScannableDoubleAggregatesColumn;
+import eu.solven.holymolap.cube.immutable.IScannableDoubleMeasureColumn;
 
 /**
  * Enable accumulating doubles
@@ -12,6 +12,6 @@ public interface IMutableDoubleAggregatesColumn {
 
 	void aggregateRow(int rowIndex, double contribution);
 
-	IScannableDoubleAggregatesColumn flush();
+	IScannableDoubleMeasureColumn flush();
 
 }

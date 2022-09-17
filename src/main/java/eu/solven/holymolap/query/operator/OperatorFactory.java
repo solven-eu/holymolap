@@ -4,9 +4,10 @@ import eu.solven.holymolap.stable.v1.IAggregatedAxis;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
 
-public class OperatorFactory {
+public class OperatorFactory implements IOperatorFactory {
 	public static final String SUM = "SUM";
 
+	@Override
 	public IDoubleBinaryOperator getDoubleBinaryOperator(String operator) {
 		if (SUM.equalsIgnoreCase(operator)) {
 			return IStandardOperators.SUM;

@@ -1,6 +1,6 @@
-package eu.solven.holymolap.sink;
+package eu.solven.holymolap.cube.immutable;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -22,16 +22,16 @@ public interface IAxisCoordinatesDictionary {
 	 * @param value
 	 * @return the index for given coordinate, else NOT_INDEXED
 	 */
-	long getCoordinateIndex(Object value);
+	long getCoordinateRef(Object value);
 
 	/**
 	 * 
 	 * @param value
 	 * @return the index of given coordinate, indexing it if it is not yet indexed
 	 */
-	long mapCoordinateIndex(Object value);
+	// long mapCoordinateIndex(Object value);
 
-	Object getCoordinate(long valueIndex);
+	Object getCoordinate(long coordinateRef);
 
-	List<?> coordinates();
+	Collection<?> coordinates();
 }

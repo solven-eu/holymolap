@@ -1,4 +1,4 @@
-package eu.solven.holymolap;
+package eu.solven.holymolap.cube.table;
 
 import org.roaringbitmap.RoaringBitmap;
 
@@ -10,13 +10,13 @@ public class EmptyHolyDictionarizedTable implements IHolyDictionarizedTable {
 		return 0;
 	}
 
-	@Override
-	public long getAxisCardinality(int axisIndex) {
-		return -1;
-	}
+	// @Override
+	// public long getAxisCardinality(int axisIndex) {
+	// return -1;
+	// }
 
 	@Override
-	public RoaringBitmap getCoordinateToRows(int axisIndex, long coordinateRef) {
+	public RoaringBitmap getCoordinateToRows(int[] axesIndexes, long[] valuesRefs) {
 		return HolyExceptionManagement.immutableEmptyBitmap();
 	}
 

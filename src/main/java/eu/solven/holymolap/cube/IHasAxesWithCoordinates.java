@@ -12,6 +12,8 @@ public interface IHasAxesWithCoordinates extends IHasNavigableAxes, IHasMemoryFo
 
 	long NOT_INDEXED = -1;
 
+	long getCardinality(int axisIndex);
+
 	/**
 	 * 
 	 * @param axisIndex

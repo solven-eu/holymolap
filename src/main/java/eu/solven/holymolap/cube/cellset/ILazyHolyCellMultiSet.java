@@ -33,7 +33,7 @@ public interface ILazyHolyCellMultiSet extends IHolyCellMultiSet {
 		List<ListenableFuture<?>> futures = new ArrayList<>();
 
 		for (String axis : axes) {
-			int axisIndex = getAxisIndex(axis);
+			int axisIndex = getAxesWithCoordinates().getAxisIndex(axis);
 
 			futures.add(startIndexing(axisIndex));
 		}

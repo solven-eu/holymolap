@@ -3,12 +3,20 @@ package eu.solven.holymolap.aggregate;
 import org.roaringbitmap.RoaringBitmap;
 
 public class RawCoordinatesToBitmap {
-	public final long[] axisIndexToValueIndex;
-	public final RoaringBitmap matchingRows;
+	final RoaringBitmap matchingRows;
+	final long[] valueRefs;
 
-	public RawCoordinatesToBitmap(RoaringBitmap matchingRows, long[] valueIndexes) {
+	public RawCoordinatesToBitmap(RoaringBitmap matchingRows, long[] valueRefs) {
 		this.matchingRows = matchingRows;
-		this.axisIndexToValueIndex = valueIndexes;
+		this.valueRefs = valueRefs;
+	}
+
+	public RoaringBitmap getMatchingRows() {
+		return matchingRows;
+	}
+
+	public long[] getValueRefs() {
+		return valueRefs;
 	}
 
 }

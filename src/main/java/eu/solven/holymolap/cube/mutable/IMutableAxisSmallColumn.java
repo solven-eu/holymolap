@@ -1,10 +1,14 @@
-package eu.solven.holymolap.cube.immutable;
+package eu.solven.holymolap.cube.mutable;
 
-import java.util.function.Consumer;
+public interface IMutableAxisSmallColumn {
 
-public interface IScannableAxisColumn {
+	IMutableAxisSmallDictionarySink getCoordinateToIndex();
 
-	void acceptCoordinates(Consumer<Object> coordinateConsumer);
+	int[] getRowToIndex();
+
+	void appendCoordinate(Object coordinate);
+
+	void appendCoordinateIndex(int coordinateRef);
 
 	/**
 	 * 
@@ -18,4 +22,5 @@ public interface IScannableAxisColumn {
 	 * @return the number of rows having encountered an issue.
 	 */
 	long getBrokenRows();
+
 }

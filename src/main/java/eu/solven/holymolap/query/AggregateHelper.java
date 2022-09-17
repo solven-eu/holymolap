@@ -20,6 +20,7 @@ import eu.solven.holymolap.aggregate.NicePointToAggregates;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
 import eu.solven.holymolap.aggregate.RawPointToAggregates;
 import eu.solven.holymolap.comparable.NavigableMapComparator;
+import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.query.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IAggregatedAxis;
@@ -44,33 +45,33 @@ public class AggregateHelper {
 
 	protected static <T> Function<RawCoordinatesToBitmap, T> rowsToAggregates(final IHolyCube cube,
 			final IAggregationLogic<T> aggregationLogic) {
-		return coordinatesToRows -> aggregationLogic.aggregateTo(cube,
-				HolyIterator.toLongIterator(coordinatesToRows.matchingRows.getIntIterator()),
-				coordinatesToRows.axisIndexToValueIndex);
+		return coordinatesToRows -> aggregationLogic.aggregateTo(cube.getMeasuresTable(),
+				HolyIterator.toLongIterator(coordinatesToRows.getMatchingRows().getIntIterator()),
+				coordinatesToRows.getValueRefs());
 	}
 
 	protected static <S, T> Function<RawCoordinatesToBitmap, RawPointToAggregates<T>> rowsToAggregates2(
 			final IHolyCube cube,
-			final IAggregationQuery query,
 			final IAggregationLogic<T> aggregationLogic) {
 		final Function<RawCoordinatesToBitmap, T> baseFunction = rowsToAggregates(cube, aggregationLogic);
 
-		return coordinatesToRows -> new RawPointToAggregates<T>(baseFunction.apply(coordinatesToRows),
-				coordinatesToRows.axisIndexToValueIndex);
+		return coordinatesToRows -> new RawPointToAggregates<T>(coordinatesToRows.getValueRefs(),
+				baseFunction.apply(coordinatesToRows));
 	}
 
 	protected static Function<long[], NavigableMap<String, Object>> rawToNiceCoordinates(final IHolyCube cube,
 			final IAggregationQuery query) {
+		IHasAxesWithCoordinates axesWithCoordinates = cube.getCellSet().getAxesWithCoordinates();
 		final int[] wildcardIndexes =
-				computeWildcardIndexes(query.getAxes(), new TreeSet<Object>(cube.getCellSet().axes()));
+				computeWildcardIndexes(query.getAxes(), new TreeSet<Object>(axesWithCoordinates.axes()));
 
 		return valueIndexes -> {
 			NavigableMap<String, Object> coordinates = new ConcurrentSkipListMap<>();
 
 			for (int i = 0; i < wildcardIndexes.length; i++) {
 				int axisIndex = wildcardIndexes[i];
-				String key = cube.getCellSet().indexToAxis(axisIndex);
-				coordinates.put(key, cube.getCellSet().dereferenceCoordinate(axisIndex, valueIndexes[i]));
+				String key = axesWithCoordinates.indexToAxis(axisIndex);
+				coordinates.put(key, axesWithCoordinates.dereferenceCoordinate(axisIndex, valueIndexes[i]));
 			}
 
 			return coordinates;
@@ -80,10 +81,10 @@ public class AggregateHelper {
 	protected static <T> Function<RawPointToAggregates<T>, NicePointToAggregates<T>> rawToNicePoint(
 			final IHolyCube cube,
 			final IAggregationQuery query) {
-		final Function<long[], NavigableMap<String, Object>> baseFunction = rawToNiceCoordinates(cube, query);
+		final Function<long[], NavigableMap<String, Object>> rawToNice = rawToNiceCoordinates(cube, query);
 
-		return pointToAggregates -> new NicePointToAggregates<T>(pointToAggregates.keyToAggregates,
-				baseFunction.apply(pointToAggregates.coordinatesRef));
+		return pointToAggregates -> new NicePointToAggregates<T>(pointToAggregates.getMeasureValue(),
+				rawToNice.apply(pointToAggregates.getCoordinatesRef()));
 	}
 
 	public static <T> NavigableMap<? extends NavigableMap<?, ?>, ? extends T> cumulateInNavigableMap(
@@ -94,11 +95,12 @@ public class AggregateHelper {
 		aggregations.forEach(
 				aggregatedAxis -> aggregatedToOperators.put(aggregatedAxis.getAxis(), aggregatedAxis.getOperator()));
 
-		OperatorFactory operatorFactory = new OperatorFactory();
+		// OperatorFactory operatorFactory = new OperatorFactory();
 		Multimap<String, IAggregationLogic<?>> aggregatedToLogic = MultimapBuilder.treeKeys().arrayListValues().build();
-		aggregatedToOperators.forEach((aggregated, operatorKey) -> {
-			aggregatedToLogic.put(aggregated,
-					new SingleColumnAggregationLogic(aggregated, operatorFactory.getDoubleBinaryOperator(operatorKey)));
+
+		aggregations.forEach(aggregatesAxis -> {
+			aggregatedToLogic.put(aggregatesAxis.getAxis(),
+					SingleColumnAggregationLogic.search(cube.getMeasuresTable().getDefinition(), aggregatesAxis));
 		});
 
 		if (aggregatedToLogic.size() != 2) {
@@ -109,7 +111,7 @@ public class AggregateHelper {
 		Iterator<RawCoordinatesToBitmap> rawIterator = queryToAggregateIterator(cube, query);
 
 		Function<RawCoordinatesToBitmap, RawPointToAggregates<T>> rowsToAggregates2 =
-				rowsToAggregates2(cube, query, aggregationLogic);
+				rowsToAggregates2(cube, aggregationLogic);
 		Function<RawPointToAggregates<T>, NicePointToAggregates<T>> rawToNicePoint = rawToNicePoint(cube, query);
 
 		Iterator<NicePointToAggregates<T>> niceIterator =
@@ -120,12 +122,14 @@ public class AggregateHelper {
 				new ConcurrentSkipListMap<NavigableMap<?, ?>, T>(NavigableMapComparator.INSTANCE);
 
 		Consumer<NicePointToAggregates<T>> pointAggregatesConsumer = pointToAggregates -> {
-			T previous = coordinateToAggregate.put(pointToAggregates.keyToValue, pointToAggregates.keyToAggregates);
+			NavigableMap<String, Object> keyToValue = pointToAggregates.getKeyToValue();
+			T keyToAggregates = pointToAggregates.getKeyToAggregates();
+			T previous = coordinateToAggregate.put(keyToValue, keyToAggregates);
 
 			if (previous != null) {
-				throw new IllegalStateException("We encountered twice the same point: " + pointToAggregates.keyToValue
+				throw new IllegalStateException("We encountered twice the same point: " + keyToValue
 						+ " associated to "
-						+ pointToAggregates.keyToAggregates
+						+ keyToAggregates
 						+ " and "
 						+ previous);
 			}

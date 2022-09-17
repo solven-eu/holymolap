@@ -1,4 +1,4 @@
-package eu.solven.holymolap.cube.cellset;
+package eu.solven.holymolap.indexation;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -12,9 +12,11 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import eu.solven.holymolap.IHolyDictionarizedTable;
+import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
+import eu.solven.holymolap.cube.table.IHolyDictionarizedTable;
 import it.unimi.dsi.fastutil.longs.LongList;
 
+@Deprecated
 @ManagedResource
 public class PositionIndexBuilder {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(PositionIndexBuilder.class);
@@ -41,10 +43,11 @@ public class PositionIndexBuilder {
 	}
 
 	public ListenableFuture<?> buildIndex(int axisIndex,
+			IHasAxesWithCoordinates axesWithCoordinates,
 			IHolyDictionarizedTable dictionarizedTable,
 			LongList cellIndexToCoordinateRef,
 			Runnable onAxisIndexed) {
-		buildIndex(axisIndex, dictionarizedTable, cellIndexToCoordinateRef);
+		buildIndex(axisIndex, axesWithCoordinates, dictionarizedTable, cellIndexToCoordinateRef);
 
 		onAxisIndexed.run();
 		// TODO: we should be able to tell indexed rows while indexing
@@ -61,10 +64,13 @@ public class PositionIndexBuilder {
 	 * @param dataHolder
 	 * @param cellRowToCoordinateRef
 	 */
-	public void buildIndex(int axisIndex, IHolyDictionarizedTable dataHolder, LongList cellRowToCoordinateRef) {
+	public void buildIndex(int axisIndex,
+			IHasAxesWithCoordinates axesWithCoordinates,
+			IHolyDictionarizedTable dataHolder,
+			LongList cellRowToCoordinateRef) {
 		LOGGER.debug("Start building index for axis {}", axisIndex);
 
-		for (int coordinateRef = 0; coordinateRef < dataHolder.getAxisCardinality(axisIndex); coordinateRef++) {
+		for (int coordinateRef = 0; coordinateRef < axesWithCoordinates.getCardinality(axisIndex); coordinateRef++) {
 			RoaringBitmap cellIndexes = dataHolder.getCoordinateToRows(axisIndex, coordinateRef);
 
 			int nbRows = cellIndexes.getCardinality();
@@ -82,7 +88,7 @@ public class PositionIndexBuilder {
 
 					long previousValueIndex = cellRowToCoordinateRef.set(nextCellIndex, coordinateRef);
 
-					if (previousValueIndex != IHolyCellMultiSet.NOT_INDEXED) {
+					if (previousValueIndex != IHasAxesWithCoordinates.NOT_INDEXED) {
 						if (previousValueIndex != coordinateRef) {
 							throw new IllegalStateException("The row " + nextCellIndex
 									+ " is associated to several values for the same row: "

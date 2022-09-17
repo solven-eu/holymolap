@@ -3,7 +3,7 @@ package eu.solven.holymolap.cube.aggregates;
 import java.util.List;
 import java.util.function.DoubleConsumer;
 
-import eu.solven.holymolap.cube.immutable.IScannableDoubleAggregatesColumn;
+import eu.solven.holymolap.cube.immutable.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.doubles.DoubleIterators;
@@ -14,16 +14,16 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  * @author Benoit Lacelle
  *
  */
-public class HolyAggregateTable implements IHolyAggregateTable {
-	final IHolyAggregateTableDefinition definition;
+public class HolyMeasuresTable implements IHolyMeasureTable {
+	final IHolyMeasuresTableDefinition definition;
 
 	/**
 	 * For each key, gives the value as double, which would be valid only where the key-bitmap is true
 	 */
-	protected final List<? extends IScannableDoubleAggregatesColumn> axisIndexToDoubles;
+	protected final List<? extends IScannableDoubleMeasureColumn> axisIndexToDoubles;
 
-	public HolyAggregateTable(IHolyAggregateTableDefinition definition,
-			List<? extends IScannableDoubleAggregatesColumn> axisIndexToDoubles) {
+	public HolyMeasuresTable(IHolyMeasuresTableDefinition definition,
+			List<? extends IScannableDoubleMeasureColumn> axisIndexToDoubles) {
 		this.definition = definition;
 		this.axisIndexToDoubles = axisIndexToDoubles;
 	}
@@ -36,7 +36,7 @@ public class HolyAggregateTable implements IHolyAggregateTable {
 			return DoubleIterators.EMPTY_ITERATOR;
 		}
 
-		IScannableDoubleAggregatesColumn doubles = axisIndexToDoubles.get(axisIndex);
+		IScannableDoubleMeasureColumn doubles = axisIndexToDoubles.get(axisIndex);
 		if (doubles == null) {
 			return DoubleIterators.EMPTY_ITERATOR;
 		}
@@ -59,7 +59,7 @@ public class HolyAggregateTable implements IHolyAggregateTable {
 	}
 
 	@Override
-	public IHolyAggregateTableDefinition getDefinition() {
+	public IHolyMeasuresTableDefinition getDefinition() {
 		return definition;
 	}
 }
