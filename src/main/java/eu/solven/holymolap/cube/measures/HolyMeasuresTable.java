@@ -1,4 +1,4 @@
-package eu.solven.holymolap.cube.aggregates;
+package eu.solven.holymolap.cube.measures;
 
 import java.util.List;
 import java.util.function.DoubleConsumer;
@@ -14,7 +14,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  * @author Benoit Lacelle
  *
  */
-public class HolyMeasuresTable implements IHolyMeasureTable {
+public class HolyMeasuresTable implements IHolyMeasuresTable {
 	final IHolyMeasuresTableDefinition definition;
 
 	/**

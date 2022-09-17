@@ -2,9 +2,9 @@ package eu.solven.holymolap.stable.v1.pojo;
 
 import java.util.Objects;
 
-import eu.solven.holymolap.stable.v1.IAggregatedAxis;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
-public class AggregatedAxis implements IAggregatedAxis {
+public class AggregatedAxis implements IMeasuredAxis {
 
 	final String axis;
 	final String operator;

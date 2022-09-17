@@ -1,6 +1,6 @@
 package eu.solven.holymolap.query;
 
-import eu.solven.holymolap.cube.aggregates.IHolyMeasureTable;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresTable;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
 public interface IAggregationLogic<T> {
@@ -14,6 +14,6 @@ public interface IAggregationLogic<T> {
 	 * @param coordinateIndexes
 	 * @return
 	 */
-	T aggregateTo(IHolyMeasureTable measuresTable, LongIterator rowsIterator, long[] coordinateIndexes);
+	T aggregateTo(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, long[] coordinateIndexes);
 
 }

@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.aggregates.IHolyMeasuresTableDefinition;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
 import eu.solven.holymolap.cube.mutable.IMutableHolyCube;
 import eu.solven.holymolap.cube.mutable.MutableHolyCube;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;

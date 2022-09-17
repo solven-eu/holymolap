@@ -38,7 +38,7 @@ public interface IAggregationQuery extends IHasFilters, IHasAxes, IHasAggregatio
 	 */
 	IAggregationQuery addAggregations(IHasAggregations hasAggregations);
 
-	default IAggregationQuery addAggregations(IAggregatedAxis first, IAggregatedAxis... rest) {
+	default IAggregationQuery addAggregations(IMeasuredAxis first, IMeasuredAxis... rest) {
 		return addAggregations(() -> Lists.asList(first, rest));
 	}
 }

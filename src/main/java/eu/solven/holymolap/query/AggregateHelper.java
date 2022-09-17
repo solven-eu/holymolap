@@ -23,7 +23,7 @@ import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.query.operator.OperatorFactory;
-import eu.solven.holymolap.stable.v1.IAggregatedAxis;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.utils.HolyIterator;
 
@@ -90,7 +90,7 @@ public class AggregateHelper {
 	public static <T> NavigableMap<? extends NavigableMap<?, ?>, ? extends T> cumulateInNavigableMap(
 			final IHolyCube cube,
 			final IAggregationQuery query) {
-		List<IAggregatedAxis> aggregations = query.getAggregations();
+		List<IMeasuredAxis> aggregations = query.getAggregations();
 		SetMultimap<String, String> aggregatedToOperators = MultimapBuilder.treeKeys().hashSetValues().build();
 		aggregations.forEach(
 				aggregatedAxis -> aggregatedToOperators.put(aggregatedAxis.getAxis(), aggregatedAxis.getOperator()));

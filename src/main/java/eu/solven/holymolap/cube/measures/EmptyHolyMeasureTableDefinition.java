@@ -1,9 +1,9 @@
-package eu.solven.holymolap.cube.aggregates;
+package eu.solven.holymolap.cube.measures;
 
 import java.util.Collections;
 import java.util.List;
 
-import eu.solven.holymolap.stable.v1.IAggregatedAxis;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
 public class EmptyHolyMeasureTableDefinition implements IHolyMeasuresTableDefinition {
 
@@ -12,13 +12,13 @@ public class EmptyHolyMeasureTableDefinition implements IHolyMeasuresTableDefini
 		return Collections.emptyList();
 	}
 
-	@Override
-	public int getMeasureIndex(IHolyMeasureColumnMeta aggregation) {
-		return -1;
-	}
+	// @Override
+	// public int getMeasureIndex(IHolyMeasureColumnMeta aggregation) {
+	// return -1;
+	// }
 
 	@Override
-	public int findMeasureIndex(IAggregatedAxis aggregatesAxis) {
+	public int findMeasureIndex(IMeasuredAxis aggregatesAxis) {
 		return -1;
 	}
 

@@ -16,8 +16,8 @@ import com.google.common.collect.ImmutableSet;
 
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.aggregates.EmptyHolyMeasureTableDefinition;
-import eu.solven.holymolap.cube.aggregates.IHolyMeasuresTableDefinition;
+import eu.solven.holymolap.cube.measures.EmptyHolyMeasureTableDefinition;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.EmptyAggregationQuery;

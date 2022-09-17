@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-import eu.solven.holymolap.stable.v1.IAggregatedAxis;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasAggregations;
@@ -40,13 +40,13 @@ public class SimpleAggregationQuery implements IAggregationQuery {
 	}
 
 	@Override
-	public List<IAggregatedAxis> getAggregations() {
+	public List<IMeasuredAxis> getAggregations() {
 		return hasAggregations.getAggregations();
 	}
 
 	@Override
 	public IAggregationQuery addAggregations(IHasAggregations additionalAggregations) {
-		IHasAggregations mergedAggregations = () -> ImmutableList.<IAggregatedAxis>builder()
+		IHasAggregations mergedAggregations = () -> ImmutableList.<IMeasuredAxis>builder()
 				.addAll(getAggregations())
 				.addAll(additionalAggregations.getAggregations())
 				.build();

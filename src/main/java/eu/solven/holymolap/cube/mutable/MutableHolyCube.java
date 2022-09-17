@@ -23,9 +23,6 @@ import eu.solven.holymolap.axes.AxisWithCoordinates;
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.aggregates.HolyMeasuresTable;
-import eu.solven.holymolap.cube.aggregates.IHolyMeasureTable;
-import eu.solven.holymolap.cube.aggregates.IHolyMeasuresTableDefinition;
 import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.cube.immutable.AxisCoordinatesDictionary;
@@ -33,12 +30,15 @@ import eu.solven.holymolap.cube.immutable.IAxisCoordinatesDictionary;
 import eu.solven.holymolap.cube.immutable.IScannableAxisSmallColumn;
 import eu.solven.holymolap.cube.immutable.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.cube.immutable.ImmutableAxisColumn;
+import eu.solven.holymolap.cube.measures.HolyMeasuresTable;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresTable;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
 import eu.solven.holymolap.cube.table.HolyDictionarizedTable;
 import eu.solven.holymolap.cube.table.IHolyDictionarizedTable;
 import eu.solven.holymolap.query.operator.OperatorFactory;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
 import eu.solven.holymolap.sink.record.IHolyRecord;
-import eu.solven.holymolap.stable.v1.IAggregatedAxis;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -55,7 +55,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MutableHolyCube.class);
 
 	final IHolyMeasuresTableDefinition aggregations;
-	final Map<IAggregatedAxis, IMutableDoubleAggregatesColumn> aggregationToColumn;
+	final Map<IMeasuredAxis, IMutableDoubleAggregatesColumn> aggregationToColumn;
 
 	// The Set of axes with at least one cell
 	final Set<String> axesNames;
@@ -72,7 +72,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	final AtomicBoolean closed = new AtomicBoolean();
 
 	protected MutableHolyCube(IHolyMeasuresTableDefinition aggregations,
-			Map<IAggregatedAxis, IMutableDoubleAggregatesColumn> aggregationToColumn,
+			Map<IMeasuredAxis, IMutableDoubleAggregatesColumn> aggregationToColumn,
 			List<String> orderedAxis,
 			Map<String, IMutableAxisSmallColumn> axisToColumn,
 			Object2IntMap<IntList> cellToRow) {
@@ -95,7 +95,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	}
 
 	/**
-	 * The {@link IAggregatedAxis} are provided as configuration
+	 * The {@link IMeasuredAxis} are provided as configuration
 	 * 
 	 * @param aggregations
 	 */
@@ -121,18 +121,18 @@ public class MutableHolyCube implements IMutableHolyCube {
 		return new CopyOnWriteArrayList<String>();
 	}
 
-	private static Map<IAggregatedAxis, IMutableDoubleAggregatesColumn> prepareAggregationColumns(
+	private static Map<IMeasuredAxis, IMutableDoubleAggregatesColumn> prepareAggregationColumns(
 			IHolyMeasuresTableDefinition aggregations) {
 		OperatorFactory operatorFactory = new OperatorFactory();
 
 		return aggregations.measures()
 				.stream()
-				.collect(Collectors.toMap(a -> a.asAggregatedAxis(),
-						a -> provisionAggregateColumn(operatorFactory, a.asAggregatedAxis())));
+				.collect(Collectors.toMap(a -> a.asMeasuredAxis(),
+						a -> provisionAggregateColumn(operatorFactory, a.asMeasuredAxis())));
 	}
 
 	protected static MutableAggregatesColumn provisionAggregateColumn(OperatorFactory operatorFactory,
-			IAggregatedAxis a) {
+			IMeasuredAxis a) {
 		return new MutableAggregatesColumn(operatorFactory.getDoubleBinaryOperator(a.getOperator()));
 	}
 
@@ -373,7 +373,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 		List<IScannableDoubleMeasureColumn> aggregatedColumns = aggregations.measures()
 				.stream()
-				.map(def -> aggregationToColumn.get(def.asAggregatedAxis()))
+				.map(def -> aggregationToColumn.get(def.asMeasuredAxis()))
 				.map(mutableColumn -> {
 					if (mutableColumn == null) {
 						return null;
@@ -383,7 +383,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 				})
 				.collect(Collectors.toList());
 
-		IHolyMeasureTable aggregateTable = new HolyMeasuresTable(aggregations, aggregatedColumns);
+		IHolyMeasuresTable aggregateTable = new HolyMeasuresTable(aggregations, aggregatedColumns);
 		return new HolyCube(nbRows, cellSet, aggregateTable);
 	}
 

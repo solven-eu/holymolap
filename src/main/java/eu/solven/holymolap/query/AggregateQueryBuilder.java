@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import eu.solven.holymolap.query.operator.OperatorFactory;
-import eu.solven.holymolap.stable.v1.IAggregatedAxis;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.AxesFilterAnd;
 
 public class AggregateQueryBuilder {
@@ -20,7 +20,7 @@ public class AggregateQueryBuilder {
 	protected final Map<String, Object> filters = new ConcurrentSkipListMap<>();
 
 	// By default, no aggregation
-	protected final List<IAggregatedAxis> aggregatesKeys = new CopyOnWriteArrayList<>();
+	protected final List<IMeasuredAxis> aggregatesKeys = new CopyOnWriteArrayList<>();
 
 	public AggregateQueryBuilder addWildcard(String wildcard) {
 		wildcards.add(wildcard);
@@ -34,7 +34,7 @@ public class AggregateQueryBuilder {
 		return this;
 	}
 
-	public AggregateQueryBuilder addAggregation(IAggregatedAxis aggregatedAxis) {
+	public AggregateQueryBuilder addAggregation(IMeasuredAxis aggregatedAxis) {
 		aggregatesKeys.add(aggregatedAxis);
 
 		return this;

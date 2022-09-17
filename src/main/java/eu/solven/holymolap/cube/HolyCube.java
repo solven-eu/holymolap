@@ -10,10 +10,10 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
 import eu.solven.holymolap.axes.EmptyAxisWithCoordinates;
-import eu.solven.holymolap.cube.aggregates.EmptyHolyMeasureTable;
-import eu.solven.holymolap.cube.aggregates.IHolyMeasureTable;
 import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
+import eu.solven.holymolap.cube.measures.EmptyHolyMeasuresTable;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresTable;
 import eu.solven.holymolap.cube.table.EmptyHolyDictionarizedTable;
 import eu.solven.holymolap.exception.HolyExceptionManagement;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
@@ -24,7 +24,7 @@ import eu.solven.holymolap.stable.v1.filters.IAxesFilterOr;
 
 /**
  * The default implementation of an {@link IHolyCube}. It relies on an {@link IHolyCellMultiSet} describing the cells,
- * and an {@link IHolyMeasureTable} describing the aggregates.
+ * and an {@link IHolyMeasuresTable} describing the aggregates.
  * 
  * @author Benoit Lacelle
  *
@@ -36,9 +36,9 @@ public class HolyCube implements IHolyCube {
 	protected final int nbRows;
 
 	protected final IHolyCellMultiSet cellSet;
-	protected final IHolyMeasureTable aggregateTable;
+	protected final IHolyMeasuresTable aggregateTable;
 
-	public HolyCube(int nbRows, IHolyCellMultiSet cellSet, IHolyMeasureTable aggregateTable) {
+	public HolyCube(int nbRows, IHolyCellMultiSet cellSet, IHolyMeasuresTable aggregateTable) {
 		this.nbRows = nbRows;
 		this.cellSet = cellSet;
 		this.aggregateTable = aggregateTable;
@@ -55,7 +55,7 @@ public class HolyCube implements IHolyCube {
 	public HolyCube() {
 		this(0,
 				new HolyBitmapCellMultiSet(new EmptyAxisWithCoordinates(), new EmptyHolyDictionarizedTable()),
-				new EmptyHolyMeasureTable());
+				new EmptyHolyMeasuresTable());
 	}
 
 	@Override
@@ -148,7 +148,7 @@ public class HolyCube implements IHolyCube {
 	}
 
 	@Override
-	public IHolyMeasureTable getMeasuresTable() {
+	public IHolyMeasuresTable getMeasuresTable() {
 		return aggregateTable;
 	}
 }

@@ -1,4 +1,4 @@
-package eu.solven.holymolap.cube.aggregates;
+package eu.solven.holymolap.cube.measures;
 
 import java.util.function.DoubleConsumer;
 
@@ -14,8 +14,8 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  * @author Benoit Lacelle
  *
  */
-public class EmptyHolyMeasureTable implements IHolyMeasureTable {
-	private static final Logger LOGGER = LoggerFactory.getLogger(EmptyHolyMeasureTable.class);
+public class EmptyHolyMeasuresTable implements IHolyMeasuresTable {
+	private static final Logger LOGGER = LoggerFactory.getLogger(EmptyHolyMeasuresTable.class);
 
 	@Override
 	public long getSizeInBytes() {

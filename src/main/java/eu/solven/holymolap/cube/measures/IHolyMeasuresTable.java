@@ -1,4 +1,4 @@
-package eu.solven.holymolap.cube.aggregates;
+package eu.solven.holymolap.cube.measures;
 
 import java.util.function.DoubleConsumer;
 
@@ -16,7 +16,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  * @author Benoit Lacelle
  *
  */
-public interface IHolyMeasureTable extends IHasMemoryFootprint {
+public interface IHolyMeasuresTable extends IHasMemoryFootprint {
 
 	IHolyMeasuresTableDefinition getDefinition();
 

@@ -8,11 +8,11 @@ import eu.solven.holymolap.query.operator.IStandardOperators;
  * @author Benoit Lacelle
  *
  */
-public interface IAggregatedAxis {
+public interface IMeasuredAxis {
 	String getAxis();
 
 	/**
-	 * See {@link IStandardOperators} for standard operators.
+	 * See {@link IStandardOperators} for standard operators (like SUM).
 	 * 
 	 * @return
 	 */
