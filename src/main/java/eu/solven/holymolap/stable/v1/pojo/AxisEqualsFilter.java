@@ -39,4 +39,9 @@ public class AxisEqualsFilter implements IAxesFilterAxisEquals {
 		return filtered;
 	}
 
+	@Override
+	public String toString() {
+		return "AxisEqualsFilter [axis=" + axis + ", filtered=" + filtered + "]";
+	}
+
 }

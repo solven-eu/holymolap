@@ -9,12 +9,12 @@ public class RawPointToAggregates<T> {
 		this.measureValue = measureValue;
 	}
 
-	public T getMeasureValue() {
-		return measureValue;
-	}
-
 	public long[] getCoordinatesRef() {
 		return coordinatesRef;
+	}
+
+	public T getMeasureValue() {
+		return measureValue;
 	}
 
 }

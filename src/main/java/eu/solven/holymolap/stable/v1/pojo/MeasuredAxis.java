@@ -4,12 +4,12 @@ import java.util.Objects;
 
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
-public class AggregatedAxis implements IMeasuredAxis {
+public class MeasuredAxis implements IMeasuredAxis {
 
 	final String axis;
 	final String operator;
 
-	public AggregatedAxis(String axis, String operator) {
+	public MeasuredAxis(String axis, String operator) {
 		this.axis = axis;
 		this.operator = operator;
 	}
@@ -34,11 +34,16 @@ public class AggregatedAxis implements IMeasuredAxis {
 		if (this == obj) {
 			return true;
 		}
-		if (!(obj instanceof AggregatedAxis)) {
+		if (!(obj instanceof MeasuredAxis)) {
 			return false;
 		}
-		AggregatedAxis other = (AggregatedAxis) obj;
+		MeasuredAxis other = (MeasuredAxis) obj;
 		return Objects.equals(axis, other.axis) && Objects.equals(operator, other.operator);
+	}
+
+	@Override
+	public String toString() {
+		return "MeasuredAxis [axis=" + axis + ", operator=" + operator + "]";
 	}
 
 }

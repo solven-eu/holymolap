@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -14,9 +15,11 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableSet;
 
+import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.measures.EmptyHolyMeasureTableDefinition;
+import eu.solven.holymolap.cube.measures.HolyMeasureTableDefinition;
 import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
@@ -31,7 +34,7 @@ import eu.solven.holymolap.sink.ObjectOnlySinkContext;
 import eu.solven.holymolap.sink.record.EmptyHolyRecord;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
-import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
+import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 
 public class TestAggregation {
 	public static final String FIRST_KEY = "firstKey";
@@ -84,7 +87,7 @@ public class TestAggregation {
 		for (IAggregationQuery query : getAllQueries()) {
 			Assert.assertEquals(new TreeMap<>(),
 					AggregateHelper.cumulateInNavigableMap(cube,
-							query.addAggregations(new AggregatedAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM))));
+							query.addAggregations(new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM))));
 		}
 	}
 
@@ -92,7 +95,8 @@ public class TestAggregation {
 	public void testAddOneEmptyEntry() {
 		ObjectOnlySinkContext context = new ObjectOnlySinkContext(new String[] {});
 
-		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
+		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
+		IHolyMeasuresTableDefinition definitions = new HolyMeasureTableDefinition(Arrays.asList(measuredAxis));
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		IHolyCube cube = sink.sink(context, EmptyHolyRecord.INSTANCE);
@@ -101,10 +105,13 @@ public class TestAggregation {
 		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().getAxesWithCoordinates().axes());
 
 		for (IAggregationQuery query : getAllQueries()) {
-			Assert.assertEquals(new TreeMap<>(),
+			Map<NavigableMap<?, ?>, Object> empty = new TreeMap<>(NavigableMapComparator.INSTANCE);
+			empty.put(Collections.emptyNavigableMap(), 0D);
+
+			Assert.assertEquals("query: " + query,
+					empty,
 					AggregateHelper.cumulateInNavigableMap(cube,
-							query.addAggregations(
-									() -> Arrays.asList(new AggregatedAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM)))));
+							query.addAggregations(() -> Arrays.asList(measuredAxis))));
 		}
 	}
 
@@ -122,20 +129,21 @@ public class TestAggregation {
 		Assert.assertEquals(new TreeMap<>(),
 				AggregateHelper.cumulateInNavigableMap(cube,
 						new EmptyAggregationQuery()
-								.addAggregations(new AggregatedAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM))));
+								.addAggregations(new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM))));
 
 		// There is no double on FirstKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ? extends Double> resultAsMap =
-					AggregateHelper.cumulateInNavigableMap(cube,
-							AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE)
-									.sum(FIRST_KEY)
-									.build()
-									.addAggregations(new AggregatedAxis(FIRST_KEY, OperatorFactory.SUM)));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> resultAsMap = AggregateHelper.cumulateInNavigableMap(cube,
+					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE)
+							.sum(FIRST_KEY)
+							.build()
+							.addAggregations(new MeasuredAxis(FIRST_KEY, OperatorFactory.SUM)));
 			Assertions.assertThat(resultAsMap).hasSize(1);
 
 			Assert.assertTrue(resultAsMap.containsKey(new TreeMap<>()));
-			Assert.assertEquals(IStandardOperators.SUM.neutral(), resultAsMap.get(new TreeMap<>()), 0.001D);
+			Assert.assertEquals(IStandardOperators.SUM.neutral(),
+					((Number) resultAsMap.get(new TreeMap<>())).doubleValue(),
+					0.001D);
 		}
 	}
 
@@ -155,21 +163,20 @@ public class TestAggregation {
 		Assert.assertEquals(new TreeMap<>(),
 				AggregateHelper.cumulateInNavigableMap(cube,
 						new EmptyAggregationQuery()
-								.addAggregations(new AggregatedAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM))));
+								.addAggregations(new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM))));
 
 		// THere is a single fact for DoubleKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ? extends Double> resultAsMap =
-					AggregateHelper.cumulateInNavigableMap(cube,
-							AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE)
-									.sum(DOUBLE_FIRSY_KEY)
-									.build()
-									.addAggregations(new AggregatedAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM)));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> resultAsMap = AggregateHelper.cumulateInNavigableMap(cube,
+					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE)
+							.sum(DOUBLE_FIRSY_KEY)
+							.build()
+							.addAggregations(new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM)));
 			Assertions.assertThat(resultAsMap).hasSize(1);
 
 			// https://github.com/joel-costigliola/assertj-core/issues/315
 			Assert.assertTrue(resultAsMap.containsKey(new TreeMap<>()));
-			Assert.assertEquals(DOUBLE_FIRST_VALUE, resultAsMap.get(new TreeMap<>()).doubleValue(), 0.001D);
+			Assert.assertEquals(DOUBLE_FIRST_VALUE, ((Number) resultAsMap.get(new TreeMap<>())).doubleValue(), 0.001D);
 		}
 	}
 }

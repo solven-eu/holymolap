@@ -50,4 +50,9 @@ public class AxesFilterAnd implements IAxesFilterAnd {
 		return Collections.unmodifiableList(filters);
 	}
 
+	@Override
+	public String toString() {
+		return "AxesFilterAnd [filters=" + filters + "]";
+	}
+
 }

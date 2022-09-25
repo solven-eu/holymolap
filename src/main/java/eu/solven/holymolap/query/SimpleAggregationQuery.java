@@ -45,6 +45,17 @@ public class SimpleAggregationQuery implements IAggregationQuery {
 	}
 
 	@Override
+	public String toString() {
+		// We call the getters to workaround usage of lambda
+		return "SimpleAggregationQuery [axesFilters=" + axesFilters.getFilters()
+				+ ", axes="
+				+ axes.getAxes()
+				+ ", hasAggregations="
+				+ hasAggregations.getAggregations()
+				+ "]";
+	}
+
+	@Override
 	public IAggregationQuery addAggregations(IHasAggregations additionalAggregations) {
 		IHasAggregations mergedAggregations = () -> ImmutableList.<IMeasuredAxis>builder()
 				.addAll(getAggregations())

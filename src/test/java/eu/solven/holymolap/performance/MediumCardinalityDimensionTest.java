@@ -30,7 +30,7 @@ import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.sink.record.IHolyRecord;
-import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
+import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
@@ -88,7 +88,7 @@ public class MediumCardinalityDimensionTest {
 				final AtomicInteger resultSize = new AtomicInteger();
 				AggregateHelper.consumeQueryResult(cube,
 						AggregateQueryBuilder.wildcard(axis)
-								.addAggregation(new AggregatedAxis(doubleKey, OperatorFactory.SUM))
+								.addAggregation(new MeasuredAxis(doubleKey, OperatorFactory.SUM))
 								.build(),
 						param -> resultSize.incrementAndGet());
 

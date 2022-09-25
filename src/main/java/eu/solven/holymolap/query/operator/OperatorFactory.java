@@ -2,7 +2,7 @@ package eu.solven.holymolap.query.operator;
 
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
-import eu.solven.holymolap.stable.v1.pojo.AggregatedAxis;
+import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 
 public class OperatorFactory implements IOperatorFactory {
 	public static final String SUM = "SUM";
@@ -17,6 +17,6 @@ public class OperatorFactory implements IOperatorFactory {
 	}
 
 	public static IMeasuredAxis sum(String axis) {
-		return new AggregatedAxis(axis, OperatorFactory.SUM);
+		return new MeasuredAxis(axis, OperatorFactory.SUM);
 	}
 }

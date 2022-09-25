@@ -2,11 +2,10 @@ package eu.solven.holymolap.query;
 
 import com.google.common.util.concurrent.AtomicDouble;
 
-import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.measures.IHolyMeasuresTable;
 import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
-import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
@@ -14,8 +13,12 @@ public class SingleColumnAggregationLogic implements IAggregationLogic<Double> {
 	protected final int measureIndex;
 	protected final IDoubleBinaryOperator operator;
 
-	public static IAggregationLogic<?> search(IHolyMeasuresTableDefinition definition, IMeasuredAxis aggregatesAxis) {
-		int index = definition.findMeasureIndex(aggregatesAxis);
+	public static IAggregationLogic<?> search(IHolyMeasuresTableDefinition definition, IMeasuredAxis measuredAxis) {
+		int index = definition.findMeasureIndex(measuredAxis);
+
+		if (index < 0) {
+			throw new IllegalArgumentException("Can not find " + measuredAxis + " in " + definition);
+		}
 
 		return definition.measures().get(index).getAggregationLogic();
 	}

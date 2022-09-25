@@ -67,7 +67,7 @@ public class MutableAggregatesColumn implements IMutableDoubleAggregatesColumn {
 		if (!flushed.compareAndSet(false, true)) {
 			throw new IllegalStateException("Already flushed");
 		}
-		return new ImmutableDoubleAggregatesColumn(cellToAggregate);
+		return new ImmutableDoubleAggregatesColumn(cellToAggregate, operator.neutral());
 	}
 
 }

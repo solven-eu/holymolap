@@ -20,9 +20,17 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
 // https://lemire.me/blog/2017/11/10/how-should-you-build-a-high-performance-column-store-for-the-2020s/
 public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureColumn {
 	final DoubleList cellToAggregate;
+	final double neutral;
 
-	public ImmutableDoubleAggregatesColumn(DoubleList cellToAggregate) {
+	/**
+	 * 
+	 * @param cellToAggregate
+	 * @param neutral
+	 *            may be returned while iterating over rows without an aggregate
+	 */
+	public ImmutableDoubleAggregatesColumn(DoubleList cellToAggregate, double neutral) {
 		this.cellToAggregate = cellToAggregate;
+		this.neutral = neutral;
 	}
 
 	@Override
@@ -47,6 +55,10 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 			@Override
 			public double nextDouble() {
 				long row = cellsIterator.nextLong();
+
+				if (row >= cellToAggregate.size() || row < 0L) {
+					return neutral;
+				}
 
 				return cellToAggregate.getDouble(Ints.checkedCast(row));
 			}

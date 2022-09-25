@@ -43,4 +43,9 @@ public class AxesFilterOr implements IAxesFilterOr {
 		return filters;
 	}
 
+	@Override
+	public String toString() {
+		return "AxesFilterOr [filters=" + filters + "]";
+	}
+
 }

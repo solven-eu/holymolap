@@ -44,18 +44,18 @@ public class HolyCube implements IHolyCube {
 		this.aggregateTable = aggregateTable;
 	}
 
-	@Override
-	public String toString() {
-		return "#Rows: " + nbRows + ", Axes=" + cellSet.getAxesWithCoordinates().axes();
-	}
-
 	/**
-	 * Make an initially empty cube
+	 * Make an empty cube
 	 */
 	public HolyCube() {
 		this(0,
 				new HolyBitmapCellMultiSet(new EmptyAxisWithCoordinates(), new EmptyHolyDictionarizedTable()),
 				new EmptyHolyMeasuresTable());
+	}
+
+	@Override
+	public String toString() {
+		return "#Rows: " + nbRows + ", Axes=" + cellSet.getAxesWithCoordinates().axes();
 	}
 
 	@Override

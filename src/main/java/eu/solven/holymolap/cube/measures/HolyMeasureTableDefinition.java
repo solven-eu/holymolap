@@ -22,7 +22,7 @@ public class HolyMeasureTableDefinition implements IHolyMeasuresTableDefinition 
 
 	@Override
 	public List<IHolyMeasureColumnMeta> measures() {
-		return Collections.emptyList();
+		return Collections.unmodifiableList(measuredMeta);
 	}
 
 	@Override
