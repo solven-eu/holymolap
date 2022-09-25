@@ -7,9 +7,13 @@ import java.util.stream.IntStream;
 
 import org.roaringbitmap.RoaringBitmap;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
+import eu.solven.holymolap.cache.CompressedIntArray;
 import eu.solven.holymolap.cube.mutable.IAxisSmallDictionary;
 import eu.solven.holymolap.cube.mutable.IMutableAxisSmallColumn;
-import me.lemire.integercompression.IntCompressor;
 
 /**
  * A column of coordinates. Each row is typically associated to a cell (i.e. a {@link Set} of coordinates).
@@ -22,12 +26,19 @@ public class ImmutableAxisColumn implements IScannableAxisSmallColumn {
 	final int nbRows;
 
 	final IAxisCoordinatesDictionary axisCoordinatesDictionary;
-	final int[] compressedRowToCoordinate;
+	final CompressedIntArray compressedRowToCoordinate;
+
+	// https://stackoverflow.com/questions/264582/is-there-a-softhashmap-in-java
+	// http://jeremymanson.blogspot.com/2009/07/how-hotspot-decides-to-clear_07.html
+	// final ConcurrentReferenceHashMap<Long, RoaringBitmap>
+	final LoadingCache<Long, RoaringBitmap> coordinateRefToBitmap = CacheBuilder.newBuilder()
+			.concurrencyLevel(Runtime.getRuntime().availableProcessors() * 2)
+			.softValues()
+			.build(CacheLoader.from(coordinateRef -> {
+				return getCoordinateBitmapNoCache(coordinateRef);
+			}));
 
 	final AtomicLong brokenRows = new AtomicLong();
-
-	// Move into ThreadLocal?
-	final IntCompressor iic = new IntCompressor();
 
 	public ImmutableAxisColumn(IAxisCoordinatesDictionary axisCoordinatesDictionary, IMutableAxisSmallColumn input) {
 		this.axisCoordinatesDictionary = axisCoordinatesDictionary;
@@ -36,7 +47,7 @@ public class ImmutableAxisColumn implements IScannableAxisSmallColumn {
 
 		nbRows = rowToIndex.length;
 
-		this.compressedRowToCoordinate = iic.compress(rowToIndex);
+		this.compressedRowToCoordinate = new CompressedIntArray(rowToIndex);
 
 		this.brokenRows.set(input.getBrokenRows());
 	}
@@ -46,14 +57,6 @@ public class ImmutableAxisColumn implements IScannableAxisSmallColumn {
 		return brokenRows.get();
 	}
 
-	private int[] uncompressRowToCoordinate() {
-		int[] rowToCoordinates;
-		synchronized (this) {
-			rowToCoordinates = iic.uncompress(compressedRowToCoordinate);
-		}
-		return rowToCoordinates;
-	}
-
 	@Override
 	public long getRows() {
 		return nbRows;
@@ -61,7 +64,7 @@ public class ImmutableAxisColumn implements IScannableAxisSmallColumn {
 
 	@Override
 	public void acceptCoordinates(Consumer<Object> coordinateConsumer) {
-		int[] rowToCoordinates = uncompressRowToCoordinate();
+		int[] rowToCoordinates = compressedRowToCoordinate.getIntArray();
 
 		IntStream.of(rowToCoordinates).forEach(coordinateRef -> {
 			Object coordinate = axisCoordinatesDictionary.getCoordinate(coordinateRef);
@@ -71,7 +74,7 @@ public class ImmutableAxisColumn implements IScannableAxisSmallColumn {
 
 	@Override
 	public long getSizeInBytes() {
-		return compressedRowToCoordinate.length * 4;
+		return compressedRowToCoordinate.getSizeInBytes();
 	}
 
 	@Override
@@ -81,14 +84,18 @@ public class ImmutableAxisColumn implements IScannableAxisSmallColumn {
 			return IAxisSmallDictionary.NO_COORDINATE_INDEX;
 		}
 
-		int[] rowToCoordinates = uncompressRowToCoordinate();
+		int[] rowToCoordinates = compressedRowToCoordinate.getIntArray();
 
 		return rowToCoordinates[(int) cellIndex];
 	}
 
 	@Override
 	public RoaringBitmap getCoordinateBitmap(long coordinateRef) {
-		int[] rowToCoordinates = uncompressRowToCoordinate();
+		return coordinateRefToBitmap.getUnchecked(coordinateRef);
+	}
+
+	protected RoaringBitmap getCoordinateBitmapNoCache(long coordinateRef) {
+		int[] rowToCoordinates = compressedRowToCoordinate.getIntArray();
 
 		// TODO If the bitmap is lighter, save it in-memory as replacement for compressedRowToCoordinate
 		RoaringBitmap bitmap = new RoaringBitmap();

@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableList;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
-import eu.solven.holymolap.stable.v1.IHasAggregations;
+import eu.solven.holymolap.stable.v1.IHasMeasures;
 import eu.solven.holymolap.stable.v1.pojo.AxesFilterAnd;
 
 /**
@@ -30,15 +30,15 @@ public class EmptyAggregationQuery implements IAggregationQuery {
 	}
 
 	@Override
-	public List<IMeasuredAxis> getAggregations() {
+	public List<IMeasuredAxis> getMeasures() {
 		return Collections.emptyList();
 	}
 
 	@Override
-	public IAggregationQuery addAggregations(IHasAggregations additionalAggregations) {
-		IHasAggregations mergedAggregations = () -> ImmutableList.<IMeasuredAxis>builder()
-				.addAll(getAggregations())
-				.addAll(additionalAggregations.getAggregations())
+	public IAggregationQuery addAggregations(IHasMeasures additionalAggregations) {
+		IHasMeasures mergedAggregations = () -> ImmutableList.<IMeasuredAxis>builder()
+				.addAll(getMeasures())
+				.addAll(additionalAggregations.getMeasures())
 				.build();
 
 		return new SimpleAggregationQuery(this, this, mergedAggregations);

@@ -15,14 +15,14 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  *
  */
 public class HolyMeasuresTable implements IHolyMeasuresTable {
-	final IHolyMeasuresTableDefinition definition;
+	final IHolyMeasuresDefinition definition;
 
 	/**
 	 * For each key, gives the value as double, which would be valid only where the key-bitmap is true
 	 */
 	protected final List<? extends IScannableDoubleMeasureColumn> axisIndexToDoubles;
 
-	public HolyMeasuresTable(IHolyMeasuresTableDefinition definition,
+	public HolyMeasuresTable(IHolyMeasuresDefinition definition,
 			List<? extends IScannableDoubleMeasureColumn> axisIndexToDoubles) {
 		this.definition = definition;
 		this.axisIndexToDoubles = axisIndexToDoubles;
@@ -59,7 +59,7 @@ public class HolyMeasuresTable implements IHolyMeasuresTable {
 	}
 
 	@Override
-	public IHolyMeasuresTableDefinition getDefinition() {
+	public IHolyMeasuresDefinition getDefinition() {
 		return definition;
 	}
 }

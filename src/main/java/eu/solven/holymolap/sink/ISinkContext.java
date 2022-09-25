@@ -9,6 +9,7 @@ import java.util.Set;
  * @author Benoit Lacelle
  *
  */
+@Deprecated
 public interface ISinkContext {
 	int expectedNbRows();
 

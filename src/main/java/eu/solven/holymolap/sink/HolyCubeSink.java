@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.cube.mutable.IMutableHolyCube;
 import eu.solven.holymolap.cube.mutable.MutableHolyCube;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
@@ -14,15 +14,20 @@ import eu.solven.holymolap.sink.record.IHolyCubeRecord;
 public class HolyCubeSink implements IHolyCubeSink {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(HolyCubeSink.class);
 
-	final IHolyMeasuresTableDefinition aggregations;
+	final IHolyMeasuresDefinition measures;
 
-	public HolyCubeSink(IHolyMeasuresTableDefinition aggregations) {
-		this.aggregations = aggregations;
+	public HolyCubeSink(IHolyMeasuresDefinition measures) {
+		this.measures = measures;
 	}
 
 	@Override
-	public IHolyCube sink(ISinkContext context, Stream<? extends IHolyCubeRecord> toAdd) {
-		IMutableHolyCube mutableHolyCube = new MutableHolyCube(aggregations);
+	public IHolyMeasuresDefinition getMeasures() {
+		return measures;
+	}
+
+	@Override
+	public IHolyCube sink(Stream<? extends IHolyCubeRecord> toAdd) {
+		IMutableHolyCube mutableHolyCube = new MutableHolyCube(measures);
 
 		mutableHolyCube.acceptRowToCell(toAdd);
 

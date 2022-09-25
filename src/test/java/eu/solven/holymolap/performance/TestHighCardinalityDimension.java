@@ -16,18 +16,18 @@ import eu.solven.holymolap.TestAggregation;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.ILazyHolyCube;
 import eu.solven.holymolap.cube.measures.EmptyHolyMeasureTableDefinition;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.ImmutableSinkContext;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.sink.record.IHolyRecord;
 
-public class HighCardinalityDimensionTest {
+public class TestHighCardinalityDimension {
 
 	@Test
 	public void testOneHighCardinality() {
-		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
+		IHolyMeasuresDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		final int cardinality = 10000000;
@@ -57,11 +57,7 @@ public class HighCardinalityDimensionTest {
 			}
 		};
 
-		ImmutableSinkContext context =
-				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
-						Collections.emptySet(),
-						Collections.emptySet());
-		IHolyCube cube = sink.sinkDeprecated(context, rows);
+		IHolyCube cube = sink.sinkDeprecated(rows);
 
 		Assert.assertEquals(cardinality, cube.getNbRows());
 		Assert.assertEquals(2, cube.getCellSet().getAxesWithCoordinates().axes().size());
@@ -74,7 +70,7 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testTwoHighCardinality() {
-		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
+		IHolyMeasuresDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		final int cardinality = 1000000;
@@ -110,12 +106,7 @@ public class HighCardinalityDimensionTest {
 			}
 		};
 
-		ImmutableSinkContext context = new ImmutableSinkContext(
-				ImmutableSet
-						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
-				Collections.emptySet(),
-				Collections.emptySet());
-		IHolyCube cube = sink.sinkDeprecated(context, rows);
+		IHolyCube cube = sink.sinkDeprecated(rows);
 
 		Assert.assertEquals(cardinality, cube.getNbRows());
 		Assert.assertEquals(3, cube.getCellSet().getAxesWithCoordinates().axes().size());
@@ -128,18 +119,13 @@ public class HighCardinalityDimensionTest {
 
 	@Test
 	public void testIndexAllKeysOneByOne() {
-		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
+		IHolyMeasuresDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
-		ImmutableSinkContext context = new ImmutableSinkContext(
-				ImmutableSet
+		IHolyCube cube = sink.sink(new FastEntry(
+				ImmutableList
 						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
-				Collections.emptySet(),
-				Collections.emptySet());
-		IHolyCube cube = sink.sink(context,
-				new FastEntry(ImmutableList
-						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
-						new Object[] { "a", "b", "c" }));
+				new Object[] { "a", "b", "c" }));
 
 		// IRoaringCube cube = sink.sink(rows);
 

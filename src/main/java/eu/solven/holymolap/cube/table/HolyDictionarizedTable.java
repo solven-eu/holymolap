@@ -33,6 +33,10 @@ public class HolyDictionarizedTable implements IHolyDictionarizedTable {
 		for (int axisIndexIndex = 0; axisIndexIndex < axesIndexes.length; axisIndexIndex++) {
 			int axisIndex = axesIndexes[axisIndexIndex];
 
+			if (axisIndex < 0) {
+				throw new IllegalArgumentException("No cell as axisIndexIndex=" + axisIndexIndex + " is unknown");
+			}
+
 			int coordinate = axisIndexToColumn.get(axisIndex).getCoordinateRef(cellIndex);
 
 			cellCoordinates[axisIndexIndex] = coordinate;
@@ -51,7 +55,8 @@ public class HolyDictionarizedTable implements IHolyDictionarizedTable {
 		List<RoaringBitmap> coordinateBitmap = new ArrayList<>(axesIndexes.length);
 
 		for (int i = 0; i < axesIndexes.length; i++) {
-			coordinateBitmap.add(axisIndexToColumn.get(i).getCoordinateBitmap(valuesRefs[i]));
+			int axisIndex = axesIndexes[i];
+			coordinateBitmap.add(axisIndexToColumn.get(axisIndex).getCoordinateBitmap(valuesRefs[i]));
 		}
 
 		return RoaringBitmap.and(coordinateBitmap.iterator(), 0L, (long) nbRows);

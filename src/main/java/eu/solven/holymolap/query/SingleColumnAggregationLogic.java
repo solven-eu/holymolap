@@ -3,7 +3,7 @@ package eu.solven.holymolap.query;
 import com.google.common.util.concurrent.AtomicDouble;
 
 import eu.solven.holymolap.cube.measures.IHolyMeasuresTable;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
@@ -13,7 +13,7 @@ public class SingleColumnAggregationLogic implements IAggregationLogic<Double> {
 	protected final int measureIndex;
 	protected final IDoubleBinaryOperator operator;
 
-	public static IAggregationLogic<?> search(IHolyMeasuresTableDefinition definition, IMeasuredAxis measuredAxis) {
+	public static IAggregationLogic<?> search(IHolyMeasuresDefinition definition, IMeasuredAxis measuredAxis) {
 		int index = definition.findMeasureIndex(measuredAxis);
 
 		if (index < 0) {
@@ -26,6 +26,11 @@ public class SingleColumnAggregationLogic implements IAggregationLogic<Double> {
 	public SingleColumnAggregationLogic(int measureIndex, IDoubleBinaryOperator operator) {
 		this.measureIndex = measureIndex;
 		this.operator = operator;
+	}
+
+	@Override
+	public String toString() {
+		return "SingleColumnAggregationLogic [measureIndex=" + measureIndex + ", operator=" + operator + "]";
 	}
 
 	@Override

@@ -32,7 +32,7 @@ import eu.solven.holymolap.cube.immutable.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.cube.immutable.ImmutableAxisColumn;
 import eu.solven.holymolap.cube.measures.HolyMeasuresTable;
 import eu.solven.holymolap.cube.measures.IHolyMeasuresTable;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.cube.table.HolyDictionarizedTable;
 import eu.solven.holymolap.cube.table.IHolyDictionarizedTable;
 import eu.solven.holymolap.query.operator.OperatorFactory;
@@ -54,7 +54,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 public class MutableHolyCube implements IMutableHolyCube {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MutableHolyCube.class);
 
-	final IHolyMeasuresTableDefinition aggregations;
+	final IHolyMeasuresDefinition aggregations;
 	final Map<IMeasuredAxis, IMutableDoubleAggregatesColumn> aggregationToColumn;
 
 	// The Set of axes with at least one cell
@@ -71,7 +71,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	final AtomicLong brokenRows = new AtomicLong();
 	final AtomicBoolean closed = new AtomicBoolean();
 
-	protected MutableHolyCube(IHolyMeasuresTableDefinition aggregations,
+	protected MutableHolyCube(IHolyMeasuresDefinition aggregations,
 			Map<IMeasuredAxis, IMutableDoubleAggregatesColumn> aggregationToColumn,
 			List<String> orderedAxis,
 			Map<String, IMutableAxisSmallColumn> axisToColumn,
@@ -99,7 +99,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	 * 
 	 * @param aggregations
 	 */
-	public MutableHolyCube(IHolyMeasuresTableDefinition aggregations) {
+	public MutableHolyCube(IHolyMeasuresDefinition aggregations) {
 		this(aggregations,
 				prepareAggregationColumns(aggregations),
 				prepareOrderedAxes(),
@@ -122,7 +122,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	}
 
 	private static Map<IMeasuredAxis, IMutableDoubleAggregatesColumn> prepareAggregationColumns(
-			IHolyMeasuresTableDefinition aggregations) {
+			IHolyMeasuresDefinition aggregations) {
 		OperatorFactory operatorFactory = new OperatorFactory();
 
 		return aggregations.measures()
@@ -190,7 +190,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 	private void contributeToMeasures(IHolyRecord aggregateTableRecord, int cellIndex) {
 		List<String> indexToAxis = aggregateTableRecord.getAxes();
-		int[] recordToCubeIndexes = computeInference(indexToAxis, orderedAxes);
+		// int[] recordToCubeIndexes = computeInference(indexToAxis, orderedAxes);
 
 		aggregateTableRecord.accept((i, contribution) -> {
 			String axis = indexToAxis.get(i);

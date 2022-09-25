@@ -1,12 +1,13 @@
 package eu.solven.holymolap.cube.measures;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
-public class HolyMeasureTableDefinition implements IHolyMeasuresTableDefinition {
+public class HolyMeasureTableDefinition implements IHolyMeasuresDefinition {
 	final List<IMeasuredAxis> measuredAxes;
 	final List<IHolyMeasureColumnMeta> measuredMeta;
 
@@ -18,6 +19,10 @@ public class HolyMeasureTableDefinition implements IHolyMeasuresTableDefinition 
 			IMeasuredAxis measuredAxis = measuredAxes.get(measureIndex);
 			measuredMeta.add(new HolyMeasureColumnMeta(measuredAxis, measureIndex));
 		}
+	}
+
+	public static IHolyMeasuresDefinition of(IMeasuredAxis... measures) {
+		return new HolyMeasureTableDefinition(Arrays.asList(measures));
 	}
 
 	@Override

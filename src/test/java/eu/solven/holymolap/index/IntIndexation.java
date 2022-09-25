@@ -1,7 +1,5 @@
 package eu.solven.holymolap.index;
 
-import java.util.Collections;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -12,28 +10,20 @@ import eu.solven.holymolap.TestAggregation;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.ILazyHolyCube;
 import eu.solven.holymolap.cube.measures.EmptyHolyMeasureTableDefinition;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresTableDefinition;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
-import eu.solven.holymolap.sink.ImmutableSinkContext;
 import eu.solven.holymolap.sink.record.FastEntry;
 
 public class IntIndexation {
 
 	@Test
 	public void testIndexAllKeysOneByOne() {
-		IHolyMeasuresTableDefinition definitions = new EmptyHolyMeasureTableDefinition();
+		IHolyMeasuresDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
-		ImmutableSinkContext context =
-				new ImmutableSinkContext(ImmutableSet.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY),
-						Collections.emptySet(),
-						Collections.emptySet());
-		IHolyCube cube = sink.sink(context,
-				new FastEntry(ImmutableList.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY),
-						new Object[0],
-						null,
-						new int[] { 3, 7 }));
+		IHolyCube cube = sink.sink(new FastEntry(ImmutableList.of(TestAggregation.FIRST_KEY,
+				TestAggregation.SECOND_KEY), new Object[0], null, new int[] { 3, 7 }));
 
 		// IRoaringCube cube = sink.sink(rows);
 

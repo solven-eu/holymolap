@@ -12,7 +12,7 @@ import com.google.common.collect.Lists;
  * @author Benoit Lacelle
  *
  */
-public interface IAggregationQuery extends IHasFilters, IHasAxes, IHasAggregations {
+public interface IAggregationQuery extends IHasFilters, IHasAxes, IHasMeasures {
 
 	/**
 	 * The filters of current query. A filter refers to the condition for the data to be included. An empty {@link List}
@@ -34,9 +34,9 @@ public interface IAggregationQuery extends IHasFilters, IHasAxes, IHasAggregatio
 	/**
 	 * 
 	 * @param hasAggregations
-	 * @return a new {@link IAggregationQuery} based on input {@link IHasAggregations}
+	 * @return a new {@link IAggregationQuery} based on input {@link IHasMeasures}
 	 */
-	IAggregationQuery addAggregations(IHasAggregations hasAggregations);
+	IAggregationQuery addAggregations(IHasMeasures hasAggregations);
 
 	default IAggregationQuery addAggregations(IMeasuredAxis first, IMeasuredAxis... rest) {
 		return addAggregations(() -> Lists.asList(first, rest));

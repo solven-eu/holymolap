@@ -25,6 +25,7 @@ import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
 import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
+import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.cube.table.RowsConsumerStatus;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
@@ -81,6 +82,13 @@ public class AggregationHelper2 {
 				i++;
 
 				int wildcardKeyIndex = cellSet.getAxesWithCoordinates().getAxisIndex(wildcardKey);
+
+				if (wildcardKeyIndex < 0) {
+					// We are decomposing an unknown axis
+					LOGGER.debug("{} is unknown amongst {}", wildcardKey, cellSet.getAxesWithCoordinates().getAxes());
+					return HolyBitmapCellMultiSet.EMPTY_BITMAP;
+				}
+
 				axesIndexes[i] = wildcardKeyIndex;
 
 				// long valueRef = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
@@ -117,7 +125,7 @@ public class AggregationHelper2 {
 			List<String> wildcardKeys,
 			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
-		computeParallelNextCellRows(index, wildcardKeys, LongLists.EMPTY_LIST, candidateRows, rowAggregateConsumer);
+		computeParallelNextCellRows(index, wildcardKeys, LongLists.emptyList(), candidateRows, rowAggregateConsumer);
 	}
 
 	protected void computeParallelNextCellRows(final IHolyCellMultiSet index,
@@ -171,7 +179,7 @@ public class AggregationHelper2 {
 	 * @param candidateRows
 	 * @param rowAggregateConsumer
 	 * @param es
-	 * @param nbAsyncTasks
+	 * @param nbTasks
 	 * @param status
 	 */
 	protected void computeParallelNextCellRows(final IHolyCellMultiSet cellSet,
@@ -180,7 +188,7 @@ public class AggregationHelper2 {
 			final RoaringBitmap candidateRows,
 			final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
 			final Executor es,
-			final AtomicLong nbAsyncTasks,
+			final AtomicLong nbTasks,
 			final RowsConsumerStatus status) {
 		if (wildcardAxes.size() == coordinateRefsForWildcardAxes.size()) {
 			// We have selected a coordinate for each wildcardAxes
@@ -237,18 +245,18 @@ public class AggregationHelper2 {
 										wildcardAxes,
 										rowAggregateConsumer,
 										es,
-										nbAsyncTasks,
+										nbTasks,
 										status);
 							} finally {
-								nbAsyncTasks.decrementAndGet();
+								nbTasks.decrementAndGet();
 							}
 						}
 					};
 
+					nbTasks.incrementAndGet();
 					if (candidateRowsLeft.getCardinality() > 1024) {
 						// Fork only if there is enough rows to consider
 
-						nbAsyncTasks.incrementAndGet();
 						es.execute(command);
 					} else {
 						command.run();

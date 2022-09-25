@@ -18,7 +18,7 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  */
 public interface IHolyMeasuresTable extends IHasMemoryFootprint {
 
-	IHolyMeasuresTableDefinition getDefinition();
+	IHolyMeasuresDefinition getDefinition();
 
 	/**
 	 * Used by {@link IAggregationLogic}

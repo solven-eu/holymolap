@@ -7,6 +7,7 @@ import java.util.Set;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+@Deprecated
 public class ImmutableSinkContext implements ISinkContext {
 	protected final Set<String> objectKeys;
 	protected final Set<String> doubleKeys;

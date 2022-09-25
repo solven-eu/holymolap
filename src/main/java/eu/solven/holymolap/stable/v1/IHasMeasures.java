@@ -10,7 +10,7 @@ import eu.solven.holymolap.cube.IHolyCube;
  * @author Benoit Lacelle
  *
  */
-public interface IHasAggregations {
+public interface IHasMeasures {
 
-	List<IMeasuredAxis> getAggregations();
+	List<IMeasuredAxis> getMeasures();
 }

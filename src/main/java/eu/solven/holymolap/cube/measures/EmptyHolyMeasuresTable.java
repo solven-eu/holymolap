@@ -33,7 +33,7 @@ public class EmptyHolyMeasuresTable implements IHolyMeasuresTable {
 	}
 
 	@Override
-	public IHolyMeasuresTableDefinition getDefinition() {
+	public IHolyMeasuresDefinition getDefinition() {
 		return new EmptyHolyMeasureTableDefinition();
 	}
 }

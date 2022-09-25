@@ -53,6 +53,18 @@ public class FastEntry implements IHolyRecord {
 				intIndexes[i] = objectIndexes.length + doubleIndexes.length + i;
 			}
 		}
+
+		int nbAxes = this.axes.size();
+		if (nbAxes != objectIndexes.length + doubleIndexes.length + intIndexes.length) {
+			throw new IllegalArgumentException("Number of axes (" + nbAxes
+					+ ") differs to number of coordinates (o="
+					+ objectIndexes.length
+					+ ", d="
+					+ doubleIndexes.length
+					+ ", i="
+					+ intIndexes.length
+					+ ")");
+		}
 	}
 
 	@Override

@@ -5,12 +5,12 @@ import java.util.List;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
 /**
- * Describes a set of measures
+ * Describes a {@link List} of measures
  * 
  * @author Benoit Lacelle
  *
  */
-public interface IHolyMeasuresTableDefinition {
+public interface IHolyMeasuresDefinition {
 	/**
 	 * 
 	 * @return the (distinct) ordered measures

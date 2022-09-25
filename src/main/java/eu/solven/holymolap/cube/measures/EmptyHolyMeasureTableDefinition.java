@@ -5,7 +5,7 @@ import java.util.List;
 
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
-public class EmptyHolyMeasureTableDefinition implements IHolyMeasuresTableDefinition {
+public class EmptyHolyMeasureTableDefinition implements IHolyMeasuresDefinition {
 
 	@Override
 	public List<IHolyMeasureColumnMeta> measures() {

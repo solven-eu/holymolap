@@ -11,5 +11,10 @@ public interface IHasNavigableAxes extends IHasAxes, IHasMemoryFootprint {
 
 	String indexToAxis(int axisIndex);
 
+	/**
+	 * 
+	 * @param axis
+	 * @return -1 if the axis is unknown
+	 */
 	int getAxisIndex(String axis);
 }

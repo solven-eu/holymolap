@@ -1,12 +1,17 @@
 package eu.solven.holymolap.sink;
 
 import java.util.Iterator;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
 
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.sink.record.EmptyHolyRecord;
+import eu.solven.holymolap.cube.measures.IHolyMeasureColumnMeta;
+import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
+import eu.solven.holymolap.sink.record.FilterInHolyRecord;
+import eu.solven.holymolap.sink.record.FilterOutHolyRecord;
 import eu.solven.holymolap.sink.record.HolyCubeRecord;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
 import eu.solven.holymolap.sink.record.IHolyRecord;
@@ -19,32 +24,47 @@ import eu.solven.holymolap.sink.record.IHolyRecord;
  */
 public interface IHolyCubeSink {
 
-	@Deprecated
-	default IHolyCube sink(ISinkContext context, IHolyRecord toAdd) {
-		return sinkDeprecated(context, Stream.of(toAdd));
-	}
+	IHolyMeasuresDefinition getMeasures();
 
 	@Deprecated
-	default IHolyCube sinkDeprecated(ISinkContext context, Iterator<? extends IHolyRecord> toAdd) {
-		return sinkDeprecated(context, Streams.stream(toAdd));
+	default IHolyCube sink(IHolyRecord toAdd) {
+		return sinkDeprecated(Stream.of(toAdd));
 	}
 
 	@Deprecated
-	default IHolyCube sinkDeprecated(ISinkContext context, Stream<? extends IHolyRecord> toAdd) {
-		return sink(context, toAdd.map(r -> new HolyCubeRecord(r, new EmptyHolyRecord())));
+	default IHolyCube sinkDeprecated(Iterator<? extends IHolyRecord> toAdd) {
+		return sinkDeprecated(Streams.stream(toAdd));
 	}
 
-	default IHolyCube sink(ISinkContext context, IHolyCubeRecord... toAdd) {
-		return sink(context, Stream.of(toAdd));
+	@Deprecated
+	default IHolyCube sinkDeprecated(Stream<? extends IHolyRecord> toAdd) {
+		return sink(toAdd.map(r -> makeHolyCubeRecord(r)));
 	}
 
-	default IHolyCube sink(ISinkContext context, Iterable<? extends IHolyCubeRecord> toAdd) {
-		return sink(context, toAdd.iterator());
+	@Deprecated
+	default IHolyCubeRecord makeHolyCubeRecord(IHolyRecord r) {
+		IHolyMeasuresDefinition measures = getMeasures();
+		Set<String> measuredColumns =
+				measures.measures().stream().map(IHolyMeasureColumnMeta::getColumn).collect(Collectors.toSet());
+
+		// By default, we consider as cellAxes only if not a measure column
+		FilterOutHolyRecord cellRecord = new FilterOutHolyRecord(r, measuredColumns);
+		FilterInHolyRecord measuresRecord = new FilterInHolyRecord(r, measuredColumns);
+
+		return new HolyCubeRecord(cellRecord, measuresRecord);
 	}
 
-	default IHolyCube sink(ISinkContext context, Iterator<? extends IHolyCubeRecord> toAdd) {
-		return sink(context, Streams.stream(toAdd));
+	default IHolyCube sink(IHolyCubeRecord... toAdd) {
+		return sink(Stream.of(toAdd));
 	}
 
-	IHolyCube sink(ISinkContext context, Stream<? extends IHolyCubeRecord> toAdd);
+	default IHolyCube sink(Iterable<? extends IHolyCubeRecord> toAdd) {
+		return sink(toAdd.iterator());
+	}
+
+	default IHolyCube sink(Iterator<? extends IHolyCubeRecord> toAdd) {
+		return sink(Streams.stream(toAdd));
+	}
+
+	IHolyCube sink(Stream<? extends IHolyCubeRecord> toAdd);
 }

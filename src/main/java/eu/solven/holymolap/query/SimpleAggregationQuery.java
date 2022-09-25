@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableList;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
-import eu.solven.holymolap.stable.v1.IHasAggregations;
+import eu.solven.holymolap.stable.v1.IHasMeasures;
 import eu.solven.holymolap.stable.v1.IHasAxes;
 import eu.solven.holymolap.stable.v1.IHasFilters;
 
@@ -21,9 +21,9 @@ public class SimpleAggregationQuery implements IAggregationQuery {
 
 	protected final IHasFilters axesFilters;
 	protected final IHasAxes axes;
-	protected final IHasAggregations hasAggregations;
+	protected final IHasMeasures hasAggregations;
 
-	public SimpleAggregationQuery(IHasFilters hasFilters, IHasAxes axes, IHasAggregations hasAggregations) {
+	public SimpleAggregationQuery(IHasFilters hasFilters, IHasAxes axes, IHasMeasures hasAggregations) {
 		this.axesFilters = hasFilters;
 		this.axes = axes;
 		this.hasAggregations = hasAggregations;
@@ -40,8 +40,8 @@ public class SimpleAggregationQuery implements IAggregationQuery {
 	}
 
 	@Override
-	public List<IMeasuredAxis> getAggregations() {
-		return hasAggregations.getAggregations();
+	public List<IMeasuredAxis> getMeasures() {
+		return hasAggregations.getMeasures();
 	}
 
 	@Override
@@ -51,15 +51,15 @@ public class SimpleAggregationQuery implements IAggregationQuery {
 				+ ", axes="
 				+ axes.getAxes()
 				+ ", hasAggregations="
-				+ hasAggregations.getAggregations()
+				+ hasAggregations.getMeasures()
 				+ "]";
 	}
 
 	@Override
-	public IAggregationQuery addAggregations(IHasAggregations additionalAggregations) {
-		IHasAggregations mergedAggregations = () -> ImmutableList.<IMeasuredAxis>builder()
-				.addAll(getAggregations())
-				.addAll(additionalAggregations.getAggregations())
+	public IAggregationQuery addAggregations(IHasMeasures additionalAggregations) {
+		IHasMeasures mergedAggregations = () -> ImmutableList.<IMeasuredAxis>builder()
+				.addAll(getMeasures())
+				.addAll(additionalAggregations.getMeasures())
 				.build();
 
 		return new SimpleAggregationQuery(this, this, mergedAggregations);
