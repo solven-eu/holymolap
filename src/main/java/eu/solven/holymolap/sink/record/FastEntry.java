@@ -73,36 +73,6 @@ public class FastEntry implements IHolyRecord {
 	}
 
 	@Override
-	public int[] objectIndexes() {
-		return objectIndexes;
-	}
-
-	@Override
-	public Comparable<?> getObject(int keyIndex) {
-		return (Comparable<?>) objects[keyIndex];
-	}
-
-	@Override
-	public int[] doubleIndexes() {
-		return doubleIndexes;
-	}
-
-	@Override
-	public double getDouble(int keyIndex) {
-		return doubles[keyIndex - objectIndexes.length];
-	}
-
-	@Override
-	public int[] intIndexes() {
-		return intIndexes;
-	}
-
-	@Override
-	public int getInt(int keyIndex) {
-		return ints[keyIndex - objectIndexes.length - doubleIndexes.length];
-	}
-
-	@Override
 	public void accept(IHolyRecordVisitor visitor) {
 		for (int i = 0; i < objectIndexes.length; i++) {
 			visitor.onObject(i, objects[i]);

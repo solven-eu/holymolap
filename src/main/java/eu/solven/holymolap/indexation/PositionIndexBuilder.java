@@ -12,8 +12,8 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
-import eu.solven.holymolap.cube.table.IHolyDictionarizedTable;
+import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
+import eu.solven.holymolap.immutable.table.IHolyDictionarizedTable;
 import it.unimi.dsi.fastutil.longs.LongList;
 
 @Deprecated

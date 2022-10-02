@@ -15,7 +15,7 @@ public class RawCoordinatesToBitmap {
 		return matchingRows;
 	}
 
-	public long[] getValueRefs() {
+	public long[] getCoordinateRefs() {
 		return valueRefs;
 	}
 

@@ -5,11 +5,11 @@ import java.util.Arrays;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
-import eu.solven.holymolap.cube.immutable.AxisCoordinatesDictionary;
-import eu.solven.holymolap.cube.immutable.IAxisCoordinatesDictionary;
-import eu.solven.holymolap.cube.immutable.ImmutableAxisColumn;
-import eu.solven.holymolap.cube.mutable.MutableAxisColumn;
-import eu.solven.holymolap.cube.table.HolyDictionarizedTable;
+import eu.solven.holymolap.immutable.axis.ImmutableAxisSmallColumn;
+import eu.solven.holymolap.immutable.dictionary.AxisCoordinatesDictionary;
+import eu.solven.holymolap.immutable.dictionary.IAxisCoordinatesDictionary;
+import eu.solven.holymolap.immutable.table.HolyDictionarizedTable;
+import eu.solven.holymolap.mutable.axis.MutableAxisColumn;
 
 public class TestHolyDictionarizedTable {
 
@@ -32,7 +32,7 @@ public class TestHolyDictionarizedTable {
 		IAxisCoordinatesDictionary immutableDictionary =
 				new AxisCoordinatesDictionary(mutableColumn1.getCoordinateToIndex().orderedCoordinates());
 
-		ImmutableAxisColumn immutableColumn = new ImmutableAxisColumn(immutableDictionary, mutableColumn1);
+		ImmutableAxisSmallColumn immutableColumn = new ImmutableAxisSmallColumn(immutableDictionary, mutableColumn1);
 		HolyDictionarizedTable table = new HolyDictionarizedTable(4, Arrays.asList(immutableColumn));
 
 		{
@@ -61,8 +61,8 @@ public class TestHolyDictionarizedTable {
 		IAxisCoordinatesDictionary immutableDictionary2 =
 				new AxisCoordinatesDictionary(mutableColumn2.getCoordinateToIndex().orderedCoordinates());
 
-		ImmutableAxisColumn immutableColumn1 = new ImmutableAxisColumn(immutableDictionary1, mutableColumn1);
-		ImmutableAxisColumn immutableColumn2 = new ImmutableAxisColumn(immutableDictionary2, mutableColumn2);
+		ImmutableAxisSmallColumn immutableColumn1 = new ImmutableAxisSmallColumn(immutableDictionary1, mutableColumn1);
+		ImmutableAxisSmallColumn immutableColumn2 = new ImmutableAxisSmallColumn(immutableDictionary2, mutableColumn2);
 		HolyDictionarizedTable table = new HolyDictionarizedTable(4, Arrays.asList(immutableColumn1, immutableColumn2));
 
 		{

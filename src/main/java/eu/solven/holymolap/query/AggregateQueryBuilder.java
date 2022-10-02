@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import eu.solven.holymolap.query.operator.OperatorFactory;
+import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.AxesFilterAnd;
 
@@ -51,12 +51,31 @@ public class AggregateQueryBuilder {
 		return addAggregation(OperatorFactory.sum(axis));
 	}
 
+	/**
+	 * Like .addAggregation, but specialized for counts.
+	 * 
+	 * @param axis
+	 *            the axis the aggregate with a COUNT.
+	 * @return current builder.
+	 */
+	public AggregateQueryBuilder count(String axis) {
+		return addAggregation(OperatorFactory.count(axis));
+	}
+
+	public AggregateQueryBuilder cellCount(String axis) {
+		return addAggregation(OperatorFactory.cellCount(axis));
+	}
+
 	public SimpleAggregationQuery build() {
 		SimpleAggregationQuery query = new SimpleAggregationQuery(() -> new AxesFilterAnd(filters),
 				() -> new ArrayList<>(wildcards),
 				() -> aggregatesKeys);
 
 		return query;
+	}
+
+	public static AggregateQueryBuilder grandTotal() {
+		return new AggregateQueryBuilder();
 	}
 
 	public static AggregateQueryBuilder filter(String key, String value) {

@@ -32,34 +32,4 @@ public class FilterInHolyRecord implements IHolyRecord {
 		return underlying.getAxes();
 	}
 
-	@Override
-	public int[] objectIndexes() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Object getObject(int axisIndex) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public int[] intIndexes() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public int getInt(int axisIndex) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public int[] doubleIndexes() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public double getDouble(int axisIndex) {
-		throw new UnsupportedOperationException();
-	}
-
 }

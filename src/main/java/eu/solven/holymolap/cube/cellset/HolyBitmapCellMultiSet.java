@@ -5,10 +5,10 @@ import java.util.NavigableSet;
 
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import eu.solven.holymolap.axes.AxisWithCoordinates;
-import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
-import eu.solven.holymolap.cube.immutable.IAxisCoordinatesDictionary;
-import eu.solven.holymolap.cube.table.IHolyDictionarizedTable;
+import eu.solven.holymolap.immutable.axes.AxisWithCoordinates;
+import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
+import eu.solven.holymolap.immutable.dictionary.IAxisCoordinatesDictionary;
+import eu.solven.holymolap.immutable.table.IHolyDictionarizedTable;
 
 /**
  * This couple an {@link IHasAxesWithCoordinates} (which dictionarized {@link Object} coordinates to {@link Long}

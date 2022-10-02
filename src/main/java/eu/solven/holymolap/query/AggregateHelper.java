@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Consumer;
@@ -17,15 +18,19 @@ import com.google.common.base.Functions;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
-import com.google.common.collect.SetMultimap;
 
-import eu.solven.holymolap.aggregate.NicePointToAggregates;
+import eu.solven.holymolap.aggregate.NiceCellToAggregate;
+import eu.solven.holymolap.aggregate.RawCellToAggregate;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
-import eu.solven.holymolap.aggregate.RawPointToAggregates;
 import eu.solven.holymolap.comparable.NavigableMapComparator;
-import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
+import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
+import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
+import eu.solven.holymolap.measures.aggregation.IAggregationLogic;
+import eu.solven.holymolap.measures.aggregation.LongAggregationLogic;
+import eu.solven.holymolap.measures.operator.IOperatorFactory;
+import eu.solven.holymolap.measures.operator.IStandardOperators;
+import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.utils.HolyIterator;
@@ -33,7 +38,7 @@ import eu.solven.holymolap.utils.HolyIterator;
 public class AggregateHelper {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AggregateHelper.class);
 
-	public static Iterator<RawCoordinatesToBitmap> queryToAggregateIterator(final IHolyCube cube,
+	public static Iterator<RawCoordinatesToBitmap> queryToCellsIterator(final IHolyCube cube,
 			final IAggregationQuery query) {
 		return new AggregationHelper2().nextCellRows(cube.getCellSet(), query.getAxes(), cube.getFiltersBitmap(query));
 	}
@@ -51,15 +56,14 @@ public class AggregateHelper {
 			final IAggregationLogic<? extends T> aggregationLogic) {
 		return coordinatesToRows -> aggregationLogic.aggregateTo(cube.getMeasuresTable(),
 				HolyIterator.toLongIterator(coordinatesToRows.getMatchingRows().getIntIterator()),
-				coordinatesToRows.getValueRefs());
+				coordinatesToRows.getCoordinateRefs());
 	}
 
-	protected static <T> Function<RawCoordinatesToBitmap, RawPointToAggregates<T>> rowsToAggregates2(
-			final IHolyCube cube,
+	protected static <T> Function<RawCoordinatesToBitmap, RawCellToAggregate<T>> cellsToAggregates(final IHolyCube cube,
 			final IAggregationLogic<? extends T> aggregationLogic) {
 		final Function<RawCoordinatesToBitmap, T> baseFunction = rowsToAggregates(cube, aggregationLogic);
 
-		return coordinatesToRows -> new RawPointToAggregates<T>(coordinatesToRows.getValueRefs(),
+		return coordinatesToRows -> new RawCellToAggregate<T>(coordinatesToRows.getCoordinateRefs(),
 				baseFunction.apply(coordinatesToRows));
 	}
 
@@ -82,13 +86,12 @@ public class AggregateHelper {
 		};
 	}
 
-	protected static <T> Function<RawPointToAggregates<T>, NicePointToAggregates<T>> rawToNicePoint(
-			final IHolyCube cube,
+	protected static <T> Function<RawCellToAggregate<T>, NiceCellToAggregate<T>> rawCellToNiceCell(final IHolyCube cube,
 			final IAggregationQuery query) {
 		final Function<long[], NavigableMap<String, Object>> rawToNice = rawToNiceCoordinates(cube, query);
 
-		return pointToAggregates -> new NicePointToAggregates<T>(pointToAggregates.getMeasureValue(),
-				rawToNice.apply(pointToAggregates.getCoordinatesRef()));
+		return cellToAggregate -> new NiceCellToAggregate<T>(cellToAggregate.getMeasureValue(),
+				rawToNice.apply(cellToAggregate.getCoordinatesRef()));
 	}
 
 	public static NavigableMap<? extends NavigableMap<?, ?>, ?> cumulateInNavigableMap(final IHolyCube cube,
@@ -98,30 +101,44 @@ public class AggregateHelper {
 				new ConcurrentSkipListMap<NavigableMap<?, ?>, Object>(NavigableMapComparator.INSTANCE);
 
 		if (cube.getNbRows() == 0L) {
-			// This enables accepting unknown measuredAxis on an empty cube
+			// We fork to accept unknown measuredAxis on an empty cube
+			// We have a specific behavior on empty cube, as there is no cell along which we can iterate
+			// We do not try resolving a relevant cell, as the filter may be complex (e.g. country IN ('FR', 'USA')) and
+			// in such a case, it is unclear what should be the relevant cell to return the aggregates
 
-			// Empty is semantically different to holding only the neutral element
-			// String operator = Iterables.getOnlyElement(query.getAggregations()).getOperator();
-			// double neutral = new OperatorFactory().getDoubleBinaryOperator(operator).neutral();
-			//
-			// coordinateToAggregate.put(new TreeMap<>(), neutral);
+			// We return a return only if querying COUNT(*)
+			if (query.getMeasures().contains(ICountMeasuresConstants.COUNT_MEASURED_AXIS)) {
+				// Empty is semantically different to holding only the neutral element
+
+				long neutral = new OperatorFactory().getLongBinaryOperator(IOperatorFactory.COUNT).neutralAsLong();
+				coordinateToAggregate.put(new TreeMap<>(), neutral);
+			}
 		} else {
-			List<IMeasuredAxis> measures = query.getMeasures();
-			SetMultimap<String, String> aggregatedToOperators = MultimapBuilder.treeKeys().hashSetValues().build();
-			measures.forEach(aggregatedAxis -> aggregatedToOperators.put(aggregatedAxis.getAxis(),
-					aggregatedAxis.getOperator()));
+			List<IMeasuredAxis> queriedMeasures = query.getMeasures();
 
+			// groupBy measures by measuredAxis
 			Multimap<String, IAggregationLogic<?>> aggregatedToLogic =
 					MultimapBuilder.treeKeys().arrayListValues().build();
 
-			measures.forEach(measuredAxis -> {
-				IHolyMeasuresDefinition definition = cube.getMeasuresTable().getDefinition();
-				int measureIndex = definition.findMeasureIndex(measuredAxis);
+			IHolyMeasuresDefinition definition = cube.getMeasuresTable().getDefinition();
+			queriedMeasures.forEach(queriedMeasured -> {
+				if (IOperatorFactory.CELLCOUNT.equals(queriedMeasured.getOperator())) {
+					// COUNT measures are implicit: they are not expressed by the measureTable as they are computed by
+					// the cellSet
+					LongAggregationLogic countAggregationLogic =
+							new LongAggregationLogic(IHolyMeasuresDefinition.CELLCOUNT_MEASURE_INDEX,
+									IStandardOperators.CELLCOUNT);
+					aggregatedToLogic.put(queriedMeasured.getAxis(), countAggregationLogic);
+				} else {
+					int cubeMeasureIndex = definition.findMeasureIndex(queriedMeasured);
 
-				if (measureIndex >= 0) {
-					IAggregationLogic<?> aggregationLogic =
-							definition.measures().get(measureIndex).getAggregationLogic();
-					aggregatedToLogic.put(measuredAxis.getAxis(), aggregationLogic);
+					if (cubeMeasureIndex >= 0) {
+						IAggregationLogic<?> aggregationLogic =
+								definition.measures().get(cubeMeasureIndex).getAggregationLogic();
+						aggregatedToLogic.put(queriedMeasured.getAxis(), aggregationLogic);
+					} else {
+						LOGGER.debug("One is quewrying an unknown measuredAxis: {}", queriedMeasured);
+					}
 				}
 			});
 
@@ -133,31 +150,31 @@ public class AggregateHelper {
 			} else {
 				IAggregationLogic<?> aggregationLogic = aggregatedToLogic.values().iterator().next();
 
-				Iterator<RawCoordinatesToBitmap> rawIterator = queryToAggregateIterator(cube, query);
+				Iterator<RawCoordinatesToBitmap> cellsIterator = queryToCellsIterator(cube, query);
 
-				Function<RawCoordinatesToBitmap, RawPointToAggregates<Object>> rowsToAggregates2 =
-						rowsToAggregates2(cube, aggregationLogic);
-				Function<RawPointToAggregates<Object>, NicePointToAggregates<Object>> rawToNicePoint =
-						rawToNicePoint(cube, query);
+				Function<RawCoordinatesToBitmap, RawCellToAggregate<Object>> cellToAggregates =
+						cellsToAggregates(cube, aggregationLogic);
+				Function<RawCellToAggregate<Object>, NiceCellToAggregate<Object>> rawCellToNiceCell =
+						rawCellToNiceCell(cube, query);
 
-				Iterator<NicePointToAggregates<Object>> niceIterator =
-						Iterators.transform(rawIterator, Functions.compose(rawToNicePoint, rowsToAggregates2));
+				Iterator<NiceCellToAggregate<Object>> niceCellToAggregateIterator =
+						Iterators.transform(cellsIterator, Functions.compose(rawCellToNiceCell, cellToAggregates));
 
-				Consumer<NicePointToAggregates<Object>> pointAggregatesConsumer = pointToAggregates -> {
-					NavigableMap<String, Object> keyToValue = pointToAggregates.getKeyToValue();
-					Object keyToAggregates = pointToAggregates.getKeyToAggregates();
-					Object previous = coordinateToAggregate.put(keyToValue, keyToAggregates);
+				Consumer<NiceCellToAggregate<Object>> niceCellToAggregateConsumer = niceCellToAggregate -> {
+					NavigableMap<String, Object> coordinates = niceCellToAggregate.getCoordinates();
+					Object aggregate = niceCellToAggregate.getAggregate();
+					Object previousAggregate = coordinateToAggregate.put(coordinates, aggregate);
 
-					if (previous != null) {
-						throw new IllegalStateException("We encountered twice the same point: " + keyToValue
+					if (previousAggregate != null) {
+						throw new IllegalStateException("We encountered twice the same point: " + coordinates
 								+ " associated to "
-								+ keyToAggregates
+								+ aggregate
 								+ " and "
-								+ previous);
+								+ previousAggregate);
 					}
 				};
 
-				pushToResultMap(niceIterator, pointAggregatesConsumer);
+				pushToResultMap(niceCellToAggregateIterator, niceCellToAggregateConsumer);
 			}
 		}
 

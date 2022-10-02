@@ -1,6 +1,6 @@
 package eu.solven.holymolap.stable.v1;
 
-import eu.solven.holymolap.query.operator.IStandardOperators;
+import eu.solven.holymolap.measures.operator.IStandardOperators;
 
 /**
  * Express how given axis should be aggregated in an {@link IAggregationQuery}

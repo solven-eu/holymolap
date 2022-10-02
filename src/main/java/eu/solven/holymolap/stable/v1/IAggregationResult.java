@@ -2,7 +2,7 @@ package eu.solven.holymolap.stable.v1;
 
 import java.util.NavigableMap;
 
-import eu.solven.holymolap.query.operator.IDoubleAggregate;
+import eu.solven.holymolap.measures.operator.IDoubleAggregate;
 
 /**
  * The result of an {@link IAggregationQuery}

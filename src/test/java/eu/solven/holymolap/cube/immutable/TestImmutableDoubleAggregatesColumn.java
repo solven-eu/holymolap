@@ -3,6 +3,7 @@ package eu.solven.holymolap.cube.immutable;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
+import eu.solven.holymolap.immutable.column.ImmutableDoubleAggregatesColumn;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.longs.LongArrayList;

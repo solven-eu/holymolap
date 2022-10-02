@@ -5,12 +5,12 @@ import java.util.function.DoubleBinaryOperator;
 /**
  * Represents an operation upon two {@code double}-valued operands, producing a {@code double}-valued result.
  */
-public interface IDoubleBinaryOperator extends DoubleBinaryOperator {
+public interface IDoubleBinaryOperator extends DoubleBinaryOperator, IBinaryOperator {
 	/**
 	 * 
 	 * @return the value of an empty aggregate, or a row with no value for the aggregated column.
 	 */
-	double neutral();
+	double neutralAsDouble();
 
 	/**
 	 * Applies this operator to the given operands.
@@ -23,4 +23,16 @@ public interface IDoubleBinaryOperator extends DoubleBinaryOperator {
 	 */
 	@Override
 	double applyAsDouble(double left, double right);
+
+	@Override
+	@Deprecated
+	default public Object neutral() {
+		return neutralAsDouble();
+	}
+
+	@Override
+	@Deprecated
+	default public Object apply(Object left, Object right) {
+		return applyAsDouble((((Number) left).doubleValue()), (((Number) left).doubleValue()));
+	}
 }

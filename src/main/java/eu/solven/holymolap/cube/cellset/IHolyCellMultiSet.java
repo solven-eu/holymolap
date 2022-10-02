@@ -2,9 +2,9 @@ package eu.solven.holymolap.cube.cellset;
 
 import org.roaringbitmap.RoaringBitmap;
 
-import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
-import eu.solven.holymolap.cube.table.IHolyDictionarizedTable;
 import eu.solven.holymolap.exception.HolyExceptionManagement;
+import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
+import eu.solven.holymolap.immutable.table.IHolyDictionarizedTable;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
 /**

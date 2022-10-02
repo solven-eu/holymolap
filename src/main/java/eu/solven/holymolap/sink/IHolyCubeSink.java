@@ -8,8 +8,9 @@ import java.util.stream.Stream;
 import com.google.common.collect.Streams;
 
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.measures.IHolyMeasureColumnMeta;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
+import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
+import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
+import eu.solven.holymolap.mutable.cube.ICloseableToHolyCube;
 import eu.solven.holymolap.sink.record.FilterInHolyRecord;
 import eu.solven.holymolap.sink.record.FilterOutHolyRecord;
 import eu.solven.holymolap.sink.record.HolyCubeRecord;
@@ -22,22 +23,22 @@ import eu.solven.holymolap.sink.record.IHolyRecord;
  * @author Benoit Lacelle
  *
  */
-public interface IHolyCubeSink {
+public interface IHolyCubeSink extends ICloseableToHolyCube {
 
 	IHolyMeasuresDefinition getMeasures();
 
 	@Deprecated
-	default IHolyCube sink(IHolyRecord toAdd) {
+	default IHolyCubeSink sink(IHolyRecord toAdd) {
 		return sinkDeprecated(Stream.of(toAdd));
 	}
 
 	@Deprecated
-	default IHolyCube sinkDeprecated(Iterator<? extends IHolyRecord> toAdd) {
+	default IHolyCubeSink sinkDeprecated(Iterator<? extends IHolyRecord> toAdd) {
 		return sinkDeprecated(Streams.stream(toAdd));
 	}
 
 	@Deprecated
-	default IHolyCube sinkDeprecated(Stream<? extends IHolyRecord> toAdd) {
+	default IHolyCubeSink sinkDeprecated(Stream<? extends IHolyRecord> toAdd) {
 		return sink(toAdd.map(r -> makeHolyCubeRecord(r)));
 	}
 
@@ -54,17 +55,17 @@ public interface IHolyCubeSink {
 		return new HolyCubeRecord(cellRecord, measuresRecord);
 	}
 
-	default IHolyCube sink(IHolyCubeRecord... toAdd) {
+	default IHolyCubeSink sink(IHolyCubeRecord... toAdd) {
 		return sink(Stream.of(toAdd));
 	}
 
-	default IHolyCube sink(Iterable<? extends IHolyCubeRecord> toAdd) {
+	default IHolyCubeSink sink(Iterable<? extends IHolyCubeRecord> toAdd) {
 		return sink(toAdd.iterator());
 	}
 
-	default IHolyCube sink(Iterator<? extends IHolyCubeRecord> toAdd) {
+	default IHolyCubeSink sink(Iterator<? extends IHolyCubeRecord> toAdd) {
 		return sink(Streams.stream(toAdd));
 	}
 
-	IHolyCube sink(Stream<? extends IHolyCubeRecord> toAdd);
+	IHolyCubeSink sink(Stream<? extends IHolyCubeRecord> toAdd);
 }

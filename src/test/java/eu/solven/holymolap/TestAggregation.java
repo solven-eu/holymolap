@@ -18,15 +18,14 @@ import com.google.common.collect.ImmutableSet;
 import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.cube.measures.EmptyHolyMeasureTableDefinition;
-import eu.solven.holymolap.cube.measures.HolyMeasureTableDefinition;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresDefinition;
+import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
+import eu.solven.holymolap.measures.definition.HolyMeasureTableDefinition;
+import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.EmptyAggregationQuery;
+import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
-import eu.solven.holymolap.query.operator.IStandardOperators;
-import eu.solven.holymolap.query.operator.OperatorFactory;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.record.EmptyHolyRecord;
@@ -47,7 +46,12 @@ public class TestAggregation {
 	public static final String DOUBLE_SECOND_KEY = "doubleSecondKey";
 	public static final double DOUBLE_SECOND_VALUE = 17D;
 
-	public static IAggregationQuery GRAND_TOTAL = new EmptyAggregationQuery();
+	public static IAggregationQuery GRAND_TOTAL = AggregateQueryBuilder.grandTotal().build();
+
+	public static IAggregationQuery GRAND_TOTAL_COUNT =
+			AggregateQueryBuilder.grandTotal().count(ICountMeasuresConstants.STAR).build();
+	public static IAggregationQuery GRAND_TOTAL_CELLCOUNT =
+			AggregateQueryBuilder.grandTotal().cellCount(ICountMeasuresConstants.STAR).build();
 
 	public static SimpleAggregationQuery FILTER_FIRST_KEY =
 			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build();
@@ -99,15 +103,23 @@ public class TestAggregation {
 
 			assertEmptyOrNeutral(result, 0D);
 		}
+
+		{
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregateHelper.cumulateInNavigableMap(cube, GRAND_TOTAL_COUNT);
+
+			Assertions.assertThat(result).hasSize(1);
+			Assertions.assertThat(result.values()).singleElement().isEqualTo(0L);
+		}
 	}
 
 	@Test
 	public void testAddOneEmptyEntry() {
 		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
-		IHolyMeasuresDefinition definitions = new HolyMeasureTableDefinition(Arrays.asList(measuredAxis));
+		IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.withCountStar(Arrays.asList(measuredAxis));
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
-		IHolyCube cube = sink.sink(EmptyHolyRecord.INSTANCE);
+		IHolyCube cube = sink.sink(EmptyHolyRecord.INSTANCE).closeToHolyCube();
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().getAxesWithCoordinates().axes());
@@ -121,6 +133,14 @@ public class TestAggregation {
 
 			assertEmptyOrNeutral(result, 0D);
 		}
+
+		{
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregateHelper.cumulateInNavigableMap(cube, GRAND_TOTAL_COUNT);
+
+			Assertions.assertThat(result).hasSize(1);
+			Assertions.assertThat(result.values()).singleElement().isEqualTo(1L);
+		}
 	}
 
 	@Test
@@ -128,7 +148,8 @@ public class TestAggregation {
 		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
 		IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.of(measuredAxis);
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
-		IHolyCube cube = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY), new Object[] { FIRST_VALUE }));
+		IHolyCube cube =
+				sink.sink(new FastEntry(Arrays.asList(FIRST_KEY), new Object[] { FIRST_VALUE })).closeToHolyCube();
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY)),
@@ -156,7 +177,7 @@ public class TestAggregation {
 
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 		IHolyCube cube = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
-				new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE }));
+				new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE })).closeToHolyCube();
 
 		Assert.assertEquals(1, cube.getNbRows());
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)),

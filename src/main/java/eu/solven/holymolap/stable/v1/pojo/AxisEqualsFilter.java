@@ -1,5 +1,8 @@
 package eu.solven.holymolap.stable.v1.pojo;
 
+import java.util.Set;
+
+import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterAxisEquals;
 
@@ -9,6 +12,10 @@ public class AxisEqualsFilter implements IAxesFilterAxisEquals {
 	final Object filtered;
 
 	public AxisEqualsFilter(String axis, Object filtered) {
+		if (Set.of(ICountMeasuresConstants.STAR).contains(axis)) {
+			throw new IllegalArgumentException("Invalid axis for filter: " + axis);
+		}
+
 		this.axis = axis;
 		this.filtered = filtered;
 

@@ -24,10 +24,10 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
-import eu.solven.holymolap.cube.IHasAxesWithCoordinates;
 import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
-import eu.solven.holymolap.cube.table.RowsConsumerStatus;
+import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
+import eu.solven.holymolap.immutable.table.RowsConsumerStatus;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.longs.LongLists;

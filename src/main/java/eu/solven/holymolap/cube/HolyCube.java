@@ -9,13 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import eu.solven.holymolap.axes.EmptyAxisWithCoordinates;
 import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
-import eu.solven.holymolap.cube.measures.EmptyHolyMeasuresTable;
-import eu.solven.holymolap.cube.measures.IHolyMeasuresTable;
-import eu.solven.holymolap.cube.table.EmptyHolyDictionarizedTable;
 import eu.solven.holymolap.exception.HolyExceptionManagement;
+import eu.solven.holymolap.immutable.axes.EmptyAxisWithCoordinates;
+import eu.solven.holymolap.immutable.table.EmptyHolyDictionarizedTable;
+import eu.solven.holymolap.measures.EmptyHolyMeasuresTable;
+import eu.solven.holymolap.measures.IHolyMeasuresTable;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasFilters;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterAnd;
