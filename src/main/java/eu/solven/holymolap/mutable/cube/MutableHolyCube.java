@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Meter;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.MultimapBuilder;
 
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
@@ -52,6 +54,7 @@ import eu.solven.holymolap.stable.v1.IBinaryOperator;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import eu.solven.holymolap.stable.v1.ILongBinaryOperator;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
+import eu.solven.pepper.logging.PepperLogHelper;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -67,8 +70,9 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 public class MutableHolyCube implements IMutableHolyCube {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MutableHolyCube.class);
 
-	final IHolyMeasuresDefinition aggregations;
+	final IHolyMeasuresDefinition measuresDefinition;
 	final Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn;
+	final ListMultimap<String, IMutableAggregatesColumn> measuredAxisToColumn;
 
 	// The Set of axes with at least one cell
 	final Set<String> axesNames;
@@ -84,14 +88,20 @@ public class MutableHolyCube implements IMutableHolyCube {
 	final AtomicLong brokenRows = new AtomicLong();
 	final AtomicBoolean closed = new AtomicBoolean();
 
-	protected MutableHolyCube(IHolyMeasuresDefinition aggregations,
-			Map<IMeasuredAxis, IMutableAggregatesColumn> aggregationToColumn,
+	final Meter inserts = new Meter();
+	final Meter cells = new Meter();
+
+	protected MutableHolyCube(IHolyMeasuresDefinition measuresDefinition,
+			Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn,
 			List<String> orderedAxis,
 			Map<String, IMutableAxisSmallColumn> axisToColumn,
 			Object2IntMap<IntList> cellToRow) {
-		this.aggregations = aggregations;
-		this.measureToColumn = aggregationToColumn;
-		this.axesNames = aggregationToColumn.keySet().stream().map(aa -> aa.getAxis()).collect(Collectors.toSet());
+		this.measuresDefinition = measuresDefinition;
+		this.measureToColumn = measureToColumn;
+		this.axesNames = measureToColumn.keySet().stream().map(aa -> aa.getAxis()).collect(Collectors.toSet());
+
+		this.measuredAxisToColumn = MultimapBuilder.hashKeys().arrayListValues().build();
+		measureToColumn.forEach((measuredAxis, column) -> measuredAxisToColumn.put(measuredAxis.getAxis(), column));
 
 		this.orderedAxes = orderedAxis;
 		this.axisToColumn = axisToColumn;
@@ -188,6 +198,13 @@ public class MutableHolyCube implements IMutableHolyCube {
 	}
 
 	public void acceptRowToCell(IHolyCubeRecord toAdd) {
+		inserts.mark();
+		if (Long.bitCount(inserts.getCount()) == 1) {
+			LOGGER.info("We sinked {} rows. Loading at {}rows/sec",
+					PepperLogHelper.humanBytes(inserts.getCount()),
+					inserts.getMeanRate());
+		}
+
 		IntList cellCoordinates = cellToCoordinates(toAdd.getCellsetRecord());
 
 		int cellIndex = ensureCellRegistration(cellCoordinates);
@@ -209,24 +226,24 @@ public class MutableHolyCube implements IMutableHolyCube {
 		});
 	}
 
-	private void contributeToMeasures(IHolyRecord aggregateTableRecord, int cellIndex) {
-		List<String> indexToAxis = aggregateTableRecord.getAxes();
+	private void contributeToMeasures(IHolyRecord measureTableRecord, int cellIndex) {
+		List<String> indexToAxis = measureTableRecord.getAxes();
 		// int[] recordToCubeIndexes = computeInference(indexToAxis, orderedAxes);
 
-		aggregateTableRecord.accept((i, contribution) -> {
+		measureTableRecord.accept((i, contribution) -> {
 			String axis = indexToAxis.get(i);
 			if (contribution != null) {
-				measureToColumn.entrySet()
-						.stream()
-						.filter(measure -> ICountMeasuresConstants.COUNT_MEASURED_AXIS.equals(measure.getKey())
-								|| measure.getKey().getAxis().equals(axis))
-						.map(e -> e.getValue())
-						.forEach(column -> {
-							column.aggregateObject(cellIndex, contribution);
-						});
-				// } else
-				// LOGGER.warn("Issue accepting contribution {} in {}", contribution, axis);
-				// brokenRows.incrementAndGet();
+				// Multiple measures may rely on the same axis (e.g. input.SUM and input.MAX)
+				measuredAxisToColumn.get(axis).forEach(column -> {
+					column.aggregateObject(cellIndex, contribution);
+				});
+
+				// measureToColumn.entrySet()
+				// .stream()
+				// .filter(measure -> ICountMeasuresConstants.COUNT_MEASURED_AXIS.equals(measure.getKey())
+				// || measure.getKey().getAxis().equals(axis))
+				// .map(e -> e.getValue())
+
 			}
 		});
 
@@ -255,6 +272,13 @@ public class MutableHolyCube implements IMutableHolyCube {
 		}
 
 		if (newCellIndex >= 0) {
+			cells.mark();
+			if (Long.bitCount(inserts.getCount()) == 1) {
+				LOGGER.info("We registered {} cells. Loading at {}cells/sec",
+						PepperLogHelper.humanBytes(cells.getCount()),
+						cells.getMeanRate());
+			}
+
 			// Register this new cell
 			for (int axisIndex = 0; axisIndex < cellCoordinates.size(); axisIndex++) {
 				String axis = orderedAxes.get(axisIndex);
@@ -338,14 +362,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 	@Override
 	public void acceptRowToCell(Stream<? extends IHolyCubeRecord> toAdd) {
-		final Meter requests = new Meter();
-
-		toAdd.peek(record -> {
-			requests.mark();
-			if (requests.getCount() % 100000 == 100000 - 1) {
-				LOGGER.debug("We sinked {} rows. Loading at {}rows/sec", requests.getCount(), requests.getMeanRate());
-			}
-		}).forEach(this::acceptRowToCell);
+		toAdd.forEach(this::acceptRowToCell);
 	}
 
 	protected IntList indexGroupBy(Map<String, ?> groupBy) {
@@ -401,7 +418,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 		IHasAxesWithCoordinates axisWithCoordinates = new AxisWithCoordinates(orderedAxes, axisToDictionary);
 		IHolyCellMultiSet cellSet = new HolyBitmapCellMultiSet(axisWithCoordinates, dictionarizedTable);
 
-		List<IScannableMeasureColumn> aggregatedColumns = aggregations.measures()
+		List<IScannableMeasureColumn> aggregatedColumns = measuresDefinition.measures()
 				.stream()
 				.map(def -> measureToColumn.get(def.asMeasuredAxis()))
 				.map(mutableColumn -> {
@@ -413,7 +430,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 				})
 				.collect(Collectors.toList());
 
-		IHolyMeasuresTable aggregateTable = new HolyMeasuresTable(aggregations, aggregatedColumns);
+		IHolyMeasuresTable aggregateTable = new HolyMeasuresTable(measuresDefinition, aggregatedColumns);
 		return new HolyCube(nbRows, cellSet, aggregateTable);
 	}
 

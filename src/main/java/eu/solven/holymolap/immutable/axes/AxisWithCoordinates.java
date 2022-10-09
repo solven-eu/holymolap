@@ -71,12 +71,6 @@ public class AxisWithCoordinates implements IHasAxesWithCoordinates {
 	}
 
 	@Override
-	public long getSizeInBytes() {
-		LOGGER.warn("TODO");
-		return 0;
-	}
-
-	@Override
 	public long getCardinality(int axisIndex) {
 		return axisIndexToCoordinateIndex.get(axisIndex).coordinates().size();
 	}

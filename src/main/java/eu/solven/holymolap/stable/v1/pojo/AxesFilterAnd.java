@@ -22,11 +22,11 @@ public class AxesFilterAnd implements IAxesFilterAnd {
 		this.filters = filters;
 	}
 
-	public AxesFilterAnd(Map<String, ?> filters) {
-		this.filters = filters.entrySet()
+	public static AxesFilterAnd andAxisEqualsFilters(Map<String, ?> filters) {
+		return new AxesFilterAnd(filters.entrySet()
 				.stream()
 				.map(e -> new AxisEqualsFilter(e.getKey(), e.getValue()))
-				.collect(Collectors.toList());
+				.collect(Collectors.toList()));
 	}
 
 	@Override

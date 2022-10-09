@@ -1,6 +1,7 @@
 package eu.solven.holymolap.mutable.column;
 
 import eu.solven.holymolap.immutable.column.IScannableMeasureColumn;
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
 /**
  * Enable accumulating things
@@ -8,7 +9,7 @@ import eu.solven.holymolap.immutable.column.IScannableMeasureColumn;
  * @author Benoit Lacelle
  *
  */
-public interface IMutableAggregatesColumn {
+public interface IMutableAggregatesColumn extends IHasMemoryFootprint {
 
 	void aggregateObject(int cellIndex, Object doubleValue);
 

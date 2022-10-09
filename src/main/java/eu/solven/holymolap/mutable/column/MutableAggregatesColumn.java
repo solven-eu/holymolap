@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 
 /**
- * A column of double aggregates. Each row is typically associated to a cell (i.e. a {@link Set} of coordinates).
+ * A column of Object aggregates. Each row is typically associated to a cell (i.e. a {@link Set} of coordinates).
  * 
  * @author Benoit Lacelle
  *

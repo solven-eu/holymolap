@@ -2,22 +2,22 @@ package eu.solven.holymolap.query;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import eu.solven.holymolap.measures.operator.OperatorFactory;
+import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.AxesFilterAnd;
+import eu.solven.holymolap.stable.v1.pojo.AxisEqualsFilter;
 
 public class AggregateQueryBuilder {
 	// By default, no columns
 	protected final Set<String> wildcards = new ConcurrentSkipListSet<>();
 
 	// By default, no filters
-	protected final Map<String, Object> filters = new ConcurrentSkipListMap<>();
+	protected final List<IAxesFilter> andFilters = new CopyOnWriteArrayList<>();
 
 	// By default, no aggregation
 	protected final List<IMeasuredAxis> aggregatesKeys = new CopyOnWriteArrayList<>();
@@ -28,10 +28,14 @@ public class AggregateQueryBuilder {
 		return this;
 	}
 
-	public AggregateQueryBuilder addFilter(String key, Object value) {
-		filters.put(key, value);
+	public AggregateQueryBuilder andFilter(IAxesFilter filter) {
+		andFilters.add(filter);
 
 		return this;
+	}
+
+	public AggregateQueryBuilder addFilter(String key, Object value) {
+		return andFilter(new AxisEqualsFilter(key, value));
 	}
 
 	public AggregateQueryBuilder addAggregation(IMeasuredAxis aggregatedAxis) {
@@ -67,7 +71,7 @@ public class AggregateQueryBuilder {
 	}
 
 	public SimpleAggregationQuery build() {
-		SimpleAggregationQuery query = new SimpleAggregationQuery(() -> new AxesFilterAnd(filters),
+		SimpleAggregationQuery query = new SimpleAggregationQuery(() -> new AxesFilterAnd(andFilters),
 				() -> new ArrayList<>(wildcards),
 				() -> aggregatesKeys);
 
@@ -98,6 +102,22 @@ public class AggregateQueryBuilder {
 		AggregateQueryBuilder queryBuilder = new AggregateQueryBuilder();
 
 		for (String wildcard : wildcards) {
+			queryBuilder.addWildcard(wildcard);
+		}
+
+		return queryBuilder;
+	}
+
+	public static AggregateQueryBuilder edit(SimpleAggregationQuery base) {
+		AggregateQueryBuilder queryBuilder = new AggregateQueryBuilder();
+
+		for (IMeasuredAxis wildcard : base.getMeasures()) {
+			queryBuilder.addAggregation(wildcard);
+		}
+
+		queryBuilder.andFilter(base.getFilters());
+
+		for (String wildcard : base.getAxes()) {
 			queryBuilder.addWildcard(wildcard);
 		}
 

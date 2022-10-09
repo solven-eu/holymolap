@@ -5,6 +5,7 @@ import java.util.function.DoubleConsumer;
 
 import com.google.common.primitives.Ints;
 
+import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.doubles.AbstractDoubleIterator;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
@@ -70,9 +71,9 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 		long sizeInBytes = 0;
 
 		if (cellToAggregate instanceof DoubleArrayList) {
-			sizeInBytes += 8 * ((DoubleArrayList) cellToAggregate).elements().length;
+			sizeInBytes += IPepperMemoryConstants.DOUBLE * ((DoubleArrayList) cellToAggregate).elements().length;
 		} else {
-			sizeInBytes += 8 * cellToAggregate.size();
+			sizeInBytes += IPepperMemoryConstants.DOUBLE * cellToAggregate.size();
 		}
 
 		return sizeInBytes;

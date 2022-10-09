@@ -5,10 +5,10 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasMeasures;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.AxesFilterAnd;
 
 /**
@@ -21,7 +21,7 @@ public class EmptyAggregationQuery implements IAggregationQuery {
 
 	@Override
 	public IAxesFilter getFilters() {
-		return new AxesFilterAnd(Collections.emptyMap());
+		return new AxesFilterAnd(Collections.emptyList());
 	}
 
 	@Override

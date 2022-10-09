@@ -5,7 +5,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -17,6 +19,8 @@ import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +28,9 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasureTableDefinition;
 import eu.solven.holymolap.measures.operator.IOperatorFactory;
+import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.record.IHolyRecord;
@@ -36,9 +42,12 @@ import eu.solven.pepper.logging.PepperLogHelper;
 public class ITLoadNycTaxiRides {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ITLoadNycTaxiRides.class);
 
+	// TODO Enable passenger_count as axes
+	// TODO Enable year(tpep_pickup_datetime) and year(tpep_dropoff_datetime)
 	public static void main(String[] args) throws IOException {
 		// https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-		String uri = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2022-01.parquet";
+		// String uri = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2022-01.parquet";
+		String uri = "file:///var/folders/8b/p64c8tfs4d7gf3v8tcmwbz580000gn/T/holymolap-nyc-997161945189150439.parquet";
 
 		Path tmpFile = Files.createTempFile("holymolap-nyc-", ".parquet");
 
@@ -51,20 +60,17 @@ public class ITLoadNycTaxiRides {
 				HadoopInputFile.fromPath(new org.apache.hadoop.fs.Path(tmpFile.toUri()), hadoopConf);
 
 		ParquetFileReader readFooter = ParquetFileReader.open(hadoopFile);
+
+		long recordCount = readFooter.getFilteredRecordCount();
+		LOGGER.info("RecordCount: {}", recordCount);
+
 		MessageType schema = readFooter.getFileMetaData().getSchema();
 
 		List<String> axes = schema.getColumns()
 				.stream()
 				.map(cd -> Stream.of(cd.getPath()).collect(Collectors.joining(".")))
 				.collect(Collectors.toList());
-		List<IMeasuredAxis> measuredAxes = schema.getColumns()
-				.stream()
-				.filter(cd -> "double".equals(cd.getPrimitiveType().getPrimitiveTypeName().name()))
-				.map(cd -> new MeasuredAxis(Stream.of(cd.getPath()).collect(Collectors.joining(".")),
-						IOperatorFactory.SUM))
-				.collect(Collectors.toList());
-
-		IHolyMeasuresDefinition measures = new HolyMeasureTableDefinition(measuredAxes);
+		IHolyMeasuresDefinition measures = defineMeasures(schema);
 		LOGGER.info("Measures: {}", measures);
 
 		ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(hadoopFile).build();
@@ -90,11 +96,47 @@ public class ITLoadNycTaxiRides {
 		IHolyCube holyCube = sink.closeToHolyCube();
 
 		long sizeInBytes = holyCube.getSizeInBytes();
-		LOGGER.info("Parquet.length={} is repsented by holyCube.length={}",
+		LOGGER.info("Parquet.length={} is represented by holyCube.length={}",
 				PepperLogHelper.humanBytes(parquetLength),
 				PepperLogHelper.humanBytes(sizeInBytes));
 
 		SimpleAggregationQuery countRecords = AggregateQueryBuilder.grandTotal().count("*").build();
+
+		{
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregateHelper.cumulateInNavigableMap(holyCube, countRecords);
+			LOGGER.info("Total records: {}", result);
+
+			Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(recordCount);
+		}
+
+		{
+			String wildcard = "VendorID";
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.cumulateInNavigableMap(holyCube,
+					AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
+			LOGGER.info("Total records by '{}': {}", wildcard, result);
+		}
+	}
+
+	private static IHolyMeasuresDefinition defineMeasures(MessageType schema) {
+		List<IMeasuredAxis> measuredAxes = schema.getColumns()
+				.stream()
+				.filter(cd -> !(cd.getPath().length == 1 && "RatecodeID".equals(cd.getPath()[0])))
+				.filter(cd -> PrimitiveTypeName.DOUBLE == cd.getPrimitiveType().getPrimitiveTypeName())
+				.map(cd -> new MeasuredAxis(Stream.of(cd.getPath()).collect(Collectors.joining(".")),
+						IOperatorFactory.SUM))
+				.collect(Collectors.toCollection(ArrayList::new));
+
+		Assertions.assertThat(measuredAxes)
+				.hasSize(11)
+				.contains(new MeasuredAxis("passenger_count", IOperatorFactory.SUM))
+				.doesNotContain(new MeasuredAxis("RatecodeID", IOperatorFactory.SUM));
+
+		// Enable querying COUNT(*)
+		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
+
+		IHolyMeasuresDefinition measures = new HolyMeasureTableDefinition(measuredAxes);
+		return measures;
 	}
 
 	private static IHolyRecord convertAvroToHoly(List<String> axes, GenericRecord nextRecord) {
@@ -109,7 +151,15 @@ public class ITLoadNycTaxiRides {
 			public void accept(IHolyRecordVisitor visitor) {
 				List<Field> fields = nextRecord.getSchema().getFields();
 				for (int i = 0; i < fields.size(); i++) {
-					visitor.onObject(i, nextRecord.get(i));
+					// Field field = fields.get(i);
+					// if (field.schema().getLogicalType())
+					Object coordinate = nextRecord.get(i);
+					if (coordinate instanceof Double) {
+						visitor.onDouble(i, ((Double) coordinate).doubleValue());
+					} else {
+						// tpep_pickup_datetime
+						visitor.onObject(i, coordinate);
+					}
 				}
 			}
 		};

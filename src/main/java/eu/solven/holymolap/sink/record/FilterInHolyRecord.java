@@ -21,7 +21,7 @@ public class FilterInHolyRecord implements IHolyRecord {
 				String axis = underlying.getAxes().get(axisIndex);
 
 				if (filteredIn.contains(axis)) {
-					visitor.onObject(axisIndex, visitor);
+					visitor.onObject(axisIndex, o);
 				}
 			}
 		});

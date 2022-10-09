@@ -183,16 +183,22 @@ public class TestAggregation {
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)),
 				cube.getCellSet().getAxesWithCoordinates().axes());
 
-		assertEmptyOrNeutral(
-				AggregateHelper.cumulateInNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis)),
-				0D);
+		AggregateHelper.cumulateInNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))
+				.values()
+				.forEach(aggregate -> {
+					Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE);
+				});
 
 		// There is a single fact for DoubleKey
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.cumulateInNavigableMap(cube,
 					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(measuredAxis));
 
-			assertEmptyOrNeutral(result, 0D);
+			AggregateHelper.cumulateInNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))
+					.values()
+					.forEach(aggregate -> {
+						Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE);
+					});
 		}
 	}
 }

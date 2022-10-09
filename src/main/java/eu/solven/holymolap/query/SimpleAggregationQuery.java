@@ -4,12 +4,12 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
-import eu.solven.holymolap.stable.v1.IHasMeasures;
 import eu.solven.holymolap.stable.v1.IHasAxes;
 import eu.solven.holymolap.stable.v1.IHasFilters;
+import eu.solven.holymolap.stable.v1.IHasMeasures;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
 /**
  * Simple {@link IAggregationQuery}, where the filter is an AND condition.
@@ -21,12 +21,12 @@ public class SimpleAggregationQuery implements IAggregationQuery {
 
 	protected final IHasFilters axesFilters;
 	protected final IHasAxes axes;
-	protected final IHasMeasures hasAggregations;
+	protected final IHasMeasures hasMeasures;
 
-	public SimpleAggregationQuery(IHasFilters hasFilters, IHasAxes axes, IHasMeasures hasAggregations) {
+	public SimpleAggregationQuery(IHasFilters hasFilters, IHasAxes axes, IHasMeasures hasMeasures) {
 		this.axesFilters = hasFilters;
 		this.axes = axes;
-		this.hasAggregations = hasAggregations;
+		this.hasMeasures = hasMeasures;
 	}
 
 	@Override
@@ -41,27 +41,23 @@ public class SimpleAggregationQuery implements IAggregationQuery {
 
 	@Override
 	public List<IMeasuredAxis> getMeasures() {
-		return hasAggregations.getMeasures();
+		return hasMeasures.getMeasures();
 	}
 
 	@Override
 	public String toString() {
 		// We call the getters to workaround usage of lambda
-		return "SimpleAggregationQuery [axesFilters=" + axesFilters.getFilters()
-				+ ", axes="
-				+ axes.getAxes()
-				+ ", hasAggregations="
-				+ hasAggregations.getMeasures()
-				+ "]";
+		return "SimpleAggregationQuery [axesFilters=" + axesFilters
+				.getFilters() + ", axes=" + axes.getAxes() + ", hasMeasures=" + hasMeasures.getMeasures() + "]";
 	}
 
 	@Override
-	public IAggregationQuery addAggregations(IHasMeasures additionalAggregations) {
-		IHasMeasures mergedAggregations = () -> ImmutableList.<IMeasuredAxis>builder()
+	public IAggregationQuery addAggregations(IHasMeasures additionalMeasures) {
+		IHasMeasures mergedMeasures = () -> ImmutableList.<IMeasuredAxis>builder()
 				.addAll(getMeasures())
-				.addAll(additionalAggregations.getMeasures())
+				.addAll(additionalMeasures.getMeasures())
 				.build();
 
-		return new SimpleAggregationQuery(this, this, mergedAggregations);
+		return new SimpleAggregationQuery(this, this, mergedMeasures);
 	}
 }

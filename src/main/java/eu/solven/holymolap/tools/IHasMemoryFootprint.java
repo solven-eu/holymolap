@@ -10,6 +10,12 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
  */
 public interface IHasMemoryFootprint {
 
+	/**
+	 * 
+	 * @return the size in bytes. Long.MAX_VALUE if not implemented
+	 */
 	@ManagedAttribute
-	long getSizeInBytes();
+	default long getSizeInBytes() {
+		return Long.MAX_VALUE;
+	}
 }
