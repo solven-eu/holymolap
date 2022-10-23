@@ -19,7 +19,6 @@ import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.EmptyHolyMeasureTableDefinition;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
-import eu.solven.holymolap.sink.ImmutableSinkContext;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.sink.record.IHolyRecord;
 
@@ -35,7 +34,7 @@ public class TestHighCardinalityDimension {
 		final Comparable<?>[] values = new Comparable<?>[2];
 
 		final FastEntry reused = new FastEntry(Arrays.asList(TestAggregation.FIRST_KEY,
-				TestAggregation.DOUBLE_FIRSY_KEY), values, new double[0], new int[0]);
+				TestAggregation.DOUBLE_FIRSY_KEY), values, new long[0], new double[0]);
 
 		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
 			int rowIndex = 0;
@@ -76,15 +75,11 @@ public class TestHighCardinalityDimension {
 		final int cardinality = 1000000;
 
 		final Comparable<?>[] values = new Comparable<?>[3];
-		// final ArrayIndexedMap<String, Comparable<?>> buffer = new
-		// ArrayIndexedMap<>(
-		// ImmutableSet.of(TestAggregation.FIRST_KEY,
-		// TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
-		// values);
 
-		final FastEntry reused = new FastEntry(ImmutableList.of(TestAggregation.FIRST_KEY,
-				TestAggregation.SECOND_KEY,
-				TestAggregation.DOUBLE_FIRSY_KEY), values, new double[0], new int[0]);
+		final FastEntry reused = new FastEntry(
+				ImmutableList
+						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
+				values);
 
 		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
 			int rowIndex = 0;

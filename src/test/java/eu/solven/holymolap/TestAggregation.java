@@ -33,18 +33,7 @@ import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 
-public class TestAggregation {
-	public static final String FIRST_KEY = "firstKey";
-	public static final String FIRST_VALUE = "firstValue";
-
-	public static final String SECOND_KEY = "secondKey";
-	public static final String SECOND_VALUE = "secondValue";
-
-	public static final String DOUBLE_FIRSY_KEY = "doubleFirstKey";
-	public static final double DOUBLE_FIRST_VALUE = 13D;
-
-	public static final String DOUBLE_SECOND_KEY = "doubleSecondKey";
-	public static final double DOUBLE_SECOND_VALUE = 17D;
+public class TestAggregation implements IHolyMapDataTestConstants {
 
 	public static IAggregationQuery GRAND_TOTAL = AggregateQueryBuilder.grandTotal().build();
 

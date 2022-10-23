@@ -1,5 +1,6 @@
 package eu.solven.holymolap.it.nyc;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -38,6 +39,7 @@ import eu.solven.holymolap.sink.record.IHolyRecordVisitor;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 import eu.solven.pepper.logging.PepperLogHelper;
+import eu.solven.pepper.memory.PepperFootprintHelper;
 
 public class ITLoadNycTaxiRides {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ITLoadNycTaxiRides.class);
@@ -45,14 +47,22 @@ public class ITLoadNycTaxiRides {
 	// TODO Enable passenger_count as axes
 	// TODO Enable year(tpep_pickup_datetime) and year(tpep_dropoff_datetime)
 	public static void main(String[] args) throws IOException {
-		// https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-		// String uri = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2022-01.parquet";
-		String uri = "file:///var/folders/8b/p64c8tfs4d7gf3v8tcmwbz580000gn/T/holymolap-nyc-997161945189150439.parquet";
-
 		Path tmpFile = Files.createTempFile("holymolap-nyc-", ".parquet");
 
-		LOGGER.info("About to copy locally {}", uri);
-		long parquetLength = Files.copy(new URL(uri).openStream(), tmpFile, StandardCopyOption.REPLACE_EXISTING);
+		long parquetLength;
+		// https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+		try {
+			String uri =
+					"file:///var/folders/8b/p64c8tfs4d7gf3v8tcmwbz580000gn/T/holymolap-nyc-6209160424500474261.parquet";
+			LOGGER.info("About to copy locally {}", uri);
+			parquetLength = Files.copy(new URL(uri).openStream(), tmpFile, StandardCopyOption.REPLACE_EXISTING);
+		} catch (FileNotFoundException e) {
+			LOGGER.warn("Failure relying on cache. We doanload again the file", e);
+
+			String uri = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2022-01.parquet";
+			LOGGER.info("About to copy locally {}", uri);
+			parquetLength = Files.copy(new URL(uri).openStream(), tmpFile, StandardCopyOption.REPLACE_EXISTING);
+		}
 		LOGGER.info("Copied locally into {} size={}", tmpFile, PepperLogHelper.humanBytes(parquetLength));
 
 		Configuration hadoopConf = new Configuration();
@@ -96,9 +106,11 @@ public class ITLoadNycTaxiRides {
 		IHolyCube holyCube = sink.closeToHolyCube();
 
 		long sizeInBytes = holyCube.getSizeInBytes();
-		LOGGER.info("Parquet.length={} is represented by holyCube.length={}",
+		long deepSize = PepperFootprintHelper.deepSize(holyCube);
+		LOGGER.info("Parquet.length={} is represented by holyCube.length={} holyCube.deepSize={}",
 				PepperLogHelper.humanBytes(parquetLength),
-				PepperLogHelper.humanBytes(sizeInBytes));
+				PepperLogHelper.humanBytes(sizeInBytes),
+				PepperLogHelper.humanBytes(deepSize));
 
 		SimpleAggregationQuery countRecords = AggregateQueryBuilder.grandTotal().count("*").build();
 

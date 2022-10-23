@@ -1,5 +1,7 @@
 package eu.solven.holymolap.immutable.axis;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -7,9 +9,11 @@ import java.util.stream.IntStream;
 
 import org.roaringbitmap.RoaringBitmap;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.cache.CompressedIntArray;
 import eu.solven.holymolap.immutable.dictionary.IAxisCoordinatesDictionary;
@@ -41,12 +45,13 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn {
 
 	final AtomicLong brokenRows = new AtomicLong();
 
-	public ImmutableAxisSmallColumn(IAxisCoordinatesDictionary axisCoordinatesDictionary, IMutableAxisSmallColumn input) {
+	public ImmutableAxisSmallColumn(IAxisCoordinatesDictionary axisCoordinatesDictionary,
+			IMutableAxisSmallColumn input) {
 		this.axisCoordinatesDictionary = axisCoordinatesDictionary;
 
-		int[] rowToIndex = input.getRowToIndex();
-
-		nbRows = rowToIndex.length;
+		nbRows = Ints.checkedCast(input.getRows());
+		int[] rowToIndex = new int[nbRows];
+		input.getRowToIndex(0, rowToIndex, 0, nbRows);
 
 		this.compressedRowToCoordinate = new CompressedIntArray(rowToIndex);
 
@@ -87,7 +92,7 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn {
 
 		int[] rowToCoordinates = compressedRowToCoordinate.getIntArray();
 
-		return rowToCoordinates[(int) cellIndex];
+		return rowToCoordinates[Ints.checkedCast(cellIndex)];
 	}
 
 	@Override
@@ -110,4 +115,18 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn {
 		return bitmap;
 	}
 
+	@Override
+	public String toString() {
+		List<Object> firstCoordinates = new ArrayList<>(100);
+		acceptCoordinates(coordinate -> {
+			if (firstCoordinates.size() < 100) {
+				firstCoordinates.add(coordinate);
+			}
+		});
+
+		return MoreObjects.toStringHelper(this)
+				.add("nbRows", getRows())
+				.add("firstCoordinates", firstCoordinates)
+				.toString();
+	}
 }

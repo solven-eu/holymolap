@@ -28,11 +28,10 @@ import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.sink.record.IHolyRecord;
-import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 
 public class TestMediumCardinalityDimension {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(TestMediumCardinalityDimension.class);
@@ -57,10 +56,10 @@ public class TestMediumCardinalityDimension {
 			doubleAxes.add("Double_" + i);
 		}
 
-		final Int2ObjectMap<IntSet> axisToValues = new Int2ObjectOpenHashMap<IntSet>();
+		final Int2ObjectMap<LongSet> axisToValues = new Int2ObjectOpenHashMap<>();
 		for (int axisIndex = 0; axisIndex < nbAxis; axisIndex++) {
 			int expectedSize = 1 + (int) (axisIndex * cardinalityFactor);
-			axisToValues.put(axisIndex, new IntLinkedOpenHashSet(expectedSize));
+			axisToValues.put(axisIndex, new LongLinkedOpenHashSet(expectedSize));
 		}
 
 		List<String> recordAxes = new ArrayList<>();
@@ -79,55 +78,59 @@ public class TestMediumCardinalityDimension {
 		List<String> doubleIterator = new ArrayList<>(doubleAxes);
 
 		for (int axisIndex = 0; axisIndex < nbAxis; axisIndex++) {
-			{
-				String axis = keyIterator.get(axisIndex);
-				String doubleKey = doubleIterator.get(axisIndex % doubleIterator.size());
+			checkAxis(axisToValues, cube, keyIterator, doubleIterator, axisIndex);
+		}
+	}
 
-				long start = System.currentTimeMillis();
+	private void checkAxis(final Int2ObjectMap<LongSet> axisToValues,
+			IHolyCube cube,
+			List<String> keyIterator,
+			List<String> doubleIterator,
+			int axisIndex) {
+		{
+			String axis = keyIterator.get(axisIndex);
+			String doubleKey = doubleIterator.get(axisIndex % doubleIterator.size());
 
-				final AtomicInteger resultSize = new AtomicInteger();
-				AggregateHelper.consumeQueryResult(cube,
-						AggregateQueryBuilder.wildcard(axis)
-								.addAggregation(new MeasuredAxis(doubleKey, OperatorFactory.SUM))
-								.build(),
-						param -> {
+			long start = System.currentTimeMillis();
+
+			final AtomicInteger resultSize = new AtomicInteger();
+			AggregateHelper
+					.consumeQueryResult(cube, AggregateQueryBuilder.wildcard(axis).sum(doubleKey).build(), param -> {
+						resultSize.incrementAndGet();
+					});
+
+			LOGGER.info("It took {} ms for {} aggregates for key={}",
+					System.currentTimeMillis() - start,
+					resultSize,
+					axis);
+
+			Assertions.assertThat(axisToValues.get(axisIndex)).hasSize(resultSize.get());
+		}
+
+		{
+			// Keep 5 keys
+			List<String> subKeys = keyIterator.subList(Math.max(0, axisIndex - 5), axisIndex + 1);
+			String doubleKey = doubleIterator.get(axisIndex % doubleIterator.size());
+
+			long start = System.currentTimeMillis();
+
+			final AtomicInteger resultSize = new AtomicInteger();
+			AggregateHelper.consumeQueryResult(cube,
+					AggregateQueryBuilder.wildcards(subKeys).addAggregation(OperatorFactory.sum(doubleKey)).build(),
+					new Consumer<RawCoordinatesToBitmap>() {
+
+						@Override
+						public void accept(RawCoordinatesToBitmap param) {
 							resultSize.incrementAndGet();
-						});
+						}
+					});
 
-				Assertions.assertThat(axisToValues.get(axisIndex)).hasSize(resultSize.get());
+			LOGGER.info("It took {} ms for {} aggregates for wildcards: {}",
+					System.currentTimeMillis() - start,
+					resultSize,
+					subKeys);
 
-				LOGGER.info("It took {} ms for {} aggregates for key={}",
-						System.currentTimeMillis() - start,
-						resultSize,
-						axis);
-			}
-
-			{
-				// Keep 5 keys
-				List<String> subKeys = keyIterator.subList(Math.max(0, axisIndex - 5), axisIndex + 1);
-				String doubleKey = doubleIterator.get(axisIndex % doubleIterator.size());
-
-				long start = System.currentTimeMillis();
-
-				final AtomicInteger resultSize = new AtomicInteger();
-				AggregateHelper.consumeQueryResult(cube,
-						AggregateQueryBuilder.wildcards(subKeys).addAggregation(OperatorFactory.sum(doubleKey)).build(),
-						new Consumer<RawCoordinatesToBitmap>() {
-
-							@Override
-							public void accept(RawCoordinatesToBitmap param) {
-								resultSize.incrementAndGet();
-							}
-
-						});
-
-				Assertions.assertThat(axisToValues.get(axisIndex).size()).isLessThanOrEqualTo(resultSize.get());
-
-				LOGGER.info("It took {} ms for {} aggregates for wildcards: {}",
-						System.currentTimeMillis() - start,
-						resultSize,
-						subKeys);
-			}
+			Assertions.assertThat(axisToValues.get(axisIndex).size()).isLessThanOrEqualTo(resultSize.get());
 		}
 	}
 
@@ -136,11 +139,11 @@ public class TestMediumCardinalityDimension {
 			final int nbIntAxes,
 			final int nbDoubleAxes,
 			List<String> recordAxes,
-			final Int2ObjectMap<IntSet> axisToValues) {
-		final int[] values = new int[nbIntAxes];
+			final Int2ObjectMap<LongSet> axisToValues) {
+		final long[] values = new long[nbIntAxes];
 		final double[] doubles = new double[nbDoubleAxes];
 
-		final FastEntry reused = new FastEntry(recordAxes, new Object[0], doubles, values);
+		final FastEntry reused = new FastEntry(recordAxes, new Object[0], values, doubles);
 
 		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
 			int rowIndex = 0;
@@ -154,7 +157,7 @@ public class TestMediumCardinalityDimension {
 						int itemIndex = 1 + (int) (i * cardinalityFactor);
 
 						// Axis with higher index has higher cardinality
-						values[i] = ThreadLocalRandom.current().nextInt(itemIndex);
+						values[i] = ThreadLocalRandom.current().nextLong(itemIndex);
 						axisToValues.get(i).add(values[i]);
 					}
 

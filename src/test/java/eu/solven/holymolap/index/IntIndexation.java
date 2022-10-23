@@ -23,7 +23,7 @@ public class IntIndexation {
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		IHolyCube cube = sink.sink(new FastEntry(ImmutableList.of(TestAggregation.FIRST_KEY,
-				TestAggregation.SECOND_KEY), new Object[0], null, new int[] { 3, 7 })).closeToHolyCube();
+				TestAggregation.SECOND_KEY), new Object[0], new long[] { 3, 7 }, null)).closeToHolyCube();
 
 		// IRoaringCube cube = sink.sink(rows);
 

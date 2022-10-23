@@ -42,11 +42,11 @@ public class MutableAxisColumn implements IMutableAxisSmallColumn {
 
 		int nextRowCoordinate = coordinateToIndex.getIndexMayAppend(coordinate);
 
-		appendCoordinateIndex(nextRowCoordinate);
+		appendCoordinateRef(nextRowCoordinate);
 	}
 
 	@Override
-	public synchronized void appendCoordinateIndex(int coordinateIndex) {
+	public synchronized void appendCoordinateRef(int coordinateIndex) {
 		rowToCoordinate.add(coordinateIndex);
 	}
 
@@ -61,16 +61,16 @@ public class MutableAxisColumn implements IMutableAxisSmallColumn {
 	}
 
 	@Override
-	public IMutableAxisSmallDictionarySink getCoordinateToIndex() {
+	public IMutableAxisSmallDictionarySink getCoordinateToRef() {
 		isLocked.set(true);
 		return coordinateToIndex;
 	}
 
 	@Override
-	public int[] getRowToIndex() {
+	public void getRowToIndex(int from, int a[], int offset, int length) {
+		// We are reading the data: make this read-only
 		isLocked.set(true);
 
-		// This lead to an int[] copy. Should we prefer relying on a buffer?
-		return rowToCoordinate.toIntArray();
+		rowToCoordinate.getElements(from, a, offset, length);
 	}
 }

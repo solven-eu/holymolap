@@ -13,21 +13,21 @@ public class FastEntry implements IHolyRecord {
 	protected final int[] doubleIndexes;
 	protected final double[] doubles;
 
-	protected final int[] intIndexes;
-	protected final int[] ints;
+	protected final int[] longIndexes;
+	protected final long[] longs;
 
 	public FastEntry(List<String> axes, Object[] objects) {
-		this(axes, objects, new double[0], new int[0]);
+		this(axes, objects, new long[0], new double[0]);
 	}
 
-	public FastEntry(List<String> axes, Object[] objects, double[] doubles, int[] ints) {
+	public FastEntry(List<String> axes, Object[] objects, long[] longs, double[] doubles) {
 		this.axes = ImmutableList.copyOf(axes);
 
 		this.objects = objects;
+		this.longs = longs;
 		this.doubles = doubles;
-		this.ints = ints;
 
-		if (ints == null) {
+		if (objects == null) {
 			objectIndexes = new int[0];
 		} else {
 			objectIndexes = new int[objects.length];
@@ -45,24 +45,24 @@ public class FastEntry implements IHolyRecord {
 			}
 		}
 
-		if (ints == null) {
-			intIndexes = new int[0];
+		if (longs == null) {
+			longIndexes = new int[0];
 		} else {
-			intIndexes = new int[ints.length];
-			for (int i = 0; i < ints.length; i++) {
-				intIndexes[i] = objectIndexes.length + doubleIndexes.length + i;
+			longIndexes = new int[longs.length];
+			for (int i = 0; i < longs.length; i++) {
+				longIndexes[i] = objectIndexes.length + doubleIndexes.length + i;
 			}
 		}
 
 		int nbAxes = this.axes.size();
-		if (nbAxes != objectIndexes.length + doubleIndexes.length + intIndexes.length) {
+		if (nbAxes != objectIndexes.length + doubleIndexes.length + longIndexes.length) {
 			throw new IllegalArgumentException("Number of axes (" + nbAxes
 					+ ") differs to number of coordinates (o="
 					+ objectIndexes.length
 					+ ", d="
 					+ doubleIndexes.length
-					+ ", i="
-					+ intIndexes.length
+					+ ", l="
+					+ longIndexes.length
 					+ ")");
 		}
 	}
@@ -77,11 +77,13 @@ public class FastEntry implements IHolyRecord {
 		for (int i = 0; i < objectIndexes.length; i++) {
 			visitor.onObject(i, objects[i]);
 		}
-		for (int i = 0; i < intIndexes.length; i++) {
-			visitor.onObject(i, ints[i]);
+		int shiftForLong = objectIndexes.length;
+		for (int i = 0; i < longIndexes.length; i++) {
+			visitor.onObject(shiftForLong + i, longs[i]);
 		}
+		int shiftForDouble = shiftForLong + longIndexes.length;
 		for (int i = 0; i < doubleIndexes.length; i++) {
-			visitor.onObject(i, doubles[i]);
+			visitor.onObject(shiftForDouble + i, doubles[i]);
 		}
 	}
 

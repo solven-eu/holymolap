@@ -18,6 +18,10 @@ public interface IAxisSmallDictionary {
 
 	int getIndexMayMiss(Object coordinate);
 
+	/**
+	 * 
+	 * @return a Set of coordinates, while iteration while go from ref=0 to ref=cardinality-1
+	 */
 	Set<?> orderedCoordinates();
 
 }

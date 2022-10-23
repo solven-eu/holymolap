@@ -1,6 +1,5 @@
 package eu.solven.holymolap.mutable.cube;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 import eu.solven.holymolap.cube.IHolyCube;
@@ -25,7 +24,7 @@ public interface IMutableHolyCube extends ICloseableToHolyCube {
 	 * @param row
 	 *            a row, to be contributed to either a new, or an existing cell.
 	 */
-	void acceptRowToCell(Map<String, ?> row);
+	// void acceptRowToCell(Map<String, ?> row);
 
 	/**
 	 * 
@@ -34,7 +33,7 @@ public interface IMutableHolyCube extends ICloseableToHolyCube {
 	 * @param groupBy
 	 *            axis to coordinates
 	 */
-	void acceptRowToCell(Map<String, ?> aggregated, Map<String, ?> groupBy);
+	// void acceptRowToCell(Map<String, ?> aggregated, Map<String, ?> groupBy);
 
 	void acceptRowToCell(Stream<? extends IHolyCubeRecord> toAdd);
 }

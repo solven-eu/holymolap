@@ -33,6 +33,11 @@
 			<artifactId>pepper</artifactId>
 			<version>${pepper.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>io.github.solven-eu.pepper</groupId>
+			<artifactId>pepper-with-agent</artifactId>
+			<version>${pepper.version}</version>
+		</dependency>
 
 		<!-- <dependency> -->
 		<!-- <groupId>org.javolution</groupId> -->

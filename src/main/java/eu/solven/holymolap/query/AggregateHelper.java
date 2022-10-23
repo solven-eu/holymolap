@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -70,8 +71,7 @@ public class AggregateHelper {
 	protected static Function<long[], NavigableMap<String, Object>> rawToNiceCoordinates(final IHolyCube cube,
 			final IAggregationQuery query) {
 		IHasAxesWithCoordinates axesWithCoordinates = cube.getCellSet().getAxesWithCoordinates();
-		final int[] wildcardIndexes =
-				computeWildcardIndexes(query.getAxes(), new TreeSet<Object>(axesWithCoordinates.axes()));
+		final int[] wildcardIndexes = computeWildcardIndexes(query.getAxes(), axesWithCoordinates.axes());
 
 		return valueIndexes -> {
 			NavigableMap<String, Object> coordinates = new ConcurrentSkipListMap<>();
@@ -187,21 +187,27 @@ public class AggregateHelper {
 		}
 	}
 
-	public static int[] computeWildcardIndexes(Collection<String> wildards, SortedSet<Object> allKeys) {
+	public static int[] computeWildcardIndexes(Collection<String> wildards, NavigableSet<String> allKeys) {
 		int[] wildcardIndexes = new int[wildards.size()];
 
 		int wildcardComputed = -1;
-		for (Object wildcard : wildards) {
+		for (String wildcard : wildards) {
 			wildcardComputed++;
 			// Count the number of element before this, not included
 			// on the first element, we return 0
+
 			wildcardIndexes[wildcardComputed] = indexOf(allKeys, wildcard);
 		}
 
 		return wildcardIndexes;
 	}
 
-	public static int indexOf(SortedSet<Object> allKeys, Object wildcard) {
-		return allKeys.headSet(wildcard).size();
+	public static int indexOf(NavigableSet<String> allKeys, String wildcard) {
+		if (allKeys instanceof SortedSet<?>) {
+			return allKeys.headSet(wildcard).size();
+		} else {
+			// BEWARE it is expensive to do this copy
+			return indexOf(new TreeSet<>(allKeys), wildcard);
+		}
 	}
 }

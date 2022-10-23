@@ -30,7 +30,7 @@ public class TestHolyDictionarizedTable {
 	@Test
 	public void testScan_1Axes() {
 		IAxisCoordinatesDictionary immutableDictionary =
-				new AxisCoordinatesDictionary(mutableColumn1.getCoordinateToIndex().orderedCoordinates());
+				new AxisCoordinatesDictionary(mutableColumn1.getCoordinateToRef().orderedCoordinates());
 
 		ImmutableAxisSmallColumn immutableColumn = new ImmutableAxisSmallColumn(immutableDictionary, mutableColumn1);
 		HolyDictionarizedTable table = new HolyDictionarizedTable(4, Arrays.asList(immutableColumn));
@@ -57,9 +57,9 @@ public class TestHolyDictionarizedTable {
 	@Test
 	public void testScan_2Axes() {
 		IAxisCoordinatesDictionary immutableDictionary1 =
-				new AxisCoordinatesDictionary(mutableColumn1.getCoordinateToIndex().orderedCoordinates());
+				new AxisCoordinatesDictionary(mutableColumn1.getCoordinateToRef().orderedCoordinates());
 		IAxisCoordinatesDictionary immutableDictionary2 =
-				new AxisCoordinatesDictionary(mutableColumn2.getCoordinateToIndex().orderedCoordinates());
+				new AxisCoordinatesDictionary(mutableColumn2.getCoordinateToRef().orderedCoordinates());
 
 		ImmutableAxisSmallColumn immutableColumn1 = new ImmutableAxisSmallColumn(immutableDictionary1, mutableColumn1);
 		ImmutableAxisSmallColumn immutableColumn2 = new ImmutableAxisSmallColumn(immutableDictionary2, mutableColumn2);

@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.Ints;
 
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
@@ -48,6 +49,9 @@ public class AxisCoordinatesDictionary implements IAxisCoordinatesDictionary {
 	public Object getCoordinate(long valueIndex) {
 		if (valueIndex < 0) {
 			return NO_REFERENCE;
+		} else if (valueIndex >= valueIndexToValue.size()) {
+			throw new IllegalArgumentException(
+					"There is no coordinate for ref=" + valueIndex + " as max refIndex is " + valueIndexToValue.size());
 		}
 		return valueIndexToValue.get(Ints.checkedCast(valueIndex));
 	}
@@ -55,5 +59,13 @@ public class AxisCoordinatesDictionary implements IAxisCoordinatesDictionary {
 	@Override
 	public Collection<?> coordinates() {
 		return Collections.unmodifiableCollection(valueToIndex.values());
+	}
+
+	@Override
+	public String toString() {
+		return MoreObjects.toStringHelper(this)
+				.add("cardinality", valueIndexToValue.size())
+				.add("firstCoodinates", valueIndexToValue.subList(0, Math.min(100, valueIndexToValue.size())))
+				.toString();
 	}
 }

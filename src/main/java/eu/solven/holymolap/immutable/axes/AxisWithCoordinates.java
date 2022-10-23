@@ -16,6 +16,7 @@ import eu.solven.holymolap.query.ICountMeasuresConstants;
 public class AxisWithCoordinates implements IHasAxesWithCoordinates {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AxisWithCoordinates.class);
 
+	// This is generally sorted
 	protected final List<? extends String> axisIndexToAxis;
 	protected final List<? extends IAxisCoordinatesDictionary> axisIndexToCoordinateIndex;
 
