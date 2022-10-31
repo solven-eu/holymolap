@@ -1,20 +1,22 @@
 package eu.solven.holymolap.it.nyc;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URL;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.avro.Schema.Field;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.thirdparty.com.google.common.collect.Maps;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -26,6 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.cube.composite.CompositeHolyCube;
+import eu.solven.holymolap.cube.composite.ICompositeHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasureTableDefinition;
 import eu.solven.holymolap.measures.operator.IOperatorFactory;
@@ -41,91 +45,104 @@ import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 import eu.solven.pepper.logging.PepperLogHelper;
 import eu.solven.pepper.memory.PepperFootprintHelper;
 
-public class ITLoadNycTaxiRides {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ITLoadNycTaxiRides.class);
+public class ITLoadNycTaxiRides_Multiple {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ITLoadNycTaxiRides_Multiple.class);
 
 	// TODO Enable passenger_count as axes
 	// TODO Enable year(tpep_pickup_datetime) and year(tpep_dropoff_datetime)
 	public static void main(String[] args) throws IOException {
-		Path tmpFile = Files.createTempFile("holymolap-nyc-", ".parquet");
+		// // https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+		Path folder = Paths.get("/Users/blacelle/Downloads/2021-yellow");
 
-		long parquetLength;
-		// https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
-		try {
-			String uri =
-					"file:///var/folders/8b/p64c8tfs4d7gf3v8tcmwbz580000gn/T/holymolap-nyc-6209160424500474261.parquet";
-			LOGGER.info("About to copy locally {}", uri);
-			parquetLength = Files.copy(new URL(uri).openStream(), tmpFile, StandardCopyOption.REPLACE_EXISTING);
-		} catch (FileNotFoundException e) {
-			LOGGER.warn("Failure relying on cache. We doanload again the file", e);
+		AtomicLong recordsCount = new AtomicLong();
 
-			String uri = "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2022-01.parquet";
-			LOGGER.info("About to copy locally {}", uri);
-			parquetLength = Files.copy(new URL(uri).openStream(), tmpFile, StandardCopyOption.REPLACE_EXISTING);
-		}
-		LOGGER.info("Copied locally into {} size={}", tmpFile, PepperLogHelper.humanBytes(parquetLength));
+		// https://stackoverflow.com/questions/33596618/how-can-i-get-a-parallel-stream-of-files-walk
+		List<Path> collectToForceParallel =
+				Files.walk(folder).filter(p -> p.toFile().isFile()).collect(Collectors.toList());
 
-		Configuration hadoopConf = new Configuration();
-		HadoopInputFile hadoopFile =
-				HadoopInputFile.fromPath(new org.apache.hadoop.fs.Path(tmpFile.toUri()), hadoopConf);
+		long totalSizeOnDisk = collectToForceParallel.stream().mapToLong(p -> p.toFile().length()).sum();
+		LOGGER.info("ABout to load {} files for a total of {}",
+				collectToForceParallel.size(),
+				PepperLogHelper.humanBytes(totalSizeOnDisk));
 
-		ParquetFileReader readFooter = ParquetFileReader.open(hadoopFile);
+		Map<String, IHolyCube> partitions = collectToForceParallel.stream().parallel().map(path -> {
+			IHolyCube holyCube;
+			try {
+				Configuration hadoopConf = new Configuration();
 
-		long recordCount = readFooter.getFilteredRecordCount();
-		LOGGER.info("RecordCount: {}", recordCount);
+				HadoopInputFile hadoopFile =
+						HadoopInputFile.fromPath(new org.apache.hadoop.fs.Path(path.toUri()), hadoopConf);
 
-		MessageType schema = readFooter.getFileMetaData().getSchema();
+				//
+				ParquetFileReader readFooter = ParquetFileReader.open(hadoopFile);
 
-		List<String> axes = schema.getColumns()
-				.stream()
-				.map(cd -> Stream.of(cd.getPath()).collect(Collectors.joining(".")))
-				.collect(Collectors.toList());
-		IHolyMeasuresDefinition measures = defineMeasures(schema);
-		LOGGER.info("Measures: {}", measures);
+				long recordCount = readFooter.getFilteredRecordCount();
+				LOGGER.info("RecordCount: {}", recordCount);
+				recordsCount.addAndGet(recordCount);
 
-		ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(hadoopFile).build();
+				MessageType schema = readFooter.getFileMetaData().getSchema();
 
-		HolyCubeSink sink = new HolyCubeSink(measures);
+				List<String> axes = schema.getColumns()
+						.stream()
+						.map(cd -> Stream.of(cd.getPath()).collect(Collectors.joining(".")))
+						.collect(Collectors.toList());
+				IHolyMeasuresDefinition measures = defineMeasures(schema);
+				LOGGER.info("Measures: {}", measures);
 
-		long nbInsert = 0;
-		while (true) {
-			GenericRecord nextRecord = reader.read();
+				ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(hadoopFile).build();
 
-			if (nextRecord == null) {
-				break;
+				HolyCubeSink sink = new HolyCubeSink(measures);
+
+				long nbInsert = 0;
+				while (true) {
+					GenericRecord nextRecord = reader.read();
+
+					if (nextRecord == null) {
+						break;
+					}
+
+					if (nbInsert == 0) {
+						LOGGER.info("First record: {}", nextRecord);
+					}
+					nbInsert++;
+
+					sink.sink(convertAvroToHoly(axes, nextRecord));
+				}
+
+				holyCube = sink.closeToHolyCube();
+
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
 			}
 
-			if (nbInsert == 0) {
-				LOGGER.info("First record: {}", nextRecord);
-			}
-			nbInsert++;
+			long parquetLength = path.toFile().length();
+			long sizeInBytes = holyCube.getSizeInBytes();
+			long deepSize = PepperFootprintHelper.deepSize(holyCube);
+			LOGGER.info("Parquet.length={} is represented by holyCube.length={} holyCube.deepSize={}",
+					PepperLogHelper.humanBytes(parquetLength),
+					PepperLogHelper.humanBytes(sizeInBytes),
+					PepperLogHelper.humanBytes(deepSize));
 
-			sink.sink(convertAvroToHoly(axes, nextRecord));
-		}
+			return Maps.immutableEntry(path.toString(), holyCube);
+		}).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-		IHolyCube holyCube = sink.closeToHolyCube();
-
-		long sizeInBytes = holyCube.getSizeInBytes();
-		long deepSize = PepperFootprintHelper.deepSize(holyCube);
-		LOGGER.info("Parquet.length={} is represented by holyCube.length={} holyCube.deepSize={}",
-				PepperLogHelper.humanBytes(parquetLength),
-				PepperLogHelper.humanBytes(sizeInBytes),
-				PepperLogHelper.humanBytes(deepSize));
+		ICompositeHolyCube partitionnedCube = new CompositeHolyCube(partitions);
 
 		SimpleAggregationQuery countRecords = AggregateQueryBuilder.grandTotal().count("*").build();
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.cumulateInNavigableMap(holyCube, countRecords);
+					AggregateHelper.singleMeasureToNavigableMap(partitionnedCube, countRecords);
 			LOGGER.info("Total records: {}", result);
 
-			Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(recordCount);
+			Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(recordsCount.get());
 		}
 
 		{
 			String wildcard = "VendorID";
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.cumulateInNavigableMap(holyCube,
-					AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregateHelper.singleMeasureToNavigableMap(partitionnedCube,
+							AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
 			LOGGER.info("Total records by '{}': {}", wildcard, result);
 		}
 	}

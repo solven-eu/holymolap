@@ -23,20 +23,4 @@ public interface IHolyCellMultiSet extends IHasMemoryFootprint {
 
 	IHolyDictionarizedTable getTable();
 
-	/**
-	 * 
-	 * @param axis
-	 * @param coordinate
-	 * @return the cellIndexes matching given coordinate on given axis.
-	 */
-	@Deprecated
-	default RoaringBitmap getCoordinateToBitmap(String axis, Object coordinate) {
-		int axisIndex = getAxesWithCoordinates().getAxisIndex(axis);
-		if (axisIndex < 0) {
-			return HolyExceptionManagement.immutableEmptyBitmap();
-		}
-		long coordinateRef = getAxesWithCoordinates().getCoordinateRef(axis, coordinate);
-		return getTable().getCoordinateToRows(axisIndex, coordinateRef);
-	}
-
 }

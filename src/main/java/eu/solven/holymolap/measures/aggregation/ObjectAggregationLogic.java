@@ -2,6 +2,7 @@ package eu.solven.holymolap.measures.aggregation;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import eu.solven.holymolap.aggregate.CoordinatesRefs;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
 import eu.solven.holymolap.stable.v1.IBinaryOperator;
@@ -29,14 +30,17 @@ public class ObjectAggregationLogic implements IAggregationLogic<Object> {
 	}
 
 	@Override
+	public IBinaryOperator getOperator() {
+		return operator;
+	}
+
+	@Override
 	public String toString() {
 		return "SingleColumnAggregationLogic [measureIndex=" + measureIndex + ", operator=" + operator + "]";
 	}
 
 	@Override
-	public Object aggregateTo(IHolyMeasuresTable measuresTable,
-			LongIterator rowsIterator,
-			long[] axisIndexToCoordinateIndex) {
+	public Object aggregateTo(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, CoordinatesRefs slice) {
 		Object neutral = operator.neutral();
 
 		// The following is discarded due to early optimization

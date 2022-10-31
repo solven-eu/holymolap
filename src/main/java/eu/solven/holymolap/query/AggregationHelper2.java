@@ -1,9 +1,10 @@
 package eu.solven.holymolap.query;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -11,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.roaringbitmap.RoaringBitmap;
 import org.roaringbitmap.Util;
@@ -23,8 +26,9 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
+import eu.solven.holymolap.aggregate.CoordinatesRefs;
+import eu.solven.holymolap.aggregate.EmptyCoordinatesRefs;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
-import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
 import eu.solven.holymolap.immutable.table.RowsConsumerStatus;
@@ -47,16 +51,16 @@ public class AggregationHelper2 {
 	 * @return the matching rows
 	 */
 	public RoaringBitmap computeNextCellRows(IHolyCellMultiSet cellSet,
-			Collection<String> axesKeys,
+			int[] axesIndexes,
 			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
 		if (candidateRows.isEmpty()) {
 			return candidateRows;
 		}
 
-		if (axesKeys.isEmpty()) {
+		if (axesIndexes.length == 0) {
 			// All rows match as we requested the grand total
-			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(candidateRows, new long[0]));
+			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(EmptyCoordinatesRefs.EMPTY, candidateRows));
 
 			return candidateRows;
 		}
@@ -64,72 +68,29 @@ public class AggregationHelper2 {
 		// Pick-up next valid row
 		long rowToConsider = Util.toUnsignedLong(candidateRows.select(0));
 
-		int[] axesIndexes = new int[axesKeys.size()];
+		final long[] valuesRefs = cellSet.getTable().getCellCoordinates(rowToConsider, axesIndexes);
 
-		// This array will hold the indexes of the values of the next coordinate
-		// matching the selected wildcards
-		final long[] valuesRefs;
-		// final List<RoaringBitmap> matchingRowsBitmaps;
-		{
-			// valuesRefs = new long[axesKeys.size()];
-
-			// The list of bitmaps matching next row siblings
-			// matchingRowsBitmaps = new ArrayList<>(1 + axesKeys.size());
-			// matchingRowsBitmaps.add(candidateRows);
-
-			int i = -1;
-			for (String wildcardKey : axesKeys) {
-				i++;
-
-				int wildcardKeyIndex = cellSet.getAxesWithCoordinates().getAxisIndex(wildcardKey);
-
-				if (wildcardKeyIndex < 0) {
-					// We are decomposing an unknown axis
-					LOGGER.debug("{} is unknown amongst {}", wildcardKey, cellSet.getAxesWithCoordinates().getAxes());
-					return HolyBitmapCellMultiSet.EMPTY_BITMAP;
-				}
-
-				axesIndexes[i] = wildcardKeyIndex;
-
-				// long valueRef = cellSet.getCellCoordinateRef(rowToConsider, wildcardKeyIndex);
-
-				// if (valueRef == IHolyCellMultiSet.NOT_INDEXED) {
-				// throw new IllegalStateException("We are considering a row (" + rowToConsider
-				// + ") which does not contribute to key: "
-				// + wildcardKey);
-				// }
-
-				// valuesRefs[i] = valueRef;
-
-				// RoaringBitmap valueBitmap = cellSet.getCoordinateToCells(wildcardKeyIndex, valueRef);
-
-				// matchingRowsBitmaps.add(valueBitmap);
-			}
-
-			valuesRefs = cellSet.getTable().getCellCoordinates(rowToConsider, axesIndexes);
-		}
-
-		// RoaringBitmap matchingRowsBitmap = FastAggregation.and(matchingRowsBitmaps.iterator());
 		RoaringBitmap matchingRowsBitmap = cellSet.getTable().getCoordinateToRows(axesIndexes, valuesRefs);
 
 		if (!matchingRowsBitmap.contains(Ints.checkedCast(rowToConsider))) {
 			throw new IllegalStateException("We should have spot at least current row");
 		}
 
-		rowAggregateConsumer.accept(new RawCoordinatesToBitmap(matchingRowsBitmap, valuesRefs));
+		CoordinatesRefs coordinates = new CoordinatesRefs(cellSet.getAxesWithCoordinates(), axesIndexes, valuesRefs);
+		rowAggregateConsumer.accept(new RawCoordinatesToBitmap(coordinates, matchingRowsBitmap));
 
 		return matchingRowsBitmap;
 	}
 
 	public void computeParallelNextCellRows(IHolyCellMultiSet index,
-			List<String> wildcardKeys,
+			int[] axesIndexes,
 			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
-		computeParallelNextCellRows(index, wildcardKeys, LongLists.emptyList(), candidateRows, rowAggregateConsumer);
+		computeParallelNextCellRows(index, axesIndexes, LongLists.emptyList(), candidateRows, rowAggregateConsumer);
 	}
 
 	protected void computeParallelNextCellRows(final IHolyCellMultiSet index,
-			final List<String> wildcardKeys,
+			final int[] axesIndexes,
 			final LongList valueIndexes,
 			final RoaringBitmap candidateRows,
 			final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
@@ -141,7 +102,7 @@ public class AggregationHelper2 {
 
 		try {
 			computeParallelNextCellRows(index,
-					wildcardKeys,
+					axesIndexes,
 					valueIndexes,
 					candidateRows,
 					rowAggregateConsumer,
@@ -183,17 +144,18 @@ public class AggregationHelper2 {
 	 * @param status
 	 */
 	protected void computeParallelNextCellRows(final IHolyCellMultiSet cellSet,
-			final List<String> wildcardAxes,
+			final int[] axesIndexes,
 			final LongList coordinateRefsForWildcardAxes,
 			final RoaringBitmap candidateRows,
 			final Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
 			final Executor es,
 			final AtomicLong nbTasks,
 			final RowsConsumerStatus status) {
-		if (wildcardAxes.size() == coordinateRefsForWildcardAxes.size()) {
+		if (axesIndexes.length == coordinateRefsForWildcardAxes.size()) {
 			// We have selected a coordinate for each wildcardAxes
-			rowAggregateConsumer
-					.accept(new RawCoordinatesToBitmap(candidateRows, coordinateRefsForWildcardAxes.toLongArray()));
+			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(new CoordinatesRefs(cellSet.getAxesWithCoordinates(),
+					axesIndexes,
+					coordinateRefsForWildcardAxes.toLongArray()), candidateRows));
 
 			// Register these rows as consumed
 			status.addAsConsidered(candidateRows.getCardinality());
@@ -216,16 +178,15 @@ public class AggregationHelper2 {
 				// This array will hold the indexes of the values of the next
 				// coordinate matching the selected wildcards
 				{
-					String wildcardKey = wildcardAxes.get(coordinateRefsForWildcardAxes.size());
-
-					int axisIndex = cellSet.getAxesWithCoordinates().getAxisIndex(wildcardKey);
+					int axisIndex = axesIndexes[coordinateRefsForWildcardAxes.size()];
 
 					final long valueIndex = cellSet.getTable().getCellCoordinateRef(rowToConsider, axisIndex);
 
 					if (valueIndex == IHasAxesWithCoordinates.NOT_INDEXED) {
+						String axisName = cellSet.getAxesWithCoordinates().getAxes().get(axisIndex);
 						throw new IllegalStateException("We are considering a row (" + rowToConsider
 								+ ") which does not contribute to key: "
-								+ wildcardKey);
+								+ axisName);
 					}
 
 					final RoaringBitmap valueBitmap = cellSet.getTable().getCoordinateToRows(axisIndex, valueIndex);
@@ -242,7 +203,7 @@ public class AggregationHelper2 {
 										coordinateRefsForWildcardAxes,
 										valueIndex,
 										cellSet,
-										wildcardAxes,
+										axesIndexes,
 										rowAggregateConsumer,
 										es,
 										nbTasks,
@@ -281,7 +242,7 @@ public class AggregationHelper2 {
 			LongList valueIndexes,
 			long valueIndex,
 			IHolyCellMultiSet index,
-			List<String> wildcardKeys,
+			int[] axesIndexes,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer,
 			Executor es,
 			AtomicLong nbAsyncTasks,
@@ -295,7 +256,7 @@ public class AggregationHelper2 {
 		LongList matchingValueIndexes = new LongArrayList(valueIndexes);
 		matchingValueIndexes.add(valueIndex);
 		computeParallelNextCellRows(index,
-				wildcardKeys,
+				axesIndexes,
 				matchingValueIndexes,
 				matchingRowsBitmap,
 				rowAggregateConsumer,
@@ -313,13 +274,13 @@ public class AggregationHelper2 {
 	 * @return rows left to process
 	 */
 	public RoaringBitmap consumeNextCellRows(final IHolyCellMultiSet index,
-			final Collection<String> wildcards,
+			final int[] axesIndexes,
 			final RoaringBitmap rows,
 			Consumer<RawCoordinatesToBitmap> consumer) {
 		if (rows.isEmpty()) {
 			return rows;
 		} else {
-			RoaringBitmap matchingRows = computeNextCellRows(index, wildcards, rows, consumer);
+			RoaringBitmap matchingRows = computeNextCellRows(index, axesIndexes, rows, consumer);
 
 			// LOGGER.debug("We consumed {} rows out of {}",
 			// matchingRows.getCardinality(), rows.getCardinality());
@@ -331,8 +292,8 @@ public class AggregationHelper2 {
 		}
 	}
 
-	public Iterator<RawCoordinatesToBitmap> nextCellRows(final IHolyCellMultiSet index,
-			final Collection<String> wildcards,
+	public Iterator<RawCoordinatesToBitmap> asIterator(final IHolyCellMultiSet index,
+			final int[] axesIndexes,
 			final RoaringBitmap rows) {
 		final AtomicReference<RawCoordinatesToBitmap> nextAggregate = new AtomicReference<>();
 
@@ -360,7 +321,7 @@ public class AggregationHelper2 {
 
 					// Do not consider the matching rows for future
 					// aggregation
-					leftRows = consumeNextCellRows(index, wildcards, leftRows, consumer);
+					leftRows = consumeNextCellRows(index, axesIndexes, leftRows, consumer);
 
 					int nbLeftRows = leftRows.getCardinality();
 
@@ -391,5 +352,15 @@ public class AggregationHelper2 {
 			}
 
 		};
+	}
+
+	public Stream<RawCoordinatesToBitmap> asStream(final IHolyCellMultiSet index,
+			final int[] axesIndexes,
+			final RoaringBitmap rows) {
+		Iterator<RawCoordinatesToBitmap> iterator = asIterator(index, axesIndexes, rows);
+		// Immutable as the underlying cube is immutable
+		Spliterator<RawCoordinatesToBitmap> spliterator =
+				Spliterators.spliteratorUnknownSize(iterator, Spliterator.IMMUTABLE);
+		return StreamSupport.stream(spliterator, false);
 	}
 }

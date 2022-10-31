@@ -55,7 +55,11 @@ public class HolyCube implements IHolyCube {
 
 	@Override
 	public String toString() {
-		return "#Rows: " + nbRows + ", Axes=" + cellSet.getAxesWithCoordinates().axes();
+		return "#Rows: " + nbRows
+				+ ", Axes="
+				+ cellSet.getAxesWithCoordinates().axes()
+				+ ", Measures="
+				+ aggregateTable.getMeasuresDefinition();
 	}
 
 	@Override
@@ -75,8 +79,14 @@ public class HolyCube implements IHolyCube {
 		} else if (axesFilter.isAxisEquals()) {
 			IAxesFilterAxisEquals equalsFilter = (IAxesFilterAxisEquals) axesFilter;
 
-			RoaringBitmap valueBitmap =
-					cellSet.getCoordinateToBitmap(equalsFilter.getAxis(), equalsFilter.getFiltered());
+			String axis = equalsFilter.getAxis();
+			int axisIndex = cellSet.getAxesWithCoordinates().getAxisIndex(axis);
+			if (axisIndex < 0) {
+				return HolyExceptionManagement.immutableEmptyBitmap();
+			}
+			long coordinateRef = cellSet.getAxesWithCoordinates().getCoordinateRef(axis, equalsFilter.getFiltered());
+
+			RoaringBitmap valueBitmap = cellSet.getTable().getCoordinateToRows(axisIndex, coordinateRef);
 
 			if (axesFilter.isExclusion()) {
 				return RoaringBitmap.andNot(all, valueBitmap);

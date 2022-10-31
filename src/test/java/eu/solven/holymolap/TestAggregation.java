@@ -1,9 +1,7 @@
 package eu.solven.holymolap;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -24,8 +22,6 @@ import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.EmptyAggregationQuery;
-import eu.solven.holymolap.query.ICountMeasuresConstants;
-import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.record.EmptyHolyRecord;
@@ -33,51 +29,7 @@ import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 
-public class TestAggregation implements IHolyMapDataTestConstants {
-
-	public static IAggregationQuery GRAND_TOTAL = AggregateQueryBuilder.grandTotal().build();
-
-	public static IAggregationQuery GRAND_TOTAL_COUNT =
-			AggregateQueryBuilder.grandTotal().count(ICountMeasuresConstants.STAR).build();
-	public static IAggregationQuery GRAND_TOTAL_CELLCOUNT =
-			AggregateQueryBuilder.grandTotal().cellCount(ICountMeasuresConstants.STAR).build();
-
-	public static SimpleAggregationQuery FILTER_FIRST_KEY =
-			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build();
-	public static SimpleAggregationQuery DD_FIRST_KEY = AggregateQueryBuilder.wildcard(FIRST_KEY).build();
-
-	public static SimpleAggregationQuery FILTER_FIRST_FILTER_SECOND_KEY =
-			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addFilter(SECOND_KEY, SECOND_VALUE).build();
-	public static SimpleAggregationQuery DD_FIRST_DD_SECOND_KEY =
-			AggregateQueryBuilder.wildcard(FIRST_KEY).addWildcard(SECOND_KEY).build();
-	public static SimpleAggregationQuery FILTER_FIRST_DD_SECOND_KEY =
-			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addWildcard(SECOND_KEY).build();
-
-	protected List<IAggregationQuery> getAllQueries() {
-		List<IAggregationQuery> queries = new ArrayList<>();
-
-		queries.add(GRAND_TOTAL);
-
-		queries.add(FILTER_FIRST_KEY);
-		queries.add(DD_FIRST_KEY);
-
-		queries.add(FILTER_FIRST_FILTER_SECOND_KEY);
-		queries.add(DD_FIRST_DD_SECOND_KEY);
-		queries.add(FILTER_FIRST_DD_SECOND_KEY);
-
-		return queries;
-	}
-
-	private void assertEmptyOrNeutral(NavigableMap<? extends NavigableMap<?, ?>, ?> result, Object neutral) {
-		if (result.isEmpty()) {
-			// The measures has no contributing rows: OK
-		} else {
-			// Everything equals the neutral
-			result.values().forEach(aggregate -> {
-				Assertions.assertThat(aggregate).isEqualTo(neutral);
-			});
-		}
-	}
+public class TestAggregation extends ATestAggregation implements IHolyMapDataTestConstants {
 
 	@Test
 	public void testEmptyCube() {
@@ -87,7 +39,7 @@ public class TestAggregation implements IHolyMapDataTestConstants {
 		Assert.assertEquals(Collections.emptySet(), cube.getCellSet().getAxesWithCoordinates().axes());
 
 		for (IAggregationQuery query : getAllQueries()) {
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.cumulateInNavigableMap(cube,
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
 					query.addAggregations(new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM)));
 
 			assertEmptyOrNeutral(result, 0D);
@@ -95,7 +47,7 @@ public class TestAggregation implements IHolyMapDataTestConstants {
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.cumulateInNavigableMap(cube, GRAND_TOTAL_COUNT);
+					AggregateHelper.singleMeasureToNavigableMap(cube, GRAND_TOTAL_COUNT);
 
 			Assertions.assertThat(result).hasSize(1);
 			Assertions.assertThat(result.values()).singleElement().isEqualTo(0L);
@@ -117,7 +69,7 @@ public class TestAggregation implements IHolyMapDataTestConstants {
 			Map<NavigableMap<?, ?>, Object> empty = new TreeMap<>(NavigableMapComparator.INSTANCE);
 			empty.put(Collections.emptyNavigableMap(), 0D);
 
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.cumulateInNavigableMap(cube,
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
 					query.addAggregations(() -> Arrays.asList(measuredAxis)));
 
 			assertEmptyOrNeutral(result, 0D);
@@ -125,7 +77,7 @@ public class TestAggregation implements IHolyMapDataTestConstants {
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.cumulateInNavigableMap(cube, GRAND_TOTAL_COUNT);
+					AggregateHelper.singleMeasureToNavigableMap(cube, GRAND_TOTAL_COUNT);
 
 			Assertions.assertThat(result).hasSize(1);
 			Assertions.assertThat(result.values()).singleElement().isEqualTo(1L);
@@ -145,12 +97,13 @@ public class TestAggregation implements IHolyMapDataTestConstants {
 				cube.getCellSet().getAxesWithCoordinates().axes());
 
 		assertEmptyOrNeutral(
-				AggregateHelper.cumulateInNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis)),
+				AggregateHelper.singleMeasureToNavigableMap(cube,
+						new EmptyAggregationQuery().addAggregations(measuredAxis)),
 				0D);
 
 		// There is no double on FirstKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.cumulateInNavigableMap(cube,
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
 					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE)
 							.build()
 							.addAggregations(new MeasuredAxis(FIRST_KEY, OperatorFactory.SUM)));
@@ -172,7 +125,7 @@ public class TestAggregation implements IHolyMapDataTestConstants {
 		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)),
 				cube.getCellSet().getAxesWithCoordinates().axes());
 
-		AggregateHelper.cumulateInNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))
+		AggregateHelper.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))
 				.values()
 				.forEach(aggregate -> {
 					Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE);
@@ -180,14 +133,12 @@ public class TestAggregation implements IHolyMapDataTestConstants {
 
 		// There is a single fact for DoubleKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.cumulateInNavigableMap(cube,
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
 					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(measuredAxis));
 
-			AggregateHelper.cumulateInNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))
-					.values()
-					.forEach(aggregate -> {
-						Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE);
-					});
+			result.values().forEach(aggregate -> {
+				Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE);
+			});
 		}
 	}
 }

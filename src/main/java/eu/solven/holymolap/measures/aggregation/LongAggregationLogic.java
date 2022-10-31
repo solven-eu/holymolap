@@ -2,8 +2,10 @@ package eu.solven.holymolap.measures.aggregation;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import eu.solven.holymolap.aggregate.CoordinatesRefs;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
+import eu.solven.holymolap.stable.v1.IBinaryOperator;
 import eu.solven.holymolap.stable.v1.ILongBinaryOperator;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -28,14 +30,17 @@ public class LongAggregationLogic implements ILongAggregationLogic {
 	}
 
 	@Override
+	public ILongBinaryOperator getOperator() {
+		return operator;
+	}
+
+	@Override
 	public String toString() {
 		return "SingleColumnAggregationLogic [measureIndex=" + measureIndex + ", operator=" + operator + "]";
 	}
 
 	@Override
-	public long aggregateToLong(IHolyMeasuresTable measuresTable,
-			LongIterator rowsIterator,
-			long[] axisIndexToCoordinateIndex) {
+	public long aggregateToLong(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, CoordinatesRefs slice) {
 		long neutral = operator.neutralAsLong();
 
 		// The following is discarded due to early optimization

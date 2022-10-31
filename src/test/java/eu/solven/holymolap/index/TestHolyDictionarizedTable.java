@@ -52,6 +52,9 @@ public class TestHolyDictionarizedTable {
 		Assertions.assertThat(table.getCoordinateToRows(0, 1).toArray()).containsExactly(1);
 		// row2 on cells 3
 		Assertions.assertThat(table.getCoordinateToRows(0, 2).toArray()).containsExactly(3);
+
+		// Querying with not a single axis: matches all
+		Assertions.assertThat(table.getCoordinateToRows(new int[0], new long[0]).toArray()).containsExactly(0, 1, 2, 3);
 	}
 
 	@Test

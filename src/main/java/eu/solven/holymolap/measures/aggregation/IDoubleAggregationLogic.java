@@ -1,12 +1,17 @@
 package eu.solven.holymolap.measures.aggregation;
 
+import eu.solven.holymolap.aggregate.CoordinatesRefs;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
+import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
 public interface IDoubleAggregationLogic extends IAggregationLogic<Double> {
 	@Override
-	default Double aggregateTo(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, long[] coordinateIndexes) {
-		return aggregateToDouble(measuresTable, rowsIterator, coordinateIndexes);
+	IDoubleBinaryOperator getOperator();
+
+	@Override
+	default Double aggregateTo(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, CoordinatesRefs slice) {
+		return aggregateToDouble(measuresTable, rowsIterator, slice);
 	}
 
 	/**
@@ -18,6 +23,6 @@ public interface IDoubleAggregationLogic extends IAggregationLogic<Double> {
 	 * @param coordinateIndexes
 	 * @return
 	 */
-	double aggregateToDouble(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, long[] coordinateIndexes);
+	double aggregateToDouble(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, CoordinatesRefs slice);
 
 }

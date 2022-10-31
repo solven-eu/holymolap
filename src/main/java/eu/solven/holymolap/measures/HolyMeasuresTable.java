@@ -1,8 +1,6 @@
 package eu.solven.holymolap.measures;
 
 import java.util.List;
-import java.util.function.DoubleConsumer;
-import java.util.function.LongConsumer;
 
 import eu.solven.holymolap.immutable.column.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.immutable.column.IScannableLongMeasureColumn;
@@ -42,7 +40,7 @@ public class HolyMeasuresTable implements IHolyMeasuresTable {
 	}
 
 	@Override
-	public IHolyMeasuresDefinition getDefinition() {
+	public IHolyMeasuresDefinition getMeasuresDefinition() {
 		return definition;
 	}
 
@@ -60,11 +58,6 @@ public class HolyMeasuresTable implements IHolyMeasuresTable {
 		}
 
 		return doubles.mapToDouble(rowsIterator);
-	}
-
-	@Override
-	public void acceptDoubles(LongIterator rowsIterator, int axisIndex, DoubleConsumer doubleConsumer) {
-		readDouble(rowsIterator, axisIndex).forEachRemaining(doubleConsumer);
 	}
 
 	@Override
@@ -96,10 +89,5 @@ public class HolyMeasuresTable implements IHolyMeasuresTable {
 		}
 
 		return longs.mapToLong(rowsIterator);
-	}
-
-	@Override
-	public void acceptLongs(LongIterator rowsIterator, int axisIndex, LongConsumer longConsumer) {
-		readLong(rowsIterator, axisIndex).forEachRemaining(longConsumer);
 	}
 }

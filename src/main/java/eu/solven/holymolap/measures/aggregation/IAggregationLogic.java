@@ -1,9 +1,13 @@
 package eu.solven.holymolap.measures.aggregation;
 
+import eu.solven.holymolap.aggregate.CoordinatesRefs;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
+import eu.solven.holymolap.stable.v1.IBinaryOperator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
 public interface IAggregationLogic<T> {
+
+	IBinaryOperator getOperator();
 
 	/**
 	 * 
@@ -14,6 +18,6 @@ public interface IAggregationLogic<T> {
 	 * @param coordinateIndexes
 	 * @return
 	 */
-	T aggregateTo(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, long[] coordinateIndexes);
+	T aggregateTo(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, CoordinatesRefs slice);
 
 }

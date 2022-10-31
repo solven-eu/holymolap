@@ -2,6 +2,7 @@ package eu.solven.holymolap.measures.aggregation;
 
 import com.google.common.util.concurrent.AtomicDouble;
 
+import eu.solven.holymolap.aggregate.CoordinatesRefs;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
@@ -10,6 +11,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
 public class DoubleAggregationLogic implements IDoubleAggregationLogic {
+	// Relate to a IHolyMeasuresDefinition
 	protected final int measureIndex;
 	protected final IDoubleBinaryOperator operator;
 
@@ -29,6 +31,11 @@ public class DoubleAggregationLogic implements IDoubleAggregationLogic {
 	}
 
 	@Override
+	public IDoubleBinaryOperator getOperator() {
+		return operator;
+	}
+
+	@Override
 	public String toString() {
 		return "SingleColumnAggregationLogic [measureIndex=" + measureIndex + ", operator=" + operator + "]";
 	}
@@ -36,7 +43,7 @@ public class DoubleAggregationLogic implements IDoubleAggregationLogic {
 	@Override
 	public double aggregateToDouble(IHolyMeasuresTable measuresTable,
 			LongIterator rowsIterator,
-			long[] axisIndexToCoordinateIndex) {
+			CoordinatesRefs slice) {
 		double neutral = operator.neutralAsDouble();
 
 		// The following is discarded due to early optimization

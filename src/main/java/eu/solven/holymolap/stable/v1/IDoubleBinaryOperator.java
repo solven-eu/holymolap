@@ -33,6 +33,6 @@ public interface IDoubleBinaryOperator extends DoubleBinaryOperator, IBinaryOper
 	@Override
 	@Deprecated
 	default public Object apply(Object left, Object right) {
-		return applyAsDouble((((Number) left).doubleValue()), (((Number) left).doubleValue()));
+		return applyAsDouble((((Number) left).doubleValue()), (((Number) right).doubleValue()));
 	}
 }

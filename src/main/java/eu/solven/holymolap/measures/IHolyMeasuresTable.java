@@ -17,23 +17,25 @@ import it.unimi.dsi.fastutil.longs.LongIterator;
  * @author Benoit Lacelle
  *
  */
-public interface IHolyMeasuresTable extends IHasMemoryFootprint {
-
-	IHolyMeasuresDefinition getDefinition();
+public interface IHolyMeasuresTable extends IHasMemoryFootprint, IHasMeasuresDefinition {
 
 	/**
 	 * Used by {@link IAggregationLogic}
 	 * 
 	 * @param rowsIterator
-	 * @param axisIndex
+	 * @param measureIndex
 	 * @return a {@link DoubleIterator} covering the rows described by the iterator.
 	 */
-	DoubleIterator readDouble(LongIterator rowsIterator, int axisIndex);
+	DoubleIterator readDouble(LongIterator rowsIterator, int measureIndex);
+
+	default void acceptDoubles(LongIterator rowsIterator, int measureIndex, DoubleConsumer doubleConsumer) {
+		readDouble(rowsIterator, measureIndex).forEachRemaining(doubleConsumer);
+	}
 
 	LongIterator readLong(LongIterator rowsIterator, int measureIndex);
 
-	void acceptDoubles(LongIterator rowsIterator, int axisIndex, DoubleConsumer doubleConsumer);
-
-	void acceptLongs(LongIterator rowsIterator, int axisIndex, LongConsumer longConsumer);
+	default void acceptLongs(LongIterator rowsIterator, int measureIndex, LongConsumer longConsumer) {
+		readLong(rowsIterator, measureIndex).forEachRemaining(longConsumer);
+	}
 
 }

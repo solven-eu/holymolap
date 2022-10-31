@@ -52,6 +52,10 @@ public class HolyDictionarizedTable implements IHolyDictionarizedTable {
 					"Incompatible .length: " + axesIndexes.length + " vs " + valuesRefs.length);
 		}
 
+		if (axesIndexes.length == 0) {
+			return RoaringBitmap.bitmapOfRange(0L, (long) nbRows);
+		}
+
 		List<RoaringBitmap> coordinateBitmap = new ArrayList<>(axesIndexes.length);
 
 		for (int i = 0; i < axesIndexes.length; i++) {
