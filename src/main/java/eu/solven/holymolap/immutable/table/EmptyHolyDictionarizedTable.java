@@ -21,8 +21,13 @@ public class EmptyHolyDictionarizedTable implements IHolyDictionarizedTable {
 	}
 
 	@Override
-	public long[] getCellCoordinates(long cellIndex, int[] axesIndexes) {
+	public long[] getCellCoordinates(long cellIndex, int... axesIndexes) {
 		throw new IllegalArgumentException("Empty");
+	}
+
+	@Override
+	public RoaringBitmap getAll() {
+		return new RoaringBitmap();
 	}
 
 }

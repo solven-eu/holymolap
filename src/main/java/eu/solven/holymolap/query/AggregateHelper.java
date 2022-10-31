@@ -69,7 +69,7 @@ public class AggregateHelper {
 
 	public static Stream<RawCoordinatesToBitmap> queryToRawCellsIterator(final IHolyCube cube,
 			final IAggregationQuery query) {
-		return queryToRawCellsIterator(cube, query, RoaringBitmap.bitmapOfRange(0, cube.getNbRows()));
+		return queryToRawCellsIterator(cube, query, cube.getCellSet().getTable().getAll());
 	}
 
 	protected static Stream<RawCoordinatesToBitmap> queryToRawCellsIterator(final IHolyCube cube,

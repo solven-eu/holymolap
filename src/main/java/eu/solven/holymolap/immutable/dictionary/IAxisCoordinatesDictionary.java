@@ -3,6 +3,8 @@ package eu.solven.holymolap.immutable.dictionary;
 import java.util.Collection;
 import java.util.Objects;
 
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
+
 /**
  * Like VBA Dictionary, this maps {@link Long} to {@link Objects}, from 0 to the cardinality of the dictionary. No 2
  * indexes would maps to equals Objects.
@@ -13,7 +15,7 @@ import java.util.Objects;
  * @author Benoit Lacelle
  *
  */
-public interface IAxisCoordinatesDictionary {
+public interface IAxisCoordinatesDictionary extends IHasMemoryFootprint {
 	int NOT_INDEXED = -1;
 	Object NO_REFERENCE = new Object();
 

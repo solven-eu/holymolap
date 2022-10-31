@@ -16,6 +16,12 @@ public class HolyMeasureColumnMeta implements IHolyMeasureColumnMeta {
 
 	final IAggregationLogic<?> aggregationLogic;
 
+	HolyMeasureColumnMeta() {
+		// serialization
+		this.measuredAxis = null;
+		this.aggregationLogic = null;
+	}
+
 	/**
 	 * 
 	 * @param measuredAxis
@@ -46,6 +52,11 @@ public class HolyMeasureColumnMeta implements IHolyMeasureColumnMeta {
 	@Override
 	public IMeasuredAxis asMeasuredAxis() {
 		return measuredAxis;
+	}
+
+	@Override
+	public String toString() {
+		return "HolyMeasureColumnMeta [measuredAxis=" + measuredAxis + "]";
 	}
 
 }

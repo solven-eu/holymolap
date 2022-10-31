@@ -1,4 +1,4 @@
-package eu.solven.holymolap.git;
+package eu.solven.holymolap.beta.git;
 
 import eu.solven.holymolap.stable.v1.IOneShotAggregator;
 

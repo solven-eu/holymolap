@@ -1,6 +1,7 @@
 package eu.solven.holymolap.immutable.table;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.roaringbitmap.RoaringBitmap;
@@ -15,6 +16,10 @@ public class HolyDictionarizedTable implements IHolyDictionarizedTable {
 
 	final int nbRows;
 	protected final List<? extends IScannableAxisSmallColumn> axisIndexToColumn;
+
+	public HolyDictionarizedTable() {
+		this(0, Collections.emptyList());
+	}
 
 	public HolyDictionarizedTable(int nbRow, List<? extends IScannableAxisSmallColumn> axisIndexToColumn) {
 		this.nbRows = nbRow;
@@ -64,6 +69,11 @@ public class HolyDictionarizedTable implements IHolyDictionarizedTable {
 		}
 
 		return RoaringBitmap.and(coordinateBitmap.iterator(), 0L, (long) nbRows);
+	}
+
+	@Override
+	public RoaringBitmap getAll() {
+		return RoaringBitmap.bitmapOfRange(0, (long) nbRows);
 	}
 
 }

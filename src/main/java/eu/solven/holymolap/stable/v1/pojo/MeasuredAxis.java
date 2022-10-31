@@ -9,6 +9,12 @@ public class MeasuredAxis implements IMeasuredAxis {
 	final String axis;
 	final String operator;
 
+	MeasuredAxis() {
+		// serialization
+		this.axis = null;
+		this.operator = null;
+	}
+
 	public MeasuredAxis(String axis, String operator) {
 		this.axis = axis;
 		this.operator = operator;

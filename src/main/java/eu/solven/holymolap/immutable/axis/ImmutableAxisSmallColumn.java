@@ -3,7 +3,6 @@ package eu.solven.holymolap.immutable.axis;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -16,8 +15,10 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.cache.CompressedIntArray;
+import eu.solven.holymolap.immutable.dictionary.EmptyAxisCoordinatesDictionary;
 import eu.solven.holymolap.immutable.dictionary.IAxisCoordinatesDictionary;
 import eu.solven.holymolap.mutable.axis.IMutableAxisSmallColumn;
+import eu.solven.holymolap.mutable.axis.MutableAxisColumn;
 import eu.solven.holymolap.mutable.dictionary.IAxisSmallDictionary;
 
 /**
@@ -36,14 +37,18 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn {
 	// https://stackoverflow.com/questions/264582/is-there-a-softhashmap-in-java
 	// http://jeremymanson.blogspot.com/2009/07/how-hotspot-decides-to-clear_07.html
 	// final ConcurrentReferenceHashMap<Long, RoaringBitmap>
-	final LoadingCache<Long, RoaringBitmap> coordinateRefToBitmap = CacheBuilder.newBuilder()
+	transient LoadingCache<Long, RoaringBitmap> coordinateRefToBitmap = CacheBuilder.newBuilder()
 			.concurrencyLevel(Runtime.getRuntime().availableProcessors() * 2)
 			.softValues()
 			.build(CacheLoader.from(coordinateRef -> {
 				return getCoordinateBitmapNoCache(coordinateRef);
 			}));
 
-	final AtomicLong brokenRows = new AtomicLong();
+	final long brokenRows;
+
+	protected ImmutableAxisSmallColumn() {
+		this(new EmptyAxisCoordinatesDictionary(), new MutableAxisColumn());
+	}
 
 	public ImmutableAxisSmallColumn(IAxisCoordinatesDictionary axisCoordinatesDictionary,
 			IMutableAxisSmallColumn input) {
@@ -55,12 +60,12 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn {
 
 		this.compressedRowToCoordinate = new CompressedIntArray(rowToIndex);
 
-		this.brokenRows.set(input.getBrokenRows());
+		this.brokenRows = input.getBrokenRows();
 	}
 
 	@Override
 	public long getBrokenRows() {
-		return brokenRows.get();
+		return brokenRows;
 	}
 
 	@Override

@@ -2,9 +2,12 @@ package eu.solven.holymolap.measures;
 
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
+
 import eu.solven.holymolap.immutable.column.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.immutable.column.IScannableLongMeasureColumn;
 import eu.solven.holymolap.immutable.column.IScannableMeasureColumn;
+import eu.solven.holymolap.measures.definition.EmptyHolyMeasureTableDefinition;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.doubles.DoubleIterators;
@@ -23,6 +26,11 @@ public class HolyMeasuresTable implements IHolyMeasuresTable {
 	 * For each key, gives the value as double, which would be valid only where the key-bitmap is true
 	 */
 	protected final List<? extends IScannableMeasureColumn> axisIndexToAggregates;
+
+	public HolyMeasuresTable() {
+		this.definition = new EmptyHolyMeasureTableDefinition();
+		this.axisIndexToAggregates = ImmutableList.of();
+	}
 
 	public HolyMeasuresTable(IHolyMeasuresDefinition definition,
 			List<? extends IScannableMeasureColumn> axisIndexToAggregates) {

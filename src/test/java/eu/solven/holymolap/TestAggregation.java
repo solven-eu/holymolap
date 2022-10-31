@@ -17,7 +17,7 @@ import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
-import eu.solven.holymolap.measures.definition.HolyMeasureTableDefinition;
+import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
@@ -57,7 +57,7 @@ public class TestAggregation extends ATestAggregation implements IHolyMapDataTes
 	@Test
 	public void testAddOneEmptyEntry() {
 		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
-		IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.withCountStar(Arrays.asList(measuredAxis));
+		IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.withCountStar(Arrays.asList(measuredAxis));
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 		IHolyCube cube = sink.sink(EmptyHolyRecord.INSTANCE).closeToHolyCube();
@@ -87,7 +87,7 @@ public class TestAggregation extends ATestAggregation implements IHolyMapDataTes
 	@Test
 	public void testAddOneEntryAggregateNotDoubleKey() {
 		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
-		IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.of(measuredAxis);
+		IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 		IHolyCube cube =
 				sink.sink(new FastEntry(Arrays.asList(FIRST_KEY), new Object[] { FIRST_VALUE })).closeToHolyCube();
@@ -115,7 +115,7 @@ public class TestAggregation extends ATestAggregation implements IHolyMapDataTes
 	@Test
 	public void testAddOneEntryAggregateDoubleKey() {
 		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
-		IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.of(measuredAxis);
+		IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 		IHolyCube cube = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),

@@ -19,7 +19,7 @@ import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.composite.CompositeHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
-import eu.solven.holymolap.measures.definition.HolyMeasureTableDefinition;
+import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
@@ -66,7 +66,7 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 		IHolyCube cube1;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
 			cube1 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
@@ -74,7 +74,7 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		}
 		IHolyCube cube2;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
 			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
@@ -110,7 +110,7 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 		IHolyCube cube1;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
 			cube1 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
@@ -118,7 +118,7 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		}
 		IHolyCube cube2;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
 			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
@@ -160,7 +160,7 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		HolyCube cube1 = new HolyCube();
 		IHolyCube cube2;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
 			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),

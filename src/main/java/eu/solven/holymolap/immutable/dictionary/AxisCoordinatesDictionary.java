@@ -9,6 +9,7 @@ import java.util.Set;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.Ints;
 
+import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
@@ -24,6 +25,10 @@ public class AxisCoordinatesDictionary implements IAxisCoordinatesDictionary {
 	protected final Object2LongMap<Object> valueToIndex;
 	// This is need for randomAccess to coordinates from ref
 	protected final List<Object> valueIndexToValue;
+
+	public AxisCoordinatesDictionary() {
+		this(Collections.emptySet());
+	}
 
 	public AxisCoordinatesDictionary(Set<?> coordinates) {
 		valueToIndex = new Object2LongOpenHashMap<>(coordinates.size());
@@ -41,19 +46,25 @@ public class AxisCoordinatesDictionary implements IAxisCoordinatesDictionary {
 	}
 
 	@Override
+	public long getSizeInBytes() {
+		return valueToIndex.size() * IPepperMemoryConstants.LONG;
+	}
+
+	@Override
 	public long getCoordinateRef(Object value) {
 		return valueToIndex.getLong(value);
 	}
 
 	@Override
-	public Object getCoordinate(long valueIndex) {
-		if (valueIndex < 0) {
+	public Object getCoordinate(long coordinateRef) {
+		if (coordinateRef < 0) {
 			return NO_REFERENCE;
-		} else if (valueIndex >= valueIndexToValue.size()) {
-			throw new IllegalArgumentException(
-					"There is no coordinate for ref=" + valueIndex + " as max refIndex is " + valueIndexToValue.size());
+		} else if (coordinateRef >= valueIndexToValue.size()) {
+			throw new IllegalArgumentException("There is no coordinate for ref=" + coordinateRef
+					+ " as max refIndex is "
+					+ valueIndexToValue.size());
 		}
-		return valueIndexToValue.get(Ints.checkedCast(valueIndex));
+		return valueIndexToValue.get(Ints.checkedCast(coordinateRef));
 	}
 
 	@Override

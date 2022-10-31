@@ -25,6 +25,12 @@ public class DoubleAggregationLogic implements IDoubleAggregationLogic {
 		return definition.measures().get(index).getAggregationLogic();
 	}
 
+	DoubleAggregationLogic() {
+		// serialization
+		this.measureIndex = Integer.MIN_VALUE;
+		this.operator = null;
+	}
+
 	public DoubleAggregationLogic(int measureIndex, IDoubleBinaryOperator operator) {
 		this.measureIndex = measureIndex;
 		this.operator = operator;

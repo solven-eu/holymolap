@@ -12,13 +12,17 @@ import me.lemire.integercompression.IntCompressor;
 public class CompressedIntArray implements IHasMemoryFootprint {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CompressedIntArray.class);
 
-	// Move into ThreadLocal?
-	final IntCompressor iic = new IntCompressor();
-
 	final int[] compressed;
 
+	// Move into ThreadLocal?
+	transient IntCompressor iic = new IntCompressor();
+
 	// https://stackoverflow.com/questions/299659/whats-the-difference-between-softreference-and-weakreference-in-java
-	final AtomicReference<SoftReference<int[]>> refSoftRef = new AtomicReference<>();
+	transient AtomicReference<SoftReference<int[]>> refSoftRef = new AtomicReference<>();
+
+	public CompressedIntArray() {
+		this.compressed = new int[0];
+	}
 
 	public CompressedIntArray(int[] rowToIndex) {
 		this.compressed = iic.compress(rowToIndex);

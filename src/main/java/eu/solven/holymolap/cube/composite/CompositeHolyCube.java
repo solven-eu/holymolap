@@ -10,7 +10,7 @@ import com.google.common.collect.ImmutableMap;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
-import eu.solven.holymolap.measures.definition.HolyMeasureTableDefinition;
+import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
 public class CompositeHolyCube implements ICompositeHolyCube {
@@ -33,7 +33,7 @@ public class CompositeHolyCube implements ICompositeHolyCube {
 				.distinct()
 				.collect(Collectors.toList());
 
-		return new HolyMeasureTableDefinition(measures);
+		return new HolyMeasuresTableDefinition(measures);
 	}
 
 }

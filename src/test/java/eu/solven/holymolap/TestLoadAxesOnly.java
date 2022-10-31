@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
-import eu.solven.holymolap.measures.definition.HolyMeasureTableDefinition;
+import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.record.EmptyHolyRecord;
@@ -17,7 +17,7 @@ import eu.solven.holymolap.sink.record.HolyCubeRecord;
 
 public class TestLoadAxesOnly implements IHolyMapDataTestConstants {
 
-	final IHolyMeasuresDefinition definitions = HolyMeasureTableDefinition.withCountStar(Collections.emptyList());
+	final IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.withCountStar(Collections.emptyList());
 	final IHolyCubeSink sink = new HolyCubeSink(definitions);
 
 	@Test

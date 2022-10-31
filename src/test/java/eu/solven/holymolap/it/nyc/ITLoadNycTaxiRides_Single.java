@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
-import eu.solven.holymolap.measures.definition.HolyMeasureTableDefinition;
+import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IOperatorFactory;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
@@ -147,7 +147,7 @@ public class ITLoadNycTaxiRides_Single {
 		// Enable querying COUNT(*)
 		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
 
-		IHolyMeasuresDefinition measures = new HolyMeasureTableDefinition(measuredAxes);
+		IHolyMeasuresDefinition measures = new HolyMeasuresTableDefinition(measuredAxes);
 		return measures;
 	}
 

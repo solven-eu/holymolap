@@ -23,6 +23,11 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 	final DoubleList cellToAggregate;
 	final double neutral;
 
+	protected ImmutableDoubleAggregatesColumn() {
+		this.cellToAggregate = DoubleList.of();
+		neutral = 0D;
+	}
+
 	/**
 	 * 
 	 * @param cellToAggregate

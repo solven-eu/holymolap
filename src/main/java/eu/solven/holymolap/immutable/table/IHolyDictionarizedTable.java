@@ -47,4 +47,6 @@ public interface IHolyDictionarizedTable extends IHasMemoryFootprint {
 		return getCellCoordinates(cellIndex, axisIndex)[0];
 	}
 
+	RoaringBitmap getAll();
+
 }

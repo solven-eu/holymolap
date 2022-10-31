@@ -3,6 +3,7 @@ package eu.solven.holymolap.cube;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.roaringbitmap.FastAggregation;
 import org.roaringbitmap.RoaringBitmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,9 +67,9 @@ public class HolyCube implements IHolyCube {
 	public RoaringBitmap getFiltersBitmap(IHasFilters hasFilters) {
 		IAxesFilter axesFilter = hasFilters.getFilters();
 
-		long currentNbRows = getNbRows();
+		// long currentNbRows = getNbRows();
 
-		RoaringBitmap all = RoaringBitmap.bitmapOfRange(0, currentNbRows);
+		RoaringBitmap all = cellSet.getTable().getAll();
 		if (axesFilter.isMatchAll()) {
 			if (axesFilter.isExclusion()) {
 				// Empty
@@ -107,7 +108,7 @@ public class HolyCube implements IHolyCube {
 				throw new IllegalStateException("Should have been caught by .matchAll");
 			}
 
-			RoaringBitmap andBitmap = RoaringBitmap.and(andBitmaps.iterator(), 0L, currentNbRows);
+			RoaringBitmap andBitmap = FastAggregation.and(andBitmaps.iterator());
 
 			if (axesFilter.isExclusion()) {
 				return RoaringBitmap.andNot(all, andBitmap);
@@ -124,7 +125,7 @@ public class HolyCube implements IHolyCube {
 				orBitmaps.add(entryBitmap);
 			}
 
-			RoaringBitmap orBitmap = RoaringBitmap.or(orBitmaps.iterator(), 0L, currentNbRows);
+			RoaringBitmap orBitmap = FastAggregation.or(orBitmaps.iterator());
 
 			if (axesFilter.isExclusion()) {
 				return RoaringBitmap.andNot(all, orBitmap);

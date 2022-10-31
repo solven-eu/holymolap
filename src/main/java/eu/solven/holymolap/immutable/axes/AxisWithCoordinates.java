@@ -12,13 +12,16 @@ import com.google.common.collect.ImmutableList;
 
 import eu.solven.holymolap.immutable.dictionary.IAxisCoordinatesDictionary;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
 public class AxisWithCoordinates implements IHasAxesWithCoordinates {
-	private static final Logger LOGGER = LoggerFactory.getLogger(AxisWithCoordinates.class);
-
 	// This is generally sorted
 	protected final List<? extends String> axisIndexToAxis;
 	protected final List<? extends IAxisCoordinatesDictionary> axisIndexToCoordinateIndex;
+
+	public AxisWithCoordinates() {
+		this(ImmutableList.of(), ImmutableList.of());
+	}
 
 	public AxisWithCoordinates(List<? extends String> axisIndexToAxis,
 			List<? extends IAxisCoordinatesDictionary> axisIndexToAxisCoordinatesDictionary) {
@@ -30,6 +33,11 @@ public class AxisWithCoordinates implements IHasAxesWithCoordinates {
 
 		// The input may mutate, when new axis are indexes.
 		this.axisIndexToCoordinateIndex = axisIndexToAxisCoordinatesDictionary;
+	}
+
+	@Override
+	public long getSizeInBytes() {
+		return axisIndexToCoordinateIndex.stream().mapToLong(IHasMemoryFootprint::getSizeInBytes).sum();
 	}
 
 	@Override

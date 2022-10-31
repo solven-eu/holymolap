@@ -19,7 +19,10 @@ import eu.solven.holymolap.tools.IHasMemoryFootprint;
  */
 public interface IHolyCube extends IHasMemoryFootprint {
 
-	long getNbRows();
+	@Deprecated
+	default long getNbRows() {
+		return getCellSet().getTable().getAll().getLongCardinality();
+	}
 
 	IHolyCellMultiSet getCellSet();
 
