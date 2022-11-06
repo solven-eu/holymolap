@@ -1,9 +1,5 @@
 package eu.solven.holymolap.it.nyc;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -17,8 +13,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.avro.Schema.Field;
 import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.hadoop.ParquetFileReader;
@@ -30,13 +26,9 @@ import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.esotericsoftware.kryo.kryo5.Kryo;
-import com.esotericsoftware.kryo.kryo5.KryoException;
-import com.esotericsoftware.kryo.kryo5.io.Input;
-import com.esotericsoftware.kryo.kryo5.io.Output;
+import com.esotericsoftware.kryo.Kryo;
 import com.google.common.collect.Maps;
 
-import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.composite.CompositeHolyCube;
 import eu.solven.holymolap.cube.composite.ICompositeHolyCube;
@@ -47,9 +39,9 @@ import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
+import eu.solven.holymolap.serialization.HolyKryoHelper;
 import eu.solven.holymolap.sink.HolyCubeSink;
-import eu.solven.holymolap.sink.record.IHolyRecord;
-import eu.solven.holymolap.sink.record.IHolyRecordVisitor;
+import eu.solven.holymolap.sink.record.avro.AvroHolyRecord;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 import eu.solven.pepper.logging.PepperLogHelper;
@@ -76,13 +68,9 @@ public class ITLoadNycTaxiRides_Multiple {
 				collectToForceParallel.size(),
 				PepperLogHelper.humanBytes(totalSizeOnDisk));
 
-		// FSTConfiguration conf = FSTConfiguration.createDefaultConfiguration();
-		// int maxkeylen = 16;
-		// FSTAsciiStringOffheapMap<IHolyCube> store = new FSTAsciiStringOffheapMap<>(cacheFolder.toAbsolutePath()
-		// .toString(), maxkeylen, 2 * FSTAsciiStringOffheapMap.GB, collectToForceParallel.size());
+		Kryo kryo = HolyKryoHelper.kryoForHolyCube();
 
-		Kryo kryo = new Kryo();
-		kryo.register(HolyCube.class);
+		kryo.register(Utf8.class);
 
 		collectToForceParallel.stream()
 				.parallel()
@@ -111,36 +99,16 @@ public class ITLoadNycTaxiRides_Multiple {
 					String pathAsString = path.toString();
 					return Maps.immutableEntry(pathAsString, holyCube);
 				})
-				.forEach(e -> storePut(kryo, cacheFolder, e.getKey(), e.getValue()));
+				.forEach(e -> HolyKryoHelper.storePut(kryo, cacheFolder, e.getKey(), e.getValue()));
 
 		Map<String, IHolyCube> partitions = collectToForceParallel.stream()
 				.map(p -> p.toString())
 				.collect(Collectors.toMap(pathAsString -> pathAsString,
-						pathAsString -> storeGet(kryo, cacheFolder, pathAsString)));
+						pathAsString -> HolyKryoHelper.storeGet(kryo, cacheFolder, pathAsString)));
 
 		ICompositeHolyCube partitionnedCube = new CompositeHolyCube(partitions);
 
 		executeQueries(recordsCount, partitionnedCube);
-	}
-
-	private static IHolyCube storeGet(Kryo kryo, Path cacheFolder, String pathAsString) {
-		File fileToPersist = new File(cacheFolder.toFile(), Paths.get(pathAsString).getFileName().toString());
-		try (Input input = new Input(new FileInputStream(fileToPersist))) {
-			return kryo.readObject(input, HolyCube.class);
-		} catch (KryoException e) {
-			throw new RuntimeException("Issue processing: " + pathAsString, e);
-		} catch (FileNotFoundException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
-
-	private static void storePut(Kryo kryo, Path cacheFolder, String pathAsString, IHolyCube value) {
-		File fileToPersist = new File(cacheFolder.toFile(), Paths.get(pathAsString).getFileName().toString());
-		try (Output output = new Output(new FileOutputStream(fileToPersist))) {
-			kryo.writeObject(output, value);
-		} catch (FileNotFoundException e) {
-			throw new UncheckedIOException(e);
-		}
 	}
 
 	private static IHolyCube loadHolyCube(AtomicLong recordsCount, Path path) {
@@ -160,11 +128,8 @@ public class ITLoadNycTaxiRides_Multiple {
 
 			MessageType schema = readFooter.getFileMetaData().getSchema();
 
-			List<String> axes = schema.getColumns()
-					.stream()
-					.map(cd -> Stream.of(cd.getPath()).collect(Collectors.joining(".")))
-					.collect(Collectors.toList());
-			IHolyMeasuresDefinition measures = defineMeasures(schema);
+			List<String> axes = AvroHolyRecord.allAxes(schema);
+			IHolyMeasuresDefinition measures = ITLoadNycTaxiRides_Single_Avro.defineMeasures(schema);
 			LOGGER.info("Measures: {}", measures);
 
 			ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(hadoopFile).build();
@@ -184,7 +149,7 @@ public class ITLoadNycTaxiRides_Multiple {
 				}
 				nbInsert++;
 
-				sink.sink(convertAvroToHoly(axes, nextRecord));
+				sink.sink(new AvroHolyRecord(axes, nextRecord));
 			}
 
 			holyCube = sink.closeToHolyCube();
@@ -215,50 +180,4 @@ public class ITLoadNycTaxiRides_Multiple {
 		}
 	}
 
-	private static IHolyMeasuresDefinition defineMeasures(MessageType schema) {
-		List<IMeasuredAxis> measuredAxes = schema.getColumns()
-				.stream()
-				.filter(cd -> !(cd.getPath().length == 1 && "RatecodeID".equals(cd.getPath()[0])))
-				.filter(cd -> PrimitiveTypeName.DOUBLE == cd.getPrimitiveType().getPrimitiveTypeName())
-				.map(cd -> new MeasuredAxis(Stream.of(cd.getPath()).collect(Collectors.joining(".")),
-						IOperatorFactory.SUM))
-				.collect(Collectors.toCollection(ArrayList::new));
-
-		Assertions.assertThat(measuredAxes)
-				.hasSize(11)
-				.contains(new MeasuredAxis("passenger_count", IOperatorFactory.SUM))
-				.doesNotContain(new MeasuredAxis("RatecodeID", IOperatorFactory.SUM));
-
-		// Enable querying COUNT(*)
-		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
-
-		IHolyMeasuresDefinition measures = new HolyMeasuresTableDefinition(measuredAxes);
-		return measures;
-	}
-
-	private static IHolyRecord convertAvroToHoly(List<String> axes, GenericRecord nextRecord) {
-		return new IHolyRecord() {
-
-			@Override
-			public List<String> getAxes() {
-				return axes;
-			}
-
-			@Override
-			public void accept(IHolyRecordVisitor visitor) {
-				List<Field> fields = nextRecord.getSchema().getFields();
-				for (int i = 0; i < fields.size(); i++) {
-					// Field field = fields.get(i);
-					// if (field.schema().getLogicalType())
-					Object coordinate = nextRecord.get(i);
-					if (coordinate instanceof Double) {
-						visitor.onDouble(i, ((Double) coordinate).doubleValue());
-					} else {
-						// tpep_pickup_datetime
-						visitor.onObject(i, coordinate);
-					}
-				}
-			}
-		};
-	}
 }

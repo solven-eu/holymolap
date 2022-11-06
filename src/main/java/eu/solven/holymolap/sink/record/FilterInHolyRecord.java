@@ -30,6 +30,9 @@ public class FilterInHolyRecord implements IHolyRecord {
 	@Override
 	public List<String> getAxes() {
 		return underlying.getAxes();
+
+		// TODO If we filter the relevant axes, we need to adjust the indexes in .accept
+		// return underlying.getAxes().stream().filter(s -> filteredIn.contains(s)).collect(Collectors.toList());
 	}
 
 }

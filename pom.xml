@@ -25,7 +25,7 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 
-		<pepper.version>4.1</pepper.version>
+		<pepper.version>4.2-SNAPSHOT</pepper.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -44,6 +44,18 @@
 		<!-- <artifactId>javolution-core-java</artifactId> -->
 		<!-- <version>6.0.0</version> -->
 		<!-- </dependency> -->
+
+		<!-- https://mvnrepository.com/artifact/org.apache.arrow/arrow-vector -->
+		<dependency>
+			<groupId>org.apache.arrow</groupId>
+			<artifactId>arrow-dataset</artifactId>
+			<version>10.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.arrow</groupId>
+			<artifactId>arrow-memory-netty</artifactId>
+			<version>10.0.0</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.roaringbitmap</groupId>
@@ -73,22 +85,9 @@
 			<version>8.2.3</version>
 		</dependency>
 
-		<!--https://www.alibabacloud.com/blog/an-introduction-and-comparison-of-several-common-java-serialization-frameworks_597900 -->
-		<dependency>
-			<groupId>de.ruedigermoeller</groupId>
-			<artifactId>fst</artifactId>
-			<version>3.0.3-jdk17</version>
-			<!--version>2.56</version-->
-		</dependency>
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryo</artifactId>
-			<version>5.3.0</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.esotericsoftware.kryo</groupId>
-			<artifactId>kryo5</artifactId>
 			<version>5.3.0</version>
 		</dependency>
 		<dependency>

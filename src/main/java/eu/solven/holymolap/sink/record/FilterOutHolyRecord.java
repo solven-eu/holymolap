@@ -2,6 +2,7 @@ package eu.solven.holymolap.sink.record;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class FilterOutHolyRecord implements IHolyRecord {
 	final IHolyRecord underlying;
@@ -30,5 +31,7 @@ public class FilterOutHolyRecord implements IHolyRecord {
 	@Override
 	public List<String> getAxes() {
 		return underlying.getAxes();
+		// TODO If we filter the relevant axes, we need to adjust the indexes in .accept
+		// return underlying.getAxes().stream().filter(s -> !filteredOut.contains(s)).collect(Collectors.toList());
 	}
 }

@@ -7,7 +7,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -19,8 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Meter;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.MultimapBuilder;
 
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
@@ -74,14 +71,14 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 	final IHolyMeasuresDefinition measuresDefinition;
 	final Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn;
-	final ListMultimap<String, IMutableAggregatesColumn> measuredAxisToColumn;
-
-	// The Set of axes with at least one cell
-	// final Set<String> axesNames;
+	// final ListMultimap<String, IMutableAggregatesColumn> measuredAxisToColumn;
+	final List<String> sharedAggregatedColumns;
+	final List<List<IMutableAggregatesColumn>> sharedAggregatedColumnToColumns;
+	final List<IMutableLongAggregatesColumn> countColumns;
 
 	// FIFO: we register axes in encounter order, to keep cellToRow consistent. It may not be lexicographical
 	final List<String> fifoAxes;
-	final Map<String, IMutableAxisSmallColumn> axisToColumn;
+	final List<IMutableAxisSmallColumn> fifoAxisIndexToColumn;
 
 	// A cell is identified by a tuple of coordinateIndexes along axes
 	// cellToRow can be recomputed from axisToColumn, but it is necessary to quickly identify to which row an input has
@@ -98,22 +95,41 @@ public class MutableHolyCube implements IMutableHolyCube {
 	protected MutableHolyCube(IHolyMeasuresDefinition measuresDefinition,
 			Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn,
 			List<String> orderedAxis,
-			Map<String, IMutableAxisSmallColumn> axisToColumn,
+			List<IMutableAxisSmallColumn> fifoAxisIndexToColumn,
 			Object2IntMap<IntList> cellToRow) {
 		this.measuresDefinition = measuresDefinition;
 		this.measureToColumn = measureToColumn;
-		// this.axesNames = measureToColumn.keySet().stream().map(aa -> aa.getAxis()).collect(Collectors.toSet());
 
-		this.measuredAxisToColumn = MultimapBuilder.hashKeys().arrayListValues().build();
-		measureToColumn.forEach((measuredAxis, column) -> measuredAxisToColumn.put(measuredAxis.getAxis(), column));
+		this.sharedAggregatedColumns = measureToColumn.keySet()
+				.stream()
+				.map(measuredAxis -> measuredAxis.getAxis())
+				.distinct()
+				.collect(Collectors.toList());
+		this.sharedAggregatedColumnToColumns = sharedAggregatedColumns.stream().map(sharedAggregatedColumn -> {
+			return measureToColumn.keySet()
+					.stream()
+					.filter(ma -> sharedAggregatedColumn.equals(ma.getAxis()))
+					.map(measureToColumn::get)
+					.collect(Collectors.toList());
+		}).collect(Collectors.toList());
+
+		this.countColumns = measureToColumn.entrySet()
+				.stream()
+				.filter(e -> IOperatorFactory.COUNT.equals(e.getKey().getOperator()))
+				.map(e -> (IMutableLongAggregatesColumn) e.getValue())
+				.collect(Collectors.toList());
+
+		// this.measuredAxisToColumn = MultimapBuilder.hashKeys().arrayListValues().build();
+		// measureToColumn.forEach((measuredAxis, column) -> measuredAxisToColumn.put(measuredAxis.getAxis(), column));
 
 		this.fifoAxes = orderedAxis;
-		this.axisToColumn = axisToColumn;
-		if (orderedAxis.size() != axisToColumn.size()) {
-			throw new IllegalArgumentException("Inconsistency " + orderedAxis + " vs " + axisToColumn.keySet());
-		} else if (!orderedAxis.stream().distinct().collect(Collectors.toSet()).equals(axisToColumn.keySet())) {
-			throw new IllegalArgumentException("Inconsistency " + orderedAxis + " vs " + axisToColumn.keySet());
+		this.fifoAxisIndexToColumn = fifoAxisIndexToColumn;
+		if (orderedAxis.size() != fifoAxisIndexToColumn.size()) {
+			throw new IllegalArgumentException("Inconsistency " + orderedAxis + " vs " + fifoAxisIndexToColumn.size());
 		}
+		// else if (!orderedAxis.stream().distinct().collect(Collectors.toSet()).equals(axisToColumn.keySet())) {
+		// throw new IllegalArgumentException("Inconsistency " + orderedAxis + " vs " + axisToColumn.keySet());
+		// }
 
 		this.cellToRow = cellToRow;
 		if (cellToRow.defaultReturnValue() != IMutableAxisSmallDictionarySink.NO_COORDINATE_INDEX) {
@@ -130,7 +146,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 		this(aggregations,
 				prepareAggregationColumns(aggregations),
 				prepareOrderedAxes(),
-				new ConcurrentHashMap<>(),
+				prepareAxesToColumn(),
 				prepareCellToRow());
 	}
 
@@ -145,7 +161,13 @@ public class MutableHolyCube implements IMutableHolyCube {
 	private static List<String> prepareOrderedAxes() {
 		// We chose a thread-safe collection not to synchronize any read from it.
 		// We expect a low number of writes, hence COpyOnWrite is OK.
-		return new CopyOnWriteArrayList<String>();
+		return new CopyOnWriteArrayList<>();
+	}
+
+	private static List<IMutableAxisSmallColumn> prepareAxesToColumn() {
+		// We chose a thread-safe collection not to synchronize any read from it.
+		// We expect a low number of writes, hence COpyOnWrite is OK.
+		return new CopyOnWriteArrayList<>();
 	}
 
 	private static Map<IMeasuredAxis, IMutableAggregatesColumn> prepareAggregationColumns(
@@ -171,43 +193,10 @@ public class MutableHolyCube implements IMutableHolyCube {
 		}
 	}
 
-	/**
-	 * 
-	 * @param row
-	 *            a row, to be contributed to either a new, or an existing cell.
-	 */
-	// @Override
-	// public void acceptRowToCell(Map<String, ?> row) {
-	// Map<String, Object> groupBy = new HashMap<>();
-	// Map<String, Object> aggregated = new HashMap<>();
-	//
-	// row.forEach((axis, coordinate) -> {
-	// // TODO What if an axes is used as both measure and column?
-	// if (axisToColumn.containsKey(axis)) {
-	// aggregated.put(axis, coordinate);
-	// } else {
-	// groupBy.put(axis, coordinate);
-	// }
-	// });
-	//
-	// acceptRowToCell(aggregated, groupBy);
-	// }
-
-	// @Override
-	// public void acceptRowToCell(Map<String, ?> aggregated, Map<String, ?> groupBy) {
-	// IntList cellCoordinates = cellToCoordinates(groupBy);
-	//
-	// int cellIndex = ensureCellRegistration(cellCoordinates);
-	//
-	// contributeToMeasures(aggregated, cellIndex);
-	// }
-
 	public void acceptRowToCell(IHolyCubeRecord toAdd) {
 		inserts.mark();
 		if (Long.bitCount(inserts.getCount()) == 1) {
-			LOGGER.info("We sinked {} rows. Loading at {}rows/sec",
-					PepperLogHelper.humanBytes(inserts.getCount()),
-					inserts.getMeanRate());
+			logSinkRate();
 		}
 
 		IntList cellCoordinates = cellToCoordinates(toAdd.getCellsetRecord());
@@ -217,48 +206,34 @@ public class MutableHolyCube implements IMutableHolyCube {
 		contributeToMeasures(toAdd.getAggregateTableRecord(), cellIndex);
 	}
 
-	// private void contributeToMeasures(Map<String, ?> aggregated, int cellIndex) {
-	// measureToColumn.forEach((aggregatedAxis, column) -> {
-	// String axis = aggregatedAxis.getAxis();
-	// Object contribution = aggregated.get(axis);
-	//
-	// if (contribution instanceof Number) {
-	// column.aggregateObject(cellIndex, contribution);
-	// } else if (contribution != null) {
-	// LOGGER.warn("Issue accepting contribution {} in {}", contribution, axis);
-	// brokenRows.incrementAndGet();
-	// }
-	// });
-	// }
+	private void logSinkRate() {
+		LOGGER.info("We sinked {} rows. Loading at {}rows/sec",
+				PepperLogHelper.humanBytes(inserts.getCount()),
+				inserts.getMeanRate());
+	}
 
 	private void contributeToMeasures(IHolyRecord measureTableRecord, int cellIndex) {
 		List<String> indexToAxis = measureTableRecord.getAxes();
-		// int[] recordToCubeIndexes = computeInference(indexToAxis, orderedAxes);
+		int[] recordToCubeIndexes = computeInference(indexToAxis, sharedAggregatedColumns);
 
 		measureTableRecord.accept((i, contribution) -> {
-			String axis = indexToAxis.get(i);
-			if (contribution != null) {
-				// Multiple measures may rely on the same axis (e.g. input.SUM and input.MAX)
-				measuredAxisToColumn.get(axis).forEach(column -> {
-					column.aggregateObject(cellIndex, contribution);
-				});
+			// String axis = indexToAxis.get(i);
+			// if (contribution != null) {
+			int aggregatedAxesIndex = recordToCubeIndexes[i];
 
-				// measureToColumn.entrySet()
-				// .stream()
-				// .filter(measure -> ICountMeasuresConstants.COUNT_MEASURED_AXIS.equals(measure.getKey())
-				// || measure.getKey().getAxis().equals(axis))
-				// .map(e -> e.getValue())
-
+			if (aggregatedAxesIndex < 0) {
+				// Given column does not exist in the cube: it happens if the record is a bit too wide (e.g. because it
+				// lazy discard fields)
+				return;
 			}
+
+			// Multiple measures may rely on the same axis (e.g. input.SUM and input.MAX)
+			sharedAggregatedColumnToColumns.get(aggregatedAxesIndex).forEach(column -> {
+				column.aggregateObject(cellIndex, contribution);
+			});
 		});
 
-		measureToColumn.entrySet()
-				.stream()
-				.filter(e -> IOperatorFactory.COUNT.equals(e.getKey().getOperator()))
-				.forEach(e -> {
-					((IMutableLongAggregatesColumn) e.getValue()).aggregateLong(cellIndex, 1L);
-				});
-		;
+		countColumns.forEach(column -> column.aggregateLong(cellIndex, 1L));
 	}
 
 	private int ensureCellRegistration(IntList cellCoordinates) {
@@ -285,15 +260,12 @@ public class MutableHolyCube implements IMutableHolyCube {
 		if (newCellIndex >= 0) {
 			cells.mark();
 			if (Long.bitCount(inserts.getCount()) == 1) {
-				LOGGER.info("We registered {} cells. Loading at {}cells/sec",
-						PepperLogHelper.humanBytes(cells.getCount()),
-						cells.getMeanRate());
+				logCellRate();
 			}
 
 			// Register this new cell
 			for (int axisIndex = 0; axisIndex < cellCoordinates.size(); axisIndex++) {
-				String axis = fifoAxes.get(axisIndex);
-				IMutableAxisSmallColumn column = axisToColumn.get(axis);
+				IMutableAxisSmallColumn column = fifoAxisIndexToColumn.get(axisIndex);
 				int cellAxisCoordinate = cellCoordinates.getInt(axisIndex);
 				column.appendCoordinateRef(cellAxisCoordinate);
 			}
@@ -301,24 +273,16 @@ public class MutableHolyCube implements IMutableHolyCube {
 		return cellIndex;
 	}
 
-	// private IntList cellToCoordinates(Map<String, ?> groupBy) {
-	// registerNewAxes(groupBy.keySet());
-	//
-	// // Append the coordinates for the known axes
-	// IntList cellCoordinates = indexGroupBy(groupBy);
-	// return cellCoordinates;
-	// }
+	private void logCellRate() {
+		LOGGER.info("We registered {} cells. Loading at {}cells/sec",
+				PepperLogHelper.humanBytes(cells.getCount()),
+				cells.getMeanRate());
+	}
 
 	private void registerNewAxes(Collection<String> inputAxes) {
-		// SetView<String> invalidGroupBys = Sets.intersection(axesNames, inputAxes);
-		// if (!invalidGroupBys.isEmpty()) {
-		// throw new IllegalArgumentException("Can not groupBy aggregated keys: " + invalidGroupBys);
-		// }
-
-		// if (inputAxes.size() > fifoAxes.size()) {
 		// This row introduces a new axes
 		Set<String> additionalAxes = new LinkedHashSet<>(inputAxes);
-		additionalAxes.removeAll(axisToColumn.keySet());
+		additionalAxes.removeAll(fifoAxes);
 
 		fifoAxes.addAll(additionalAxes);
 		additionalAxes.forEach(axis -> {
@@ -333,7 +297,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 				newColumn = new SkippedHeaderRows(nbRows, rawNewColumn);
 			}
 
-			axisToColumn.putIfAbsent(axis, newColumn);
+			fifoAxisIndexToColumn.add(newColumn);
 		});
 		// }
 	}
@@ -358,14 +322,13 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 		cellsetRecord.accept((i, coordinate) -> {
 			int cubeIndex = recordToCubeIndexes[i];
-			String axis = fifoAxes.get(cubeIndex);
 
 			// Register the coordinate
 			int coordinateRef;
 			if (coordinate == null) {
 				coordinateRef = IMutableAxisSmallDictionarySink.NO_COORDINATE_INDEX;
 			} else {
-				coordinateRef = axisToColumn.get(axis).getCoordinateToRef().getIndexMayAppend(coordinate);
+				coordinateRef = fifoAxisIndexToColumn.get(cubeIndex).getCoordinateToRef().getIndexMayAppend(coordinate);
 			}
 
 			int previousRef = cellCoordinates.set(cubeIndex, coordinateRef);
@@ -395,7 +358,9 @@ public class MutableHolyCube implements IMutableHolyCube {
 		return input.stream().mapToInt(i -> {
 			int indexInOutput = output.indexOf(i);
 			if (indexInOutput < 0) {
-				throw new IllegalStateException(i + " is not in " + output);
+				// We will simply do not consume this field
+				// throw new IllegalStateException(i + " is not in " + output);
+				return -1;
 			}
 
 			return indexInOutput;
@@ -407,47 +372,25 @@ public class MutableHolyCube implements IMutableHolyCube {
 		toAdd.forEach(this::acceptRowToCell);
 	}
 
-	protected IntList indexGroupBy(Map<String, ?> groupBy) {
-		IntList cellCoordinates = new IntArrayList(groupBy.size());
-
-		// Register the coordinate
-		fifoAxes.stream().forEach(axis -> {
-			Object coordinate = groupBy.get(axis);
-
-			int coordinateIndex;
-			if (coordinate == null || IMutableAxisSmallDictionarySink.NO_COORDINATE == coordinate) {
-				coordinateIndex = IMutableAxisSmallDictionarySink.NO_COORDINATE_INDEX;
-			} else {
-				coordinateIndex = axisToColumn.get(axis).getCoordinateToRef().getIndexMayAppend(coordinate);
-			}
-
-			cellCoordinates.add(coordinateIndex);
-		});
-
-		// Remove the trailing no_coordinates, to prevent array differing only by trailing no_coordinates
-		while (!cellCoordinates.isEmpty() && cellCoordinates
-				.getInt(cellCoordinates.size() - 1) == IMutableAxisSmallDictionarySink.NO_COORDINATE_INDEX) {
-			cellCoordinates.removeInt(cellCoordinates.size() - 1);
-		}
-
-		return cellCoordinates;
-	}
-
 	@Override
 	public IHolyCube closeToHolyCube() {
 		if (!closed.compareAndSet(false, true)) {
 			throw new IllegalStateException("Was already closed");
 		}
 
-		int nbAxes = axisToColumn.size();
+		logSinkRate();
+		logCellRate();
+
+		int nbAxes = fifoAxes.size();
 
 		List<IAxisCoordinatesDictionary> axisToDictionary = new ArrayList<>(nbAxes);
 		List<IScannableAxisSmallColumn> columns = new ArrayList<>(nbAxes);
 
-		List<String> orderedAxesAsList = axisToColumn.keySet().stream().sorted().collect(Collectors.toList());
+		List<String> orderedAxesAsList = fifoAxes.stream().sorted().collect(Collectors.toList());
 
 		orderedAxesAsList.forEach(axis -> {
-			IMutableAxisSmallColumn mutableColumn = axisToColumn.get(axis);
+			int fifoAxisIndex = fifoAxes.indexOf(axis);
+			IMutableAxisSmallColumn mutableColumn = fifoAxisIndexToColumn.get(fifoAxisIndex);
 			IAxisCoordinatesDictionary immutableDictionary =
 					new AxisCoordinatesDictionary(mutableColumn.getCoordinateToRef().orderedCoordinates());
 

@@ -45,12 +45,12 @@ public interface IHolyCubeSink extends ICloseableToHolyCube {
 	@Deprecated
 	default IHolyCubeRecord makeHolyCubeRecord(IHolyRecord r) {
 		IHolyMeasuresDefinition measures = getMeasures();
-		Set<String> measuredColumns =
+		Set<String> measuredAxes =
 				measures.measures().stream().map(IHolyMeasureColumnMeta::getColumn).collect(Collectors.toSet());
 
 		// By default, we consider as cellAxes only if not a measure column
-		FilterOutHolyRecord cellRecord = new FilterOutHolyRecord(r, measuredColumns);
-		FilterInHolyRecord measuresRecord = new FilterInHolyRecord(r, measuredColumns);
+		FilterOutHolyRecord cellRecord = new FilterOutHolyRecord(r, measuredAxes);
+		FilterInHolyRecord measuresRecord = new FilterInHolyRecord(r, measuredAxes);
 
 		return new HolyCubeRecord(cellRecord, measuresRecord);
 	}

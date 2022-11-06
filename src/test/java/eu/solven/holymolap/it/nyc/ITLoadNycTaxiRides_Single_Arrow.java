@@ -9,40 +9,46 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import org.apache.avro.Schema.Field;
-import org.apache.avro.generic.GenericRecord;
+import org.apache.arrow.dataset.file.FileFormat;
+import org.apache.arrow.dataset.file.FileSystemDatasetFactory;
+import org.apache.arrow.dataset.jni.NativeMemoryPool;
+import org.apache.arrow.dataset.scanner.ScanOptions;
+import org.apache.arrow.dataset.scanner.Scanner;
+import org.apache.arrow.dataset.source.Dataset;
+import org.apache.arrow.dataset.source.DatasetFactory;
+import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.memory.RootAllocator;
+import org.apache.arrow.vector.FieldVector;
+import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ArrowReader;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.hadoop.ParquetFileReader;
-import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
-import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
-import eu.solven.holymolap.measures.operator.IOperatorFactory;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
-import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
+import eu.solven.holymolap.sink.record.HolyCubeRecord;
 import eu.solven.holymolap.sink.record.IHolyRecord;
-import eu.solven.holymolap.sink.record.IHolyRecordVisitor;
-import eu.solven.holymolap.stable.v1.IMeasuredAxis;
-import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 import eu.solven.pepper.logging.PepperLogHelper;
 import eu.solven.pepper.memory.PepperFootprintHelper;
 
-public class ITLoadNycTaxiRides_Single {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ITLoadNycTaxiRides_Single.class);
+public class ITLoadNycTaxiRides_Single_Arrow {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ITLoadNycTaxiRides_Single_Arrow.class);
 
 	// TODO Enable passenger_count as axes
 	// TODO Enable year(tpep_pickup_datetime) and year(tpep_dropoff_datetime)
@@ -53,7 +59,7 @@ public class ITLoadNycTaxiRides_Single {
 		// https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 		try {
 			String uri =
-					"file:///var/folders/8b/p64c8tfs4d7gf3v8tcmwbz580000gn/T/holymolap-nyc-6209160424500474261.parquet";
+					"file:///var/folders/8b/p64c8tfs4d7gf3v8tcmwbz580000gn/T/holymolap-nyc-3336560945066608729.parquet";
 			LOGGER.info("About to copy locally {}", uri);
 			parquetLength = Files.copy(new URL(uri).openStream(), tmpFile, StandardCopyOption.REPLACE_EXISTING);
 		} catch (FileNotFoundException e) {
@@ -76,31 +82,58 @@ public class ITLoadNycTaxiRides_Single {
 
 		MessageType schema = readFooter.getFileMetaData().getSchema();
 
-		List<String> axes = schema.getColumns()
-				.stream()
-				.map(cd -> Stream.of(cd.getPath()).collect(Collectors.joining(".")))
-				.collect(Collectors.toList());
-		IHolyMeasuresDefinition measures = defineMeasures(schema);
+		IHolyMeasuresDefinition measures = ITLoadNycTaxiRides_Single_Avro.defineMeasures(schema);
 		LOGGER.info("Measures: {}", measures);
 
-		ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(hadoopFile).build();
+		Set<String> measuredAxes =
+				measures.measures().stream().map(IHolyMeasureColumnMeta::getColumn).collect(Collectors.toSet());
 
 		HolyCubeSink sink = new HolyCubeSink(measures);
 
-		long nbInsert = 0;
-		while (true) {
-			GenericRecord nextRecord = reader.read();
+		// https://arrow.apache.org/cookbook/java/io.html#reading-parquet-file
+		ScanOptions options = new ScanOptions(32768);
+		try (BufferAllocator allocator = new RootAllocator();
+				DatasetFactory datasetFactory = new FileSystemDatasetFactory(allocator,
+						NativeMemoryPool.getDefault(),
+						FileFormat.PARQUET,
+						tmpFile.toUri().toString());
+				Dataset dataset = datasetFactory.finish();
+				Scanner scanner = dataset.newScan(options);
+				ArrowReader reader = scanner.scanBatches()) {
+			while (reader.loadNextBatch()) {
+				try (VectorSchemaRoot root = reader.getVectorSchemaRoot()) {
+					Schema arrowSchema = root.getSchema();
+					List<String> axes = new ArrayList<>(schema.getFields().size());
+					for (Field field : arrowSchema.getFields()) {
+						axes.add(field.getName());
+					}
 
-			if (nextRecord == null) {
-				break;
+					// By default, we consider as cellAxes only if not a measure column
+					boolean[] inCell = new boolean[axes.size()];
+					boolean[] inMeasure = new boolean[axes.size()];
+
+					for (int fieldIndex = 0; fieldIndex < axes.size(); fieldIndex++) {
+						String axis = axes.get(fieldIndex);
+						if (measuredAxes.contains(axis)) {
+							inMeasure[fieldIndex] = true;
+						} else {
+							inCell[fieldIndex] = true;
+						}
+					}
+
+					int rowCount = root.getRowCount();
+
+					List<FieldVector> fieldVectors = root.getFieldVectors();
+					for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+						IHolyRecord cellRecord = new ArrowSubsetHolyRecord(axes, inCell, fieldVectors, rowIndex);
+						IHolyRecord measuresRecord = new ArrowSubsetHolyRecord(axes, inMeasure, fieldVectors, rowIndex);
+
+						sink.sink(new HolyCubeRecord(cellRecord, measuresRecord));
+					}
+				}
 			}
-
-			if (nbInsert == 0) {
-				LOGGER.info("First record: {}", nextRecord);
-			}
-			nbInsert++;
-
-			sink.sink(convertAvroToHoly(axes, nextRecord));
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 
 		IHolyCube holyCube = sink.closeToHolyCube();
@@ -130,50 +163,4 @@ public class ITLoadNycTaxiRides_Single {
 		}
 	}
 
-	private static IHolyMeasuresDefinition defineMeasures(MessageType schema) {
-		List<IMeasuredAxis> measuredAxes = schema.getColumns()
-				.stream()
-				.filter(cd -> !(cd.getPath().length == 1 && "RatecodeID".equals(cd.getPath()[0])))
-				.filter(cd -> PrimitiveTypeName.DOUBLE == cd.getPrimitiveType().getPrimitiveTypeName())
-				.map(cd -> new MeasuredAxis(Stream.of(cd.getPath()).collect(Collectors.joining(".")),
-						IOperatorFactory.SUM))
-				.collect(Collectors.toCollection(ArrayList::new));
-
-		Assertions.assertThat(measuredAxes)
-				.hasSize(11)
-				.contains(new MeasuredAxis("passenger_count", IOperatorFactory.SUM))
-				.doesNotContain(new MeasuredAxis("RatecodeID", IOperatorFactory.SUM));
-
-		// Enable querying COUNT(*)
-		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
-
-		IHolyMeasuresDefinition measures = new HolyMeasuresTableDefinition(measuredAxes);
-		return measures;
-	}
-
-	private static IHolyRecord convertAvroToHoly(List<String> axes, GenericRecord nextRecord) {
-		return new IHolyRecord() {
-
-			@Override
-			public List<String> getAxes() {
-				return axes;
-			}
-
-			@Override
-			public void accept(IHolyRecordVisitor visitor) {
-				List<Field> fields = nextRecord.getSchema().getFields();
-				for (int i = 0; i < fields.size(); i++) {
-					// Field field = fields.get(i);
-					// if (field.schema().getLogicalType())
-					Object coordinate = nextRecord.get(i);
-					if (coordinate instanceof Double) {
-						visitor.onDouble(i, ((Double) coordinate).doubleValue());
-					} else {
-						// tpep_pickup_datetime
-						visitor.onObject(i, coordinate);
-					}
-				}
-			}
-		};
-	}
 }

@@ -20,7 +20,8 @@ public class TestMutableHolyCube {
 	public void testInference_missing() {
 		MutableHolyCube cube = new MutableHolyCube(new EmptyHolyMeasureTableDefinition());
 
-		Assertions.assertThatThrownBy(() -> cube.computeInference(Arrays.asList("k1", "k2"), Arrays.asList("k2")))
-				.isInstanceOf(IllegalStateException.class);
+		Assertions.assertThat(cube.computeInference(Arrays.asList("k1", "k2"), Arrays.asList("k2")))
+				.hasSize(2)
+				.containsExactly(-1, 0);
 	}
 }
