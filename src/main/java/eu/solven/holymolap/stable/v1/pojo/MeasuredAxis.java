@@ -2,6 +2,7 @@ package eu.solven.holymolap.stable.v1.pojo;
 
 import java.util.Objects;
 
+import eu.solven.holymolap.measures.operator.IStandardOperators;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
 public class MeasuredAxis implements IMeasuredAxis {
@@ -15,6 +16,12 @@ public class MeasuredAxis implements IMeasuredAxis {
 		this.operator = null;
 	}
 
+	/**
+	 * 
+	 * @param axis
+	 * @param operator
+	 *            see {@link IStandardOperators} for example operators
+	 */
 	public MeasuredAxis(String axis, String operator) {
 		this.axis = axis;
 		this.operator = operator;

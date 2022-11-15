@@ -6,10 +6,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.solven.holymolap.cube.IMayCache;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import me.lemire.integercompression.IntCompressor;
 
-public class CompressedIntArray implements IHasMemoryFootprint {
+public class CompressedIntArray implements IHasMemoryFootprint, IMayCache {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CompressedIntArray.class);
 
 	final int[] compressed;
@@ -32,6 +33,11 @@ public class CompressedIntArray implements IHasMemoryFootprint {
 	@Override
 	public long getSizeInBytes() {
 		return compressed.length * 4;
+	}
+
+	@Override
+	public void invalidateCache() {
+		refSoftRef.set(null);
 	}
 
 	private int[] uncompress() {

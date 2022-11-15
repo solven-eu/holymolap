@@ -17,7 +17,7 @@ import eu.solven.holymolap.tools.IHasMemoryFootprint;
  * @author Benoit Lacelle
  *
  */
-public interface IHolyCube extends IHasMemoryFootprint {
+public interface IHolyCube extends IHasMemoryFootprint, IMayCache {
 
 	@Deprecated
 	default long getNbRows() {

@@ -11,7 +11,7 @@ import eu.solven.holymolap.mutable.dictionary.IAxisSmallDictionary;
  * @author Benoit Lacelle
  *
  */
-public interface IMutableAxisSmallDictionarySink extends IAxisSmallDictionary, IHolyMutable {
+public interface IMutableAxisSmallDictionary extends IAxisSmallDictionary, IHolyMutable {
 	// Marker used to inject missing coordinates in inputs not allowing null references.
 	Object NO_COORDINATE = new Object();
 

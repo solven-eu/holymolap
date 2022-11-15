@@ -1,12 +1,7 @@
 package eu.solven.holymolap.mutable.axis;
 
 public interface IMutableAxisSmallColumn {
-
-	IMutableAxisSmallDictionarySink getCoordinateToRef();
-
-	// default int[] getRowToIndex() {
-	// return getRowToIndex(new int[0]);
-	// }
+	ILazyMutableAxisSmallDictionary getCoordinateToRef();
 
 	/**
 	 * Copies (hopefully quickly) elements of this type-specific list into the given array.
@@ -37,6 +32,6 @@ public interface IMutableAxisSmallColumn {
 	 * 
 	 * @return the number of rows having encountered an issue.
 	 */
-	long getBrokenRows();
+	// long getBrokenRows();
 
 }

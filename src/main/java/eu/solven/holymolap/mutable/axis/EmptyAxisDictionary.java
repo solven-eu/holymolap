@@ -3,7 +3,7 @@ package eu.solven.holymolap.mutable.axis;
 import java.util.Collections;
 import java.util.Set;
 
-public class EmptyAxisDictionary implements IMutableAxisSmallDictionarySink {
+public class EmptyAxisDictionary implements IMutableAxisSmallDictionary {
 
 	@Override
 	public int cardinality() {

@@ -6,14 +6,16 @@ import eu.solven.holymolap.stable.v1.ILongBinaryOperator;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 
-public class OperatorFactory implements IOperatorFactory {
+public class OperatorFactory implements IOperatorFactory, IStandardOperators {
 
 	@Override
 	public IBinaryOperator getBinaryOperator(String operator) {
 		if (SUM.equalsIgnoreCase(operator)) {
-			return IStandardOperators.SUM;
+			return IStandardDoubleOperators.SUM;
 		} else if (COUNT.equalsIgnoreCase(operator)) {
-			return IStandardOperators.COUNT;
+			return IStandardLongOperators.COUNT;
+		} else if (AVG.equalsIgnoreCase(operator)) {
+			return IStandardDoubleOperators.AVG;
 		} else {
 			throw new IllegalArgumentException("Unknown operator: " + operator);
 		}
@@ -22,7 +24,7 @@ public class OperatorFactory implements IOperatorFactory {
 	@Override
 	public IDoubleBinaryOperator getDoubleBinaryOperator(String operator) {
 		if (SUM.equalsIgnoreCase(operator)) {
-			return IStandardOperators.SUM;
+			return IStandardDoubleOperators.SUM;
 			// } else if (COUNT.equalsIgnoreCase(operator)) {
 			// return IStandardOperators.COUNT;
 		} else {
@@ -36,7 +38,7 @@ public class OperatorFactory implements IOperatorFactory {
 		// return IStandardOperators.SUM;
 		// } else
 		if (COUNT.equalsIgnoreCase(operator)) {
-			return IStandardOperators.COUNT;
+			return IStandardLongOperators.COUNT;
 		} else {
 			throw new IllegalArgumentException("Unknown operator: " + operator);
 		}

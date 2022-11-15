@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.jmx.export.annotation.ManagedResource;
 
+import eu.solven.holymolap.cube.IMayCache;
 import eu.solven.holymolap.immutable.axes.AxisWithCoordinates;
 import eu.solven.holymolap.immutable.axes.EmptyAxisWithCoordinates;
 import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
@@ -19,7 +20,7 @@ import eu.solven.holymolap.immutable.table.IHolyDictionarizedTable;
  *
  */
 @ManagedResource
-public class HolyBitmapCellMultiSet implements IHolyCellMultiSet {
+public class HolyBitmapCellMultiSet implements IHolyCellMultiSet, IMayCache {
 	protected final IHasAxesWithCoordinates axesWithCoordinates;
 	protected final IHolyDictionarizedTable dictionarizedTable;
 
@@ -48,6 +49,16 @@ public class HolyBitmapCellMultiSet implements IHolyCellMultiSet {
 		sizeInBytes += dictionarizedTable.getSizeInBytes();
 
 		return sizeInBytes;
+	}
+
+	@Override
+	public void invalidateCache() {
+		if (axesWithCoordinates instanceof IMayCache) {
+			((IMayCache) axesWithCoordinates).invalidateCache();
+		}
+		if (dictionarizedTable instanceof IMayCache) {
+			((IMayCache) dictionarizedTable).invalidateCache();
+		}
 	}
 
 	@Override

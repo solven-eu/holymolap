@@ -22,7 +22,7 @@ public interface IScannableAxisSmallColumn extends IHasMemoryFootprint {
 	 * 
 	 * @return the number of rows having encountered an issue.
 	 */
-	long getBrokenRows();
+	// long getBrokenRows();
 
 	// Replace this usage by something needing to scan the column?
 	int getCoordinateRef(long cellIndex);

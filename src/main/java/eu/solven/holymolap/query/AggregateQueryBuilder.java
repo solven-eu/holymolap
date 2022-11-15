@@ -1,6 +1,7 @@
 package eu.solven.holymolap.query;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -38,8 +39,9 @@ public class AggregateQueryBuilder {
 		return andFilter(new AxisEqualsFilter(key, value));
 	}
 
-	public AggregateQueryBuilder addAggregation(IMeasuredAxis aggregatedAxis) {
+	public AggregateQueryBuilder addAggregation(IMeasuredAxis aggregatedAxis, IMeasuredAxis... more) {
 		aggregatesKeys.add(aggregatedAxis);
+		aggregatesKeys.addAll(Arrays.asList(more));
 
 		return this;
 	}

@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -38,6 +39,7 @@ import eu.solven.holymolap.measures.IHolyMeasuresTable;
 import eu.solven.holymolap.measures.aggregation.IAggregationLogic;
 import eu.solven.holymolap.measures.aggregation.LongAggregationLogic;
 import eu.solven.holymolap.measures.operator.IOperatorFactory;
+import eu.solven.holymolap.measures.operator.IStandardLongOperators;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
 import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
@@ -249,12 +251,12 @@ public class AggregateHelper {
 
 		List<IMeasuredAxis> queriedMeasures = query.getMeasures();
 		queriedMeasures.forEach(queriedMeasured -> {
-			if (IOperatorFactory.CELLCOUNT.equals(queriedMeasured.getOperator())) {
+			if (IStandardOperators.CELLCOUNT.equals(queriedMeasured.getOperator())) {
 				// COUNT measures are implicit: they are not expressed by the measureTable as they are computed by
 				// the cellSet
 				LongAggregationLogic countAggregationLogic =
 						new LongAggregationLogic(IHolyMeasuresDefinition.CELLCOUNT_MEASURE_INDEX,
-								IStandardOperators.CELLCOUNT);
+								IStandardLongOperators.CELLCOUNT);
 				aggregationLogics.add(countAggregationLogic);
 			} else {
 				int cubeMeasureIndex = definition.findMeasureIndex(queriedMeasured);
@@ -365,6 +367,22 @@ public class AggregateHelper {
 		return singleMeasureToNavigableMap(cube.asComposite(), query);
 	}
 
+	public static Optional<?> singleMeasureCell(final IHolyCube cube, final IAggregationQuery query) {
+		if (!query.getAxes().isEmpty()) {
+			throw new IllegalArgumentException("Can not select a single cell given wildcards: " + query.getAxes());
+		}
+
+		NavigableMap<? extends NavigableMap<?, ?>, ?> asMap = singleMeasureToNavigableMap(cube.asComposite(), query);
+
+		if (asMap.isEmpty()) {
+			return Optional.empty();
+		} else if (asMap.size() == 1) {
+			return Optional.of(asMap.values().iterator().next());
+		} else {
+			throw new IllegalStateException("We return multiple results: " + asMap);
+		}
+	}
+
 	public static NavigableMap<? extends NavigableMap<?, ?>, ?> singleMeasureToNavigableMap(
 			final ICompositeHolyCube compositeCube,
 			final IAggregationQuery query) {
@@ -378,18 +396,18 @@ public class AggregateHelper {
 			// We do not try resolving a relevant cell, as the filter may be complex (e.g. country IN ('FR', 'USA')) and
 			// in such a case, it is unclear what should be the relevant cell to return the aggregates
 
-			// We return a return only if querying COUNT(*)
+			// We can only return COUNT measures, only if they are indeed available in the cube
 			if (query.getMeasures().contains(ICountMeasuresConstants.COUNT_MEASURED_AXIS)) {
 				// Empty is semantically different to holding only the neutral element
 
-				long neutral = new OperatorFactory().getLongBinaryOperator(IOperatorFactory.COUNT).neutralAsLong();
+				long neutral = new OperatorFactory().getLongBinaryOperator(IStandardOperators.COUNT).neutralAsLong();
 				coordinateToAggregate.put(new TreeMap<>(), neutral);
 			}
 		} else {
 			List<IAggregationLogic<?>> aggregationLogics =
 					getAggregationLogics(compositeCube.getMeasuresDefinition(), query);
 			if (aggregationLogics.size() >= 2) {
-				throw new UnsupportedOperationException("TODO Manage multiple aggregation in a single query: " + query);
+				throw new IllegalArgumentException("Expects a single measure. Was: " + query.getMeasures());
 			} else if (aggregationLogics.size() == 0) {
 				return coordinateToAggregate;
 			}

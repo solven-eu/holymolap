@@ -2,7 +2,6 @@ package eu.solven.holymolap.mutable.axis;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -15,32 +14,29 @@ import it.unimi.dsi.fastutil.ints.IntList;
  */
 // https://stackoverflow.com/questions/32917973/thread-safe-list-that-only-needs-to-support-random-access-and-appends
 public class MutableAxisColumn implements IMutableAxisSmallColumn {
-	final IMutableAxisSmallDictionarySink coordinateToIndex;
+	final ILazyMutableAxisSmallDictionary coordinateToIndex;
 	final IntList rowToCoordinate;
-
-	final AtomicLong brokenRows = new AtomicLong();
 
 	final AtomicBoolean isLocked = new AtomicBoolean();
 
-	protected MutableAxisColumn(IMutableAxisSmallDictionarySink coordinateToIndex, IntList rowToCoordinate) {
+	protected MutableAxisColumn(ILazyMutableAxisSmallDictionary coordinateToIndex, IntList rowToCoordinate) {
 		this.coordinateToIndex = coordinateToIndex;
 		this.rowToCoordinate = rowToCoordinate;
 	}
 
 	public MutableAxisColumn() {
-		this.coordinateToIndex = new Object2IntAxisDictionary();
+		this.coordinateToIndex = new LazyTypeAxisDictionary();
 
 		this.rowToCoordinate = new IntArrayList();
 	}
 
 	@Override
 	public synchronized void appendCoordinate(Object coordinate) {
-		if (coordinateToIndex.cardinality() == Integer.MAX_VALUE || rowToCoordinate.size() == Integer.MAX_VALUE) {
-			brokenRows.incrementAndGet();
-			return;
+		if (rowToCoordinate.size() == Integer.MAX_VALUE) {
+			throw new IllegalStateException("This structure is full");
 		}
 
-		int nextRowCoordinate = coordinateToIndex.getIndexMayAppend(coordinate);
+		int nextRowCoordinate = coordinateToIndex.asObjects().getIndexMayAppend(coordinate);
 
 		appendCoordinateRef(nextRowCoordinate);
 	}
@@ -56,12 +52,7 @@ public class MutableAxisColumn implements IMutableAxisSmallColumn {
 	}
 
 	@Override
-	public long getBrokenRows() {
-		return brokenRows.get();
-	}
-
-	@Override
-	public IMutableAxisSmallDictionarySink getCoordinateToRef() {
+	public ILazyMutableAxisSmallDictionary getCoordinateToRef() {
 		isLocked.set(true);
 		return coordinateToIndex;
 	}

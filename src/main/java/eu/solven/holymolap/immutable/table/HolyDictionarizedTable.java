@@ -8,10 +8,11 @@ import org.roaringbitmap.RoaringBitmap;
 
 import com.google.common.collect.ImmutableList;
 
+import eu.solven.holymolap.cube.IMayCache;
 import eu.solven.holymolap.immutable.axis.IScannableAxisSmallColumn;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
-public class HolyDictionarizedTable implements IHolyDictionarizedTable {
+public class HolyDictionarizedTable implements IHolyDictionarizedTable, IMayCache {
 	// private static final Logger LOGGER = LoggerFactory.getLogger(HolyFlatDictionarizedTable.class);
 
 	final int nbRows;
@@ -29,6 +30,13 @@ public class HolyDictionarizedTable implements IHolyDictionarizedTable {
 	@Override
 	public long getSizeInBytes() {
 		return axisIndexToColumn.stream().mapToLong(IHasMemoryFootprint::getSizeInBytes).sum();
+	}
+
+	@Override
+	public void invalidateCache() {
+		if (axisIndexToColumn instanceof IMayCache) {
+			((IMayCache) axisIndexToColumn).invalidateCache();
+		}
 	}
 
 	@Override

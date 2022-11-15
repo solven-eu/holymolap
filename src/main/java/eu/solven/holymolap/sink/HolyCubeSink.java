@@ -12,6 +12,7 @@ import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.mutable.cube.IMutableHolyCube;
 import eu.solven.holymolap.mutable.cube.MutableHolyCube;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
+import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 
 public class HolyCubeSink implements IHolyCubeSink {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(HolyCubeSink.class);
@@ -43,6 +44,19 @@ public class HolyCubeSink implements IHolyCubeSink {
 	}
 
 	@Override
+	public IHolyCubeSink sink(IHolyRecordsTable cellsToAdd, IHolyRecordsTable measuresToAdd) {
+		while (pending.get() == null) {
+			pending.compareAndSet(null, new MutableHolyCube(measures));
+		}
+
+		IMutableHolyCube mutableHolyCube = pending.get();
+
+		mutableHolyCube.acceptRowToCell(cellsToAdd, measuresToAdd);
+
+		return this;
+	}
+
+	@Override
 	public IHolyCube closeToHolyCube() {
 		IMutableHolyCube mutableHolyCube = pending.get();
 
@@ -52,6 +66,5 @@ public class HolyCubeSink implements IHolyCubeSink {
 		} else {
 			return mutableHolyCube.closeToHolyCube();
 		}
-
 	}
 }

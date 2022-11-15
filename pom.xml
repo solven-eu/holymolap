@@ -25,7 +25,8 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 
-		<pepper.version>4.2-SNAPSHOT</pepper.version>
+		<pepper.version>4.2</pepper.version>
+        <jmh.version>1.21</jmh.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -38,12 +39,6 @@
 			<artifactId>pepper-with-agent</artifactId>
 			<version>${pepper.version}</version>
 		</dependency>
-
-		<!-- <dependency> -->
-		<!-- <groupId>org.javolution</groupId> -->
-		<!-- <artifactId>javolution-core-java</artifactId> -->
-		<!-- <version>6.0.0</version> -->
-		<!-- </dependency> -->
 
 		<!-- https://mvnrepository.com/artifact/org.apache.arrow/arrow-vector -->
 		<dependency>
@@ -67,11 +62,6 @@
 			<artifactId>JavaFastPFOR</artifactId>
 			<version>0.1.12</version>
 		</dependency>
-		<!-- <dependency> -->
-		<!-- <groupId>org.mapdb</groupId> -->
-		<!-- <artifactId>mapdb</artifactId> -->
-		<!-- <version>3.0.8</version> -->
-		<!-- </dependency> -->
 
 		<dependency>
 			<groupId>it.unimi.dsi</groupId>
@@ -80,9 +70,20 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.simpleflatmapper</groupId>
-			<artifactId>sfm-csv</artifactId>
-			<version>8.2.3</version>
+			<groupId>io.deephaven</groupId>
+			<artifactId>deephaven-csv</artifactId>
+			<version>0.8.0</version>
+		</dependency>
+		<!-- Optional dependency for faster double parsing (Java 11+ compatible) -->
+		<dependency>
+			<groupId>io.deephaven</groupId>
+			<artifactId>deephaven-csv-fast-double-parser</artifactId>
+			<version>0.8.0</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.randelshofer</groupId>
+			<artifactId>fastdoubleparser</artifactId>
+			<version>0.3.0</version>
 		</dependency>
 
 		<dependency>
@@ -94,6 +95,22 @@
 			<groupId>de.javakaffee</groupId>
 			<artifactId>kryo-serializers</artifactId>
 			<version>0.45</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.calcite.avatica</groupId>
+			<artifactId>avatica-core</artifactId>
+			<version>1.22.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.calcite</groupId>
+			<artifactId>calcite-core</artifactId>
+			<version>1.32.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.calcite</groupId>
+			<artifactId>calcite-file</artifactId>
+			<version>1.32.0</version>
 		</dependency>
 
 		<dependency>
@@ -134,5 +151,18 @@
 			<artifactId>pepper-parquet</artifactId>
 			<version>${pepper.version}</version>
 		</dependency>
+		
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+			<scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+			<scope>test</scope>
+        </dependency>
 	</dependencies>
 </project>

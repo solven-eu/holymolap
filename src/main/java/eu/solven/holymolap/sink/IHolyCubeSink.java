@@ -16,6 +16,7 @@ import eu.solven.holymolap.sink.record.FilterOutHolyRecord;
 import eu.solven.holymolap.sink.record.HolyCubeRecord;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
 import eu.solven.holymolap.sink.record.IHolyRecord;
+import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 
 /**
  * An {@link IHolyCubeSink} knows how to turn a set of data into a {@link IHolyCube}
@@ -68,4 +69,7 @@ public interface IHolyCubeSink extends ICloseableToHolyCube {
 	}
 
 	IHolyCubeSink sink(Stream<? extends IHolyCubeRecord> toAdd);
+
+	IHolyCubeSink sink(IHolyRecordsTable cellsToAdd, IHolyRecordsTable measuresToAdd);
+
 }

@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
-import eu.solven.holymolap.measures.operator.IOperatorFactory;
+import eu.solven.holymolap.measures.operator.IStandardOperators;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
@@ -136,13 +136,13 @@ public class ITLoadNycTaxiRides_Single_Avro {
 				.filter(cd -> !(cd.getPath().length == 1 && "RatecodeID".equals(cd.getPath()[0])))
 				.filter(cd -> PrimitiveTypeName.DOUBLE == cd.getPrimitiveType().getPrimitiveTypeName())
 				.map(cd -> new MeasuredAxis(Stream.of(cd.getPath()).collect(Collectors.joining(".")),
-						IOperatorFactory.SUM))
+						IStandardOperators.SUM))
 				.collect(Collectors.toCollection(ArrayList::new));
 
 		Assertions.assertThat(measuredAxes)
 				.hasSize(11)
-				.contains(new MeasuredAxis("passenger_count", IOperatorFactory.SUM))
-				.doesNotContain(new MeasuredAxis("RatecodeID", IOperatorFactory.SUM));
+				.contains(new MeasuredAxis("passenger_count", IStandardOperators.SUM))
+				.doesNotContain(new MeasuredAxis("RatecodeID", IStandardOperators.SUM));
 
 		// Enable querying COUNT(*)
 		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);

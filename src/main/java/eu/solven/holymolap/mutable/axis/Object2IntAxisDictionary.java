@@ -8,7 +8,7 @@ import eu.solven.holymolap.mutable.dictionary.IAxisSmallDictionary;
 import it.unimi.dsi.fastutil.objects.Object2IntLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
-public class Object2IntAxisDictionary implements IMutableAxisSmallDictionarySink {
+public class Object2IntAxisDictionary implements IMutableAxisSmallDictionary {
 	protected final Object2IntMap<Object> coordinateToIndex;
 	protected final AtomicBoolean locked = new AtomicBoolean();
 

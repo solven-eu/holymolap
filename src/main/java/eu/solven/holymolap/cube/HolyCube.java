@@ -34,13 +34,13 @@ import eu.solven.holymolap.stable.v1.filters.IAxesFilterOr;
 public class HolyCube implements IHolyCube {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(HolyCube.class);
 
-	protected final int nbRows;
+	protected final int nbCells;
 
 	protected final IHolyCellMultiSet cellSet;
 	protected final IHolyMeasuresTable aggregateTable;
 
-	public HolyCube(int nbRows, IHolyCellMultiSet cellSet, IHolyMeasuresTable aggregateTable) {
-		this.nbRows = nbRows;
+	public HolyCube(int nbCells, IHolyCellMultiSet cellSet, IHolyMeasuresTable aggregateTable) {
+		this.nbCells = nbCells;
 		this.cellSet = cellSet;
 		this.aggregateTable = aggregateTable;
 	}
@@ -56,11 +56,21 @@ public class HolyCube implements IHolyCube {
 
 	@Override
 	public String toString() {
-		return "#Rows: " + nbRows
+		return "#cells: " + nbCells
 				+ ", Axes="
 				+ cellSet.getAxesWithCoordinates().axes()
 				+ ", Measures="
 				+ aggregateTable.getMeasuresDefinition();
+	}
+
+	@Override
+	public void invalidateCache() {
+		if (cellSet instanceof IMayCache) {
+			((IMayCache) cellSet).invalidateCache();
+		}
+		if (aggregateTable instanceof IMayCache) {
+			((IMayCache) aggregateTable).invalidateCache();
+		}
 	}
 
 	@Override
@@ -139,7 +149,7 @@ public class HolyCube implements IHolyCube {
 
 	@Override
 	public long getNbRows() {
-		return nbRows;
+		return nbCells;
 	}
 
 	@ManagedAttribute

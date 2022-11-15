@@ -3,13 +3,13 @@ package eu.solven.holymolap.mutable.column;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
-import eu.solven.holymolap.measures.operator.IStandardOperators;
+import eu.solven.holymolap.measures.operator.IStandardLongOperators;
 import eu.solven.pepper.memory.IPepperMemoryConstants;
 
 public class TestMutableLongAggregatesColumn {
 	@Test
 	public void testWriteNeutral() {
-		MutableLongAggregatesColumn column = new MutableLongAggregatesColumn(IStandardOperators.COUNT);
+		MutableLongAggregatesColumn column = new MutableLongAggregatesColumn(IStandardLongOperators.COUNT);
 
 		long sizeBefore = column.getSizeInBytes();
 		Assertions.assertThat(sizeBefore).isLessThanOrEqualTo(IPepperMemoryConstants.MB);
@@ -21,7 +21,7 @@ public class TestMutableLongAggregatesColumn {
 
 	@Test
 	public void testWriteOne_first() {
-		MutableLongAggregatesColumn column = new MutableLongAggregatesColumn(IStandardOperators.COUNT);
+		MutableLongAggregatesColumn column = new MutableLongAggregatesColumn(IStandardLongOperators.COUNT);
 
 		long sizeBefore = column.getSizeInBytes();
 		Assertions.assertThat(sizeBefore).isLessThanOrEqualTo(IPepperMemoryConstants.MB);
@@ -33,7 +33,7 @@ public class TestMutableLongAggregatesColumn {
 
 	@Test
 	public void testWriteOne_further() {
-		MutableLongAggregatesColumn column = new MutableLongAggregatesColumn(IStandardOperators.COUNT);
+		MutableLongAggregatesColumn column = new MutableLongAggregatesColumn(IStandardLongOperators.COUNT);
 
 		long sizeBefore = column.getSizeInBytes();
 		Assertions.assertThat(sizeBefore).isLessThanOrEqualTo(IPepperMemoryConstants.MB);

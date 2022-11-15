@@ -21,10 +21,10 @@ public class EmptyImmutableAxisSmallColumn implements IScannableAxisSmallColumn 
 		return 0;
 	}
 
-	@Override
-	public long getBrokenRows() {
-		return 0;
-	}
+	// @Override
+	// public long getBrokenRows() {
+	// return 0;
+	// }
 
 	@Override
 	public int getCoordinateRef(long cellIndex) {

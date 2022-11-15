@@ -19,7 +19,7 @@ public class SkippedHeaderRows implements IMutableAxisSmallColumn {
 	}
 
 	@Override
-	public IMutableAxisSmallDictionarySink getCoordinateToRef() {
+	public ILazyMutableAxisSmallDictionary getCoordinateToRef() {
 		return decorated.getCoordinateToRef();
 	}
 
@@ -60,9 +60,9 @@ public class SkippedHeaderRows implements IMutableAxisSmallColumn {
 		return nbSkipped + decorated.getRows();
 	}
 
-	@Override
-	public long getBrokenRows() {
-		return decorated.getBrokenRows();
-	}
+	// @Override
+	// public long getBrokenRows() {
+	// return decorated.getBrokenRows();
+	// }
 
 }

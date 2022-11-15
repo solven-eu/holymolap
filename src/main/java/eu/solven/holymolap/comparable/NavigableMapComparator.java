@@ -12,7 +12,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Ordering;
 
 /**
- * A {@link Comparator} which compare first the keyset, then the values
+ * A {@link Comparator} which compare first the keyset, then the values. Useful to rely on {@link NavigableMap} as key
+ * of a {@link NavigableMap}.
  * 
  * @author Benoit Lacelle
  * 

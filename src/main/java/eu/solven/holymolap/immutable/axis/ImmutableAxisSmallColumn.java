@@ -15,6 +15,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.cache.CompressedIntArray;
+import eu.solven.holymolap.cube.IMayCache;
 import eu.solven.holymolap.immutable.dictionary.EmptyAxisCoordinatesDictionary;
 import eu.solven.holymolap.immutable.dictionary.IAxisCoordinatesDictionary;
 import eu.solven.holymolap.mutable.axis.IMutableAxisSmallColumn;
@@ -28,7 +29,7 @@ import eu.solven.holymolap.mutable.dictionary.IAxisSmallDictionary;
  *
  */
 // https://lemire.me/blog/2017/11/10/how-should-you-build-a-high-performance-column-store-for-the-2020s/
-public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn {
+public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn, IMayCache {
 	final int nbRows;
 
 	final IAxisCoordinatesDictionary axisCoordinatesDictionary;
@@ -44,7 +45,7 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn {
 				return getCoordinateBitmapNoCache(coordinateRef);
 			}));
 
-	final long brokenRows;
+	// final long brokenRows;
 
 	protected ImmutableAxisSmallColumn() {
 		this(new EmptyAxisCoordinatesDictionary(), new MutableAxisColumn());
@@ -60,13 +61,24 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn {
 
 		this.compressedRowToCoordinate = new CompressedIntArray(rowToIndex);
 
-		this.brokenRows = input.getBrokenRows();
+		// this.brokenRows = input.getBrokenRows();
 	}
 
 	@Override
-	public long getBrokenRows() {
-		return brokenRows;
+	public void invalidateCache() {
+		if (axisCoordinatesDictionary instanceof IMayCache) {
+			((IMayCache) axisCoordinatesDictionary).invalidateCache();
+		}
+		if (compressedRowToCoordinate instanceof IMayCache) {
+			((IMayCache) compressedRowToCoordinate).invalidateCache();
+		}
+		coordinateRefToBitmap.invalidateAll();
 	}
+
+	// @Override
+	// public long getBrokenRows() {
+	// return brokenRows;
+	// }
 
 	@Override
 	public long getRows() {
