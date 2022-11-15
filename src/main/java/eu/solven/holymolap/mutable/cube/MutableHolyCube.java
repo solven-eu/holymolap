@@ -130,9 +130,6 @@ public class MutableHolyCube implements IMutableHolyCube {
 				.map(e -> (IMutableLongAggregatesColumn) e.getValue())
 				.collect(Collectors.toList());
 
-		// this.measuredAxisToColumn = MultimapBuilder.hashKeys().arrayListValues().build();
-		// measureToColumn.forEach((measuredAxis, column) -> measuredAxisToColumn.put(measuredAxis.getAxis(), column));
-
 		this.fifoAxes = orderedAxis;
 		this.fifoAxisIndexToColumn = fifoAxisIndexToColumn;
 		if (orderedAxis.size() != fifoAxisIndexToColumn.size()) {

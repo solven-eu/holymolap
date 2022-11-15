@@ -24,12 +24,14 @@ import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
+import eu.solven.holymolap.primitives.HolyPrimitiveParser;
 import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
+import eu.solven.holymolap.sink.record.IHolyRecordsTableVisitor;
 import eu.solven.holymolap.sink.record.csv.CsvHolyRecordsTable;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
@@ -80,7 +82,9 @@ public class ITLoadAgeAndSex_csv {
 				IHolyRecordsTable measuresTable =
 						new CsvHolyRecordsTable(axes, numRows, csvResult, measuredAxes::contains);
 
-				sink.sink(cellsTable, measuresTable);
+				IHolyRecordsTable cleanMeasuresTable = cleanMeasures(measuresTable);
+
+				sink.sink(cellsTable, cleanMeasuresTable);
 			}
 
 			holyCube = sink.closeToHolyCube();
@@ -95,6 +99,48 @@ public class ITLoadAgeAndSex_csv {
 				PepperLogHelper.humanBytes(deepSize));
 
 		sanityChecks(holyCube, numRows);
+	}
+
+	// Demonstrate how one can clean data between a source and a HolyCubeSink
+	private static IHolyRecordsTable cleanMeasures(IHolyRecordsTable measuresTable) {
+		return new IHolyRecordsTable() {
+
+			@Override
+			public long size() {
+				return measuresTable.size();
+			}
+
+			@Override
+			public List<String> getAxes() {
+				return measuresTable.getAxes();
+			}
+
+			@Override
+			public void accept(IHolyRecordsTableVisitor visitor) {
+				measuresTable.accept(new IHolyRecordsTableVisitor() {
+
+					@Override
+					public void onObject(int axisIndex, List<?> listObjects) {
+						if (getAxes().get(axisIndex).equals("")) {
+							// This column is ill in the sCSV: we prefer cleaning it early
+							double[] cleanDoubles = listObjects.stream().mapToDouble(o -> {
+								if ("".equals(o)) {
+									// There is a lot of such Strings in the CSV: it is faster to discard them
+									// early than trying to parse as a double
+									return Double.NaN;
+								} else {
+									return HolyPrimitiveParser.toDouble(o);
+								}
+							}).toArray();
+
+							visitor.onDouble(axisIndex, cleanDoubles);
+						} else {
+							visitor.onObject(axisIndex, listObjects);
+						}
+					}
+				});
+			}
+		};
 	}
 
 	private static void sanityChecks(IHolyCube holyCube, long numRows) {
