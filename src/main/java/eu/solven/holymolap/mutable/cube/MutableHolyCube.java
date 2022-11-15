@@ -47,6 +47,8 @@ import eu.solven.holymolap.mutable.axis.IMutableAxisSmallIntDictionary;
 import eu.solven.holymolap.mutable.axis.IProxyForMutableAxisSmallDictionary;
 import eu.solven.holymolap.mutable.axis.MutableAxisColumn;
 import eu.solven.holymolap.mutable.axis.SkippedHeaderRows;
+import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
+import eu.solven.holymolap.mutable.cellset.Long2IntHolyCellToRow;
 import eu.solven.holymolap.mutable.column.IMutableAggregatesColumn;
 import eu.solven.holymolap.mutable.column.IMutableDoubleAggregatesColumn;
 import eu.solven.holymolap.mutable.column.IMutableLongAggregatesColumn;
@@ -66,8 +68,6 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * Enables loading data into an {@link IHolyCube}. It is specialized for loading. It may be queried, but with a chance
@@ -94,7 +94,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	// cellToRow can be recomputed from axisToColumn, but it is necessary to quickly identify to which row an input has
 	// to be aggregated into.
 	// This can be rebuilt from (fifoAxes, axisToColumn)
-	final Object2IntMap<IntList> cellToRow;
+	final IHolyCellToRow cellToRow;
 
 	final AtomicLong brokenRows = new AtomicLong();
 	final AtomicBoolean closed = new AtomicBoolean();
@@ -107,7 +107,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 			Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn,
 			List<String> orderedAxis,
 			List<IMutableAxisSmallColumn> fifoAxisIndexToColumn,
-			Object2IntMap<IntList> cellToRow) {
+			IHolyCellToRow cellToRow) {
 		this.measuresDefinition = measuresDefinition;
 		this.measureToColumn = measureToColumn;
 
@@ -140,9 +140,6 @@ public class MutableHolyCube implements IMutableHolyCube {
 		// }
 
 		this.cellToRow = cellToRow;
-		if (cellToRow.defaultReturnValue() != IMutableAxisSmallDictionary.NO_COORDINATE_INDEX) {
-			throw new IllegalArgumentException("Invalid defaultReturnValue: " + cellToRow.defaultReturnValue());
-		}
 	}
 
 	/**
@@ -158,12 +155,9 @@ public class MutableHolyCube implements IMutableHolyCube {
 				prepareCellToRow());
 	}
 
-	private static Object2IntOpenHashMap<IntList> prepareCellToRow() {
-		Object2IntOpenHashMap<IntList> cellToRow = new Object2IntOpenHashMap<>();
-
-		cellToRow.defaultReturnValue(IMutableAxisSmallDictionary.NO_COORDINATE_INDEX);
-
-		return cellToRow;
+	private static IHolyCellToRow prepareCellToRow() {
+		// return new Object2IntHolyCellToRow();
+		return new Long2IntHolyCellToRow();
 	}
 
 	private static List<String> prepareOrderedAxes() {
@@ -313,8 +307,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	}
 
 	private int[] ensureCellRegistration(long size, NavigableMap<Integer, int[]> axisIndexToCoordinates) {
-		int[] cellIndexes;
-		IntList cellIndexesAsList = new IntArrayList();
+		IntArrayList cellIndexesAsList = new IntArrayList();
 
 		// This record will no write further than this
 		int maxIndex = axisIndexToCoordinates.lastKey().intValue();
@@ -350,15 +343,14 @@ public class MutableHolyCube implements IMutableHolyCube {
 			int cellIndex;
 			int newCellIndex;
 			synchronized (cellToRow) {
-				int localCellIndex = cellToRow.getInt(rowCellCoordinates);
+				int localCellIndex = cellToRow.getRow(rowCellCoordinates);
 				if (localCellIndex >= 0) {
 					cellIndex = localCellIndex;
 					newCellIndex = IMutableAxisSmallDictionary.NO_COORDINATE_INDEX;
 				} else {
-					newCellIndex = getNbCells();
-					cellIndex = newCellIndex;
 					// Copy as we relied on a buffer
-					cellToRow.put(new IntArrayListFastHashCode(rowCellCoordinates), newCellIndex);
+					newCellIndex = cellToRow.registerRow(new IntArrayListFastHashCode(rowCellCoordinates));
+					cellIndex = newCellIndex;
 				}
 			}
 
@@ -378,8 +370,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 			cellIndexesAsList.add(cellIndex);
 		}
 
-		cellIndexes = cellIndexesAsList.toIntArray();
-		return cellIndexes;
+		return cellIndexesAsList.elements();
 	}
 
 	private void contributeToMeasures(IHolyRecordsTable measuresToAdd, long size, int[] cellIndexes) {
@@ -436,6 +427,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	}
 
 	private void logSinkRate() {
+		// TODO Log only since a new row this previous log
 		LOGGER.info("We sinked {} rows. Loading at {}rows/sec",
 				PepperLogHelper.humanBytes(inserts.getCount()),
 				inserts.getMeanRate());
@@ -490,14 +482,14 @@ public class MutableHolyCube implements IMutableHolyCube {
 		int cellIndex;
 		int newCellIndex;
 		synchronized (cellToRow) {
-			int localCellIndex = cellToRow.getInt(cellCoordinates);
+			int localCellIndex = cellToRow.getRow(cellCoordinates);
 			if (localCellIndex >= 0) {
 				cellIndex = localCellIndex;
 				newCellIndex = IMutableAxisSmallDictionary.NO_COORDINATE_INDEX;
 			} else {
-				newCellIndex = getNbCells();
+				newCellIndex = cellToRow.registerRow(cellCoordinates);
 				cellIndex = newCellIndex;
-				cellToRow.put(cellCoordinates, newCellIndex);
+
 			}
 		}
 
