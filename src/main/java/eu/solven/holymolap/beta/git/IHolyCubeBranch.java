@@ -1,6 +1,6 @@
 package eu.solven.holymolap.beta.git;
 
-import eu.solven.holymolap.stable.v1.IOneShotAggregator;
+import eu.solven.holymolap.stable.beta.IOneShotAggregator;
 
 /**
  * An {@link IHolyCubeBranch} is a chain of {@link IHolyCubeCommit}, enabling aggregation queries. Its head may

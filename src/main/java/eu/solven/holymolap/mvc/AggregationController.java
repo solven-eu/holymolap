@@ -1,26 +1,28 @@
 package eu.solven.holymolap.mvc;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import eu.solven.holymolap.stable.beta.MapAggregationResult;
+import eu.solven.holymolap.stable.beta.IAggregationResult;
+import eu.solven.holymolap.stable.beta.IOneShotAggregator;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
-import eu.solven.holymolap.stable.v1.IAggregationResult;
-import eu.solven.holymolap.stable.v1.IOneShotAggregator;
 
-@Controller
+@RestController
 @RequestMapping("/v1/query")
 public class AggregationController {
 
+	final SinkController sinkController;
 	final IOneShotAggregator oneShotAggregator;
 
-	public AggregationController(IOneShotAggregator oneShotAggregator) {
+	public AggregationController(SinkController sinkController, IOneShotAggregator oneShotAggregator) {
+		this.sinkController = sinkController;
 		this.oneShotAggregator = oneShotAggregator;
 	}
 
 	@GetMapping
-	public ResponseEntity<IAggregationResult> aggregate(IAggregationQuery query) {
-		return ResponseEntity.ok(oneShotAggregator.aggregate(query));
+	public IAggregationResult aggregate(LoadingRequest loadingRequest, IAggregationQuery query) {
+		return new MapAggregationResult(oneShotAggregator.aggregate(sinkController.getIfPresent(loadingRequest), query));
 	}
 }

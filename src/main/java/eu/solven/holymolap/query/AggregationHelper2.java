@@ -1,7 +1,6 @@
 package eu.solven.holymolap.query;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;

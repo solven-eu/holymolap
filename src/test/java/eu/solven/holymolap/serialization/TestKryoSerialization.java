@@ -28,11 +28,11 @@ public class TestKryoSerialization extends ATestAggregation {
 	@Test
 	public void testSerializationWithKryo() {
 
-		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
+		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRST_KEY, OperatorFactory.SUM);
 		IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
-		IHolyCube initialCube = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
+		IHolyCube initialCube = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRST_KEY),
 				new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE })).closeToHolyCube();
 
 		Kryo kryo = HolyKryoHelper.kryoForHolyCube();

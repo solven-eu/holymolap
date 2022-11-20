@@ -1,4 +1,4 @@
-package eu.solven.holymolap.sink.record.csv;
+package eu.solven.holymolap.sink.csv;
 
 import java.util.Arrays;
 import java.util.List;

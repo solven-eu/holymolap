@@ -1,15 +1,12 @@
 package eu.solven.holymolap.it.age_sex;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -17,10 +14,7 @@ import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Predicates;
-
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
@@ -29,19 +23,16 @@ import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
-import eu.solven.holymolap.sink.HolyCubeSink;
+import eu.solven.holymolap.sink.csv.LoadFromCsv;
+import eu.solven.holymolap.sink.csv.LoadResult;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 import eu.solven.holymolap.sink.record.IHolyRecordsTableVisitor;
-import eu.solven.holymolap.sink.record.csv.CsvHolyRecordsTable;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 import eu.solven.pepper.logging.PepperLogHelper;
 import eu.solven.pepper.memory.PepperFootprintHelper;
-import io.deephaven.csv.CsvSpecs;
 import io.deephaven.csv.parsers.DataType;
-import io.deephaven.csv.reading.CsvReader;
 import io.deephaven.csv.reading.CsvReader.ResultColumn;
-import io.deephaven.csv.sinks.SinkFactory;
 import io.deephaven.csv.util.CsvReaderException;
 
 public class ITLoadAgeAndSex_csv {
@@ -51,46 +42,26 @@ public class ITLoadAgeAndSex_csv {
 	// TODO Enable passenger_count as axes
 	// TODO Enable year(tpep_pickup_datetime) and year(tpep_dropoff_datetime)
 	public static void main(String[] args) throws IOException, CsvReaderException {
-		final long numRows;
-		IHolyCube holyCube;
 		Path inputFolder = Paths.get("/Users/blacelle/Downloads/csv_age_sex");
 
 		File file = new File(inputFolder.toFile(), "Data8317.csv");
 
-		LOGGER.info("About to parse a CSV file with length={}", PepperLogHelper.humanBytes(file.length()));
-		try (final InputStream inputStream = new FileInputStream(file)) {
-			final CsvSpecs specs = CsvSpecs.csv();
-			final CsvReader.Result csvResult = CsvReader.read(specs, inputStream, SinkFactory.arrays());
-			numRows = csvResult.numRows();
-			LOGGER.info("Done parsing {} rows from a CSV file with length={}",
-					PepperLogHelper.humanBytes(numRows),
-					PepperLogHelper.humanBytes(file.length()));
+		LoadResult loadResult;
 
-			List<String> axes = Stream.of(csvResult.columns()).map(rc -> rc.name()).collect(Collectors.toList());
-			IHolyMeasuresDefinition measures = defineMeasures(csvResult.columns());
-			LOGGER.info("Measures: {}", measures);
+		loadResult = new LoadFromCsv() {
 
-			Set<String> measuredAxes =
-					measures.measures().stream().map(IHolyMeasureColumnMeta::getColumn).collect(Collectors.toSet());
-
-			HolyCubeSink sink = new HolyCubeSink(measures);
-
-			{
-
-				IHolyRecordsTable cellsTable =
-						new CsvHolyRecordsTable(axes, numRows, csvResult, Predicates.not(measuredAxes::contains));
-				IHolyRecordsTable measuresTable =
-						new CsvHolyRecordsTable(axes, numRows, csvResult, measuredAxes::contains);
-
-				IHolyRecordsTable cleanMeasuresTable = cleanMeasures(measuresTable);
-
-				sink.sink(cellsTable, cleanMeasuresTable);
+			@Override
+			protected IHolyRecordsTable cleanMeasures(IHolyRecordsTable measuresTable) {
+				return ITLoadAgeAndSex_csv.cleanMeasures(measuresTable);
 			}
 
-			holyCube = sink.closeToHolyCube();
-		}
-		LOGGER.info("We have an immutable cube ready for querying");
+			@Override
+			protected IHolyMeasuresDefinition defineMeasures(ResultColumn[] resultColumns) {
+				return ITLoadAgeAndSex_csv.defineMeasures(resultColumns);
+			}
+		}.loadSingleCsvFile(file);
 
+		IHolyCube holyCube = loadResult.getHolyCube();
 		long sizeInBytes = holyCube.getSizeInBytes();
 		long deepSize = PepperFootprintHelper.deepSize(holyCube);
 		LOGGER.info("CSV.length={} is represented by holyCube.length={} holyCube.deepSize={}",
@@ -98,7 +69,7 @@ public class ITLoadAgeAndSex_csv {
 				PepperLogHelper.humanBytes(sizeInBytes),
 				PepperLogHelper.humanBytes(deepSize));
 
-		sanityChecks(holyCube, numRows);
+		sanityChecks(holyCube, loadResult.getNumRows());
 	}
 
 	// Demonstrate how one can clean data between a source and a HolyCubeSink
@@ -143,25 +114,6 @@ public class ITLoadAgeAndSex_csv {
 		};
 	}
 
-	private static void sanityChecks(IHolyCube holyCube, long numRows) {
-		SimpleAggregationQuery countRecords = AggregateQueryBuilder.grandTotal().count("*").build();
-
-		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(holyCube, countRecords);
-			LOGGER.info("Total records: {}", result);
-
-			Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(numRows);
-		}
-
-		{
-			String wildcard = "VendorID";
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
-					AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
-			LOGGER.info("Total records by '{}': {}", wildcard, result);
-		}
-	}
-
 	public static IHolyMeasuresDefinition defineMeasures(ResultColumn[] resultColumns) {
 		List<IMeasuredAxis> measuredAxes = Stream.of(resultColumns)
 				.filter(cd -> DataType.FLOAT == cd.dataType() || DataType.DOUBLE == cd.dataType()
@@ -176,6 +128,25 @@ public class ITLoadAgeAndSex_csv {
 
 		IHolyMeasuresDefinition measures = new HolyMeasuresTableDefinition(measuredAxes);
 		return measures;
+	}
+
+	private static void sanityChecks(IHolyCube holyCube, long numRows) {
+		SimpleAggregationQuery countRecords = AggregateQueryBuilder.grandTotal().count("*").build();
+
+		{
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregateHelper.singleMeasureToNavigableMap(holyCube, countRecords);
+			LOGGER.info("Total records: {}", result);
+
+			Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(numRows);
+		}
+
+		{
+			String wildcard = "Sex";
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
+					AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
+			LOGGER.info("Total records by '{}': {}", wildcard, result);
+		}
 	}
 
 }

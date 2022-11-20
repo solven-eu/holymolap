@@ -30,7 +30,6 @@ import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
-import eu.solven.holymolap.sink.record.csv.CsvHolyRecordsTable;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.pepper.logging.PepperLogHelper;
 import eu.solven.pepper.memory.PepperFootprintHelper;

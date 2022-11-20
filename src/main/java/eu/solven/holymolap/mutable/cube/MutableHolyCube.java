@@ -48,7 +48,7 @@ import eu.solven.holymolap.mutable.axis.IProxyForMutableAxisSmallDictionary;
 import eu.solven.holymolap.mutable.axis.MutableAxisColumn;
 import eu.solven.holymolap.mutable.axis.SkippedHeaderRows;
 import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
-import eu.solven.holymolap.mutable.cellset.Long2IntHolyCellToRow;
+import eu.solven.holymolap.mutable.cellset.FibonacciHolyCellToRow;
 import eu.solven.holymolap.mutable.column.IMutableAggregatesColumn;
 import eu.solven.holymolap.mutable.column.IMutableDoubleAggregatesColumn;
 import eu.solven.holymolap.mutable.column.IMutableLongAggregatesColumn;
@@ -157,7 +157,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 	private static IHolyCellToRow prepareCellToRow() {
 		// return new Object2IntHolyCellToRow();
-		return new Long2IntHolyCellToRow();
+		return new FibonacciHolyCellToRow();
 	}
 
 	private static List<String> prepareOrderedAxes() {
@@ -279,7 +279,10 @@ public class MutableHolyCube implements IMutableHolyCube {
 			} else {
 				IMutableAxisSmallDictionary coordinateToRef = proxyForCoordinateToRef.asObjects();
 
-				for (int i = 0; i < size; i++) {
+				// list may be bigger if buffered (elements out of size may be anything)
+				// list may be smaller is last element would be nulls
+				int realSize = Math.min(Ints.checkedCast(size), list.size());
+				for (int i = 0; i < realSize; i++) {
 					Object coordinate = list.get(i);
 
 					// Register the coordinate
@@ -306,6 +309,14 @@ public class MutableHolyCube implements IMutableHolyCube {
 		return axisIndexToCoordinates;
 	}
 
+	/**
+	 * 
+	 * @param size
+	 *            the number of rows being inserted
+	 * @param axisIndexToCoordinates
+	 *            a mapping from axisIndex to the coordinates (rowIndex -> coordinateRef)
+	 * @return
+	 */
 	private int[] ensureCellRegistration(long size, NavigableMap<Integer, int[]> axisIndexToCoordinates) {
 		IntArrayList cellIndexesAsList = new IntArrayList();
 
@@ -349,6 +360,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 					newCellIndex = IMutableAxisSmallDictionary.NO_COORDINATE_INDEX;
 				} else {
 					// Copy as we relied on a buffer
+					// But this is not necessary for FibonacciHolyCellToRow
 					newCellIndex = cellToRow.registerRow(new IntArrayListFastHashCode(rowCellCoordinates));
 					cellIndex = newCellIndex;
 				}
@@ -489,7 +501,6 @@ public class MutableHolyCube implements IMutableHolyCube {
 			} else {
 				newCellIndex = cellToRow.registerRow(cellCoordinates);
 				cellIndex = newCellIndex;
-
 			}
 		}
 

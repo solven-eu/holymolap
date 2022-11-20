@@ -1,6 +1,5 @@
 package eu.solven.holymolap.mutable.cellset;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.slf4j.Logger;
@@ -10,6 +9,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
 // https://www.geeksforgeeks.org/fibonacci-coding/
+// https://en.wikipedia.org/wiki/Zeckendorf%27s_theorem
 public class FibonacciEncoding {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FibonacciEncoding.class);
 
@@ -165,25 +165,42 @@ public class FibonacciEncoding {
 		System.out.println("Fibonacci code word for " + n + " is " + fibonacciEncoding(n));
 	}
 
-	public static long fibonacciEncodingToLong(int[] ints) {
-		return fibonacciEncodingToLong(IntArrayList.wrap(ints));
+	public static long fibonacciEncodingToLong(int... ints) {
+		return fibonacciEncodingToLong(0, IntArrayList.wrap(ints));
 	}
 
-	public static long fibonacciEncodingToLong(IntList ints) {
+	/**
+	 * 
+	 * @param minValue
+	 *            the minimal value we may encounter. All values would be shifted depending on this as FibonacciEncoding
+	 *            handles only values >= 1
+	 * @param ints
+	 *            the int array to encode
+	 * @return
+	 */
+	public static long fibonacciEncodingToLong(int minValue, IntList ints) {
 		long codeword = 0L;
 		int shift = 63;
+
+		if (minValue > 0) {
+			throw new UnsupportedOperationException("We need to handle positive minValue: " + minValue);
+		}
+
+		int maxAllowed = Integer.MAX_VALUE + minValue;
 
 		int inputSize = ints.size();
 		for (int intIndex = 0; intIndex < inputSize; intIndex++) {
 			int oneInt = ints.getInt(intIndex);
-			if (oneInt == Integer.MAX_VALUE) {
-				throw new IllegalArgumentException("We do not accept Integer.MAX_VALUE in the array");
-			} else if (oneInt < 0) {
-				throw new IllegalArgumentException("We do not accept negative integers in the array");
+			if (minValue < 0 && oneInt >= maxAllowed) {
+				throw new IllegalArgumentException(
+						"We do not accept values above " + maxAllowed + " in the array: " + ints);
+			} else if (oneInt < minValue) {
+				throw new IllegalArgumentException(
+						"We do not accept integers below " + minValue + " in the array: " + ints);
 			}
 
 			// We accept 0, by shifting all values by 1
-			int n = oneInt + 1;
+			int n = oneInt + 1 - minValue;
 
 			int index = indexofLargestFibonacciLessOrEquals(n);
 

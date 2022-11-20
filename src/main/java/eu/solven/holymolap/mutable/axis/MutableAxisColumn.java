@@ -3,9 +3,6 @@ package eu.solven.holymolap.mutable.axis;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-
 /**
  * A column of coordinates. Each row is typically associated to a cell (i.e. a {@link Set} of coordinates).
  * 
@@ -15,11 +12,11 @@ import it.unimi.dsi.fastutil.ints.IntList;
 // https://stackoverflow.com/questions/32917973/thread-safe-list-that-only-needs-to-support-random-access-and-appends
 public class MutableAxisColumn implements IMutableAxisSmallColumn {
 	final ILazyMutableAxisSmallDictionary coordinateToIndex;
-	final IntList rowToCoordinate;
+	final IAppendOnlyIntList rowToCoordinate;
 
 	final AtomicBoolean isLocked = new AtomicBoolean();
 
-	protected MutableAxisColumn(ILazyMutableAxisSmallDictionary coordinateToIndex, IntList rowToCoordinate) {
+	protected MutableAxisColumn(ILazyMutableAxisSmallDictionary coordinateToIndex, IAppendOnlyIntList rowToCoordinate) {
 		this.coordinateToIndex = coordinateToIndex;
 		this.rowToCoordinate = rowToCoordinate;
 	}
@@ -27,15 +24,11 @@ public class MutableAxisColumn implements IMutableAxisSmallColumn {
 	public MutableAxisColumn() {
 		this.coordinateToIndex = new LazyTypeAxisDictionary();
 
-		this.rowToCoordinate = new IntArrayList();
+		this.rowToCoordinate = new AppendOnlyIntArrayList();
 	}
 
 	@Override
 	public synchronized void appendCoordinate(Object coordinate) {
-		if (rowToCoordinate.size() == Integer.MAX_VALUE) {
-			throw new IllegalStateException("This structure is full");
-		}
-
 		int nextRowCoordinate = coordinateToIndex.asObjects().getIndexMayAppend(coordinate);
 
 		appendCoordinateRef(nextRowCoordinate);
@@ -43,7 +36,7 @@ public class MutableAxisColumn implements IMutableAxisSmallColumn {
 
 	@Override
 	public synchronized void appendCoordinateRef(int coordinateIndex) {
-		rowToCoordinate.add(coordinateIndex);
+		rowToCoordinate.append(coordinateIndex);
 	}
 
 	@Override

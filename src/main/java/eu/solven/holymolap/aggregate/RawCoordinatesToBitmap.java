@@ -27,4 +27,9 @@ public class RawCoordinatesToBitmap {
 		return matchingRows;
 	}
 
+	@Override
+	public String toString() {
+		return "RawCoordinatesToBitmap [coordinates=" + coordinates + ", matchingRows=" + matchingRows + "]";
+	}
+
 }

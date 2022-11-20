@@ -1,16 +1,54 @@
 package eu.solven.holymolap.mutable.axis;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Sets;
 
 import eu.solven.holymolap.mutable.dictionary.IAxisSmallDictionary;
 import it.unimi.dsi.fastutil.objects.Object2IntLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 public class Object2IntAxisDictionary implements IMutableAxisSmallDictionary {
+	private static final Logger LOGGER = LoggerFactory.getLogger(Object2IntAxisDictionary.class);
+
+	private static Set<Class<?>> VALID_CLASSES = Sets.newConcurrentHashSet();
+
 	protected final Object2IntMap<Object> coordinateToIndex;
 	protected final AtomicBoolean locked = new AtomicBoolean();
+
+	private static boolean isValidCoordinate(Object coordinate) {
+		if (coordinate == null) {
+			// TODO Is it legit to have null coordinates ?
+			return true;
+		}
+
+		Class<? extends Object> coordinateClass = coordinate.getClass();
+		if (VALID_CLASSES.contains(coordinateClass)) {
+			return true;
+		}
+
+		// First-encounter or invalid class
+		try {
+			Method hashcodeMethod = coordinateClass.getMethod("hashCode");
+			if (hashcodeMethod.getDeclaringClass() == Object.class) {
+				LOGGER.debug(".hasCode is from Object.class for {}", coordinateClass);
+				return false;
+			}
+		} catch (NoSuchMethodException | SecurityException e) {
+			LOGGER.error("Issue fetching .hashCode method from {}", coordinateClass);
+			return false;
+		}
+
+		VALID_CLASSES.add(coordinateClass);
+
+		return true;
+	}
 
 	/**
 	 * 
@@ -53,6 +91,8 @@ public class Object2IntAxisDictionary implements IMutableAxisSmallDictionary {
 		if (locked.get()) {
 			throw new IllegalStateException("Should not mutate once locked");
 		}
+
+		assert isValidCoordinate(coordinate);
 
 		int coordinateIndex = getIndexMayMiss(coordinate);
 

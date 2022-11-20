@@ -1,9 +1,9 @@
 package eu.solven.holymolap.beta.git;
 
 import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.stable.beta.IOneShotAggregator;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasFilters;
-import eu.solven.holymolap.stable.v1.IOneShotAggregator;
 
 /**
  * An {@link IHolyCubeCommit} refers to an {@link IHolyCube} holding data, and a set of data to mask from previous

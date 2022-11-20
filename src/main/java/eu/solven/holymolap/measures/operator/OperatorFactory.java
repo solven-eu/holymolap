@@ -34,10 +34,9 @@ public class OperatorFactory implements IOperatorFactory, IStandardOperators {
 
 	@Override
 	public ILongBinaryOperator getLongBinaryOperator(String operator) {
-		// if (SUM.equalsIgnoreCase(operator)) {
-		// return IStandardOperators.SUM;
-		// } else
-		if (COUNT.equalsIgnoreCase(operator)) {
+		if (SUM.equalsIgnoreCase(operator)) {
+			return IStandardLongOperators.SUM;
+		} else if (COUNT.equalsIgnoreCase(operator)) {
 			return IStandardLongOperators.COUNT;
 		} else {
 			throw new IllegalArgumentException("Unknown operator: " + operator);

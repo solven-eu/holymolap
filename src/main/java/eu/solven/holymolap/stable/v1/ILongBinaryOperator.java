@@ -33,6 +33,11 @@ public interface ILongBinaryOperator extends LongBinaryOperator, IBinaryOperator
 	@Override
 	@Deprecated
 	default public Object apply(Object left, Object right) {
+		if (left == null) {
+			return right;
+		} else if (right == null) {
+			return left;
+		}
 		return applyAsLong((((Number) left).longValue()), (((Number) left).longValue()));
 	}
 }

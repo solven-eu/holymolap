@@ -1,7 +1,5 @@
 package eu.solven.holymolap.it.nyc;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -11,14 +9,7 @@ import java.util.NavigableMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.util.Utf8;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.avro.AvroParquetReader;
-import org.apache.parquet.hadoop.ParquetFileReader;
-import org.apache.parquet.hadoop.ParquetReader;
-import org.apache.parquet.hadoop.util.HadoopInputFile;
-import org.apache.parquet.schema.MessageType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.assertj.core.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +25,13 @@ import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.serialization.HolyKryoHelper;
-import eu.solven.holymolap.sink.HolyCubeSink;
-import eu.solven.holymolap.sink.record.avro.AvroHolyRecord;
+import eu.solven.holymolap.sink.arrow.LoadFromArrow;
+import eu.solven.holymolap.sink.csv.LoadResult;
 import eu.solven.pepper.logging.PepperLogHelper;
 import eu.solven.pepper.memory.PepperFootprintHelper;
 
-public class ITLoadNycTaxiRides_Multiple {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ITLoadNycTaxiRides_Multiple.class);
+public class ITLoadNycTaxiRides_Arrow_Multiple {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ITLoadNycTaxiRides_Arrow_Multiple.class);
 
 	// TODO Enable passenger_count as axes
 	// TODO Enable year(tpep_pickup_datetime) and year(tpep_dropoff_datetime)
@@ -62,7 +53,7 @@ public class ITLoadNycTaxiRides_Multiple {
 
 		Kryo kryo = HolyKryoHelper.kryoForHolyCube();
 
-		kryo.register(Utf8.class);
+		// kryo.register(Utf8.class);
 
 		collectToForceParallel.stream()
 				.parallel()
@@ -76,7 +67,14 @@ public class ITLoadNycTaxiRides_Multiple {
 				// }
 				// })
 				.map(path -> {
-					IHolyCube holyCube = loadHolyCube(recordsCount, path);
+					LoadResult loadResult = new LoadFromArrow() {
+						@Override
+						protected IHolyMeasuresDefinition defineMeasures(Schema schema) {
+							return ITLoadNycTaxiRides_Arrow_Single.defineMeasures(schema);
+						}
+					}.loadParquetFile(path.toUri());
+
+					IHolyCube holyCube = loadResult.getHolyCube();
 
 					long parquetLength = path.toFile().length();
 					long sizeInBytes = holyCube.getSizeInBytes();
@@ -85,8 +83,6 @@ public class ITLoadNycTaxiRides_Multiple {
 							PepperLogHelper.humanBytes(parquetLength),
 							PepperLogHelper.humanBytes(sizeInBytes),
 							PepperLogHelper.humanBytes(deepSize));
-
-					// byte barray[] = conf.asByteArray(holyCube);
 
 					String pathAsString = path.toString();
 					return Maps.immutableEntry(pathAsString, holyCube);
@@ -101,55 +97,6 @@ public class ITLoadNycTaxiRides_Multiple {
 		ICompositeHolyCube partitionnedCube = new CompositeHolyCube(partitions);
 
 		executeQueries(recordsCount, partitionnedCube);
-	}
-
-	private static IHolyCube loadHolyCube(AtomicLong recordsCount, Path path) {
-		IHolyCube holyCube;
-		try {
-			Configuration hadoopConf = new Configuration();
-
-			HadoopInputFile hadoopFile =
-					HadoopInputFile.fromPath(new org.apache.hadoop.fs.Path(path.toUri()), hadoopConf);
-
-			//
-			ParquetFileReader readFooter = ParquetFileReader.open(hadoopFile);
-
-			long recordCount = readFooter.getFilteredRecordCount();
-			LOGGER.info("RecordCount: {}", recordCount);
-			recordsCount.addAndGet(recordCount);
-
-			MessageType schema = readFooter.getFileMetaData().getSchema();
-
-			List<String> axes = AvroHolyRecord.allAxes(schema);
-			IHolyMeasuresDefinition measures = ITLoadNycTaxiRides_Single_Avro.defineMeasures(schema);
-			LOGGER.info("Measures: {}", measures);
-
-			ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(hadoopFile).build();
-
-			HolyCubeSink sink = new HolyCubeSink(measures);
-
-			long nbInsert = 0;
-			while (true) {
-				GenericRecord nextRecord = reader.read();
-
-				if (nextRecord == null) {
-					break;
-				}
-
-				if (nbInsert == 0) {
-					LOGGER.info("First record: {}", nextRecord);
-				}
-				nbInsert++;
-
-				sink.sink(new AvroHolyRecord(axes, nextRecord));
-			}
-
-			holyCube = sink.closeToHolyCube();
-
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
-		return holyCube;
 	}
 
 	private static void executeQueries(AtomicLong recordsCount, ICompositeHolyCube partitionnedCube) {

@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 
 import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.HolyCube;
@@ -33,27 +34,28 @@ import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 
 public class TestAggregationComposite extends ATestAggregation implements IHolyMapDataTestConstants {
 
+	final MeasuredAxis sumFirstKey = new MeasuredAxis(DOUBLE_FIRST_KEY, OperatorFactory.SUM);
+
 	@Test
 	public void testEmptyCube() {
 		HolyCube cube1 = new HolyCube();
 		HolyCube cube2 = new HolyCube();
-		CompositeHolyCube composite = new CompositeHolyCube(
-				ImmutableMap.<String, IHolyCube>builder().put("1", cube1).put("2", cube2).build());
 
-		Assertions.assertThat(composite.getNbRows()).isEqualTo(0);
-		Assertions.assertThat(composite.getMeasuresDefinition().measures()).isEmpty();
+		CompositeHolyCube cube = new CompositeHolyCube(cube1, cube2);
+
+		Assertions.assertThat(cube.getNbRows()).isEqualTo(0);
+		Assertions.assertThat(cube.getMeasuresDefinition().measures()).isEmpty();
 
 		for (IAggregationQuery query : getAllQueries()) {
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(composite,
-							query.addAggregations(new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM)));
+					AggregateHelper.singleMeasureToNavigableMap(cube, query.addAggregations(sumFirstKey));
 
 			assertEmptyOrNeutral(result, 0D);
 		}
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(composite, GRAND_TOTAL_COUNT);
+					AggregateHelper.singleMeasureToNavigableMap(cube, GRAND_TOTAL_COUNT);
 
 			Assertions.assertThat(result).hasSize(1);
 			Assertions.assertThat(result.values()).singleElement().isEqualTo(0L);
@@ -62,32 +64,28 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 	@Test
 	public void testSingleMeasureIn2Cubes_sameCell() {
-		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
-
 		IHolyCube cube1;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(sumFirstKey);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
-			cube1 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
+			cube1 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRST_KEY),
 					new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE })).closeToHolyCube();
 		}
 		IHolyCube cube2;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(sumFirstKey);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
-			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
+			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRST_KEY),
 					new Object[] { FIRST_VALUE, DOUBLE_SECOND_VALUE })).closeToHolyCube();
 		}
-
-		CompositeHolyCube cube = new CompositeHolyCube(
-				ImmutableMap.<String, IHolyCube>builder().put("1", cube1).put("2", cube2).build());
+		CompositeHolyCube cube = new CompositeHolyCube(cube1, cube2);
 
 		Assertions.assertThat(cube.getNbRows()).isEqualTo(2);
 		Assertions.assertThat(cube.getMeasuresDefinition().measures()).hasSize(1);
 
-		AggregateHelper.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))
+		AggregateHelper.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(sumFirstKey))
 				.values()
 				.forEach(aggregate -> {
 					Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE + DOUBLE_SECOND_VALUE);
@@ -96,7 +94,7 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		// There is a single fact for DoubleKey
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(measuredAxis));
+					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
 
 			result.values().forEach(aggregate -> {
 				Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE + DOUBLE_SECOND_VALUE);
@@ -106,34 +104,30 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 	@Test
 	public void testSingleMeasureIn2Cubes_differentCell() {
-		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
-
 		IHolyCube cube1;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(sumFirstKey);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
-			cube1 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
+			cube1 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRST_KEY),
 					new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE })).closeToHolyCube();
 		}
 		IHolyCube cube2;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(sumFirstKey);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
-			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
+			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRST_KEY),
 					new Object[] { SECOND_VALUE, DOUBLE_SECOND_VALUE })).closeToHolyCube();
 		}
-
-		CompositeHolyCube cube = new CompositeHolyCube(
-				ImmutableMap.<String, IHolyCube>builder().put("1", cube1).put("2", cube2).build());
+		CompositeHolyCube cube = new CompositeHolyCube(cube1, cube2);
 
 		Assertions.assertThat(cube.getNbRows()).isEqualTo(2);
 		Assertions.assertThat(cube.getMeasuresDefinition().measures()).hasSize(1);
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					new EmptyAggregationQuery().addAggregations(measuredAxis));
+					new EmptyAggregationQuery().addAggregations(sumFirstKey));
 
 			Assertions.assertThat(result).hasSize(1);
 			result.values().forEach(aggregate -> {
@@ -144,7 +138,7 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		// There is a single fact for DoubleKey
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(measuredAxis));
+					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
 
 			Assertions.assertThat(result).hasSize(1);
 			result.values().forEach(aggregate -> {
@@ -155,27 +149,24 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 	@Test
 	public void testSingleMeasureIn2Cubes_oneIsEmpty() {
-		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
-
 		HolyCube cube1 = new HolyCube();
 		IHolyCube cube2;
 		{
-			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(sumFirstKey);
 
 			IHolyCubeSink sink = new HolyCubeSink(definitions);
-			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
+			cube2 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRST_KEY),
 					new Object[] { FIRST_VALUE, DOUBLE_SECOND_VALUE })).closeToHolyCube();
 		}
 
-		CompositeHolyCube cube = new CompositeHolyCube(
-				ImmutableMap.<String, IHolyCube>builder().put("1", cube1).put("2", cube2).build());
+		CompositeHolyCube cube = new CompositeHolyCube(cube1, cube2);
 
 		Assertions.assertThat(cube.getNbRows()).isEqualTo(1);
 		Assertions.assertThat(cube.getMeasuresDefinition().measures()).hasSize(1);
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					new EmptyAggregationQuery().addAggregations(measuredAxis));
+					new EmptyAggregationQuery().addAggregations(sumFirstKey));
 
 			Assertions.assertThat(result).hasSize(1);
 			result.values().forEach(aggregate -> {
@@ -186,12 +177,67 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		// There is a single fact for DoubleKey
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(measuredAxis));
+					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
 
 			Assertions.assertThat(result).hasSize(1);
 			result.values().forEach(aggregate -> {
 				Assertions.assertThat(aggregate).isEqualTo(DOUBLE_SECOND_VALUE);
 			});
+		}
+	}
+
+	@Test
+	public void testMultipleMeasureIn2Cubes() {
+		MeasuredAxis firstMeasuredAxis = sumFirstKey;
+		MeasuredAxis secondMeasuredAxis = new MeasuredAxis(DOUBLE_SECOND_KEY, OperatorFactory.SUM);
+		MeasuredAxis thirdMeasuredAxis = new MeasuredAxis(DOUBLE_THIRD_KEY, OperatorFactory.SUM);
+
+		IHolyCube cube1;
+		{
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(firstMeasuredAxis, secondMeasuredAxis);
+
+			IHolyCubeSink sink = new HolyCubeSink(definitions);
+			cube1 = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRST_KEY, DOUBLE_SECOND_KEY),
+					new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE, DOUBLE_SECOND_VALUE })).closeToHolyCube();
+		}
+		IHolyCube cube2;
+		{
+			IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(secondMeasuredAxis, thirdMeasuredAxis);
+
+			IHolyCubeSink sink = new HolyCubeSink(definitions);
+			cube2 = sink
+					.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_SECOND_KEY, DOUBLE_THIRD_KEY),
+							new Object[] { FIRST_VALUE, DOUBLE_SECOND_VALUE + 7D, DOUBLE_THIRD_VALUE }))
+					.closeToHolyCube();
+		}
+
+		CompositeHolyCube cube = new CompositeHolyCube(cube1, cube2);
+
+		Assertions.assertThat(cube.getNbRows()).isEqualTo(2);
+		Assertions.assertThat(cube.getMeasuresDefinition().measures()).hasSize(3);
+
+		{
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
+					new EmptyAggregationQuery().addAggregations(firstMeasuredAxis));
+
+			Assertions.assertThat(result).hasSize(1);
+			Assertions.assertThat(result.get(ImmutableSortedMap.of())).isEqualTo(DOUBLE_FIRST_VALUE);
+		}
+
+		{
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
+					new EmptyAggregationQuery().addAggregations(secondMeasuredAxis));
+
+			Assertions.assertThat(result).hasSize(1);
+			Assertions.assertThat(result.get(ImmutableSortedMap.of())).isEqualTo(DOUBLE_SECOND_VALUE * 2D + 7D);
+		}
+
+		{
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
+					new EmptyAggregationQuery().addAggregations(thirdMeasuredAxis));
+
+			Assertions.assertThat(result).hasSize(1);
+			Assertions.assertThat(result.get(ImmutableSortedMap.of())).isEqualTo(DOUBLE_THIRD_VALUE);
 		}
 	}
 }

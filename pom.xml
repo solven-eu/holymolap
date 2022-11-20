@@ -26,7 +26,7 @@
 		<maven.compiler.target>17</maven.compiler.target>
 
 		<pepper.version>4.2</pepper.version>
-        <jmh.version>1.21</jmh.version>
+		<jmh.version>1.21</jmh.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -96,7 +96,7 @@
 			<artifactId>kryo-serializers</artifactId>
 			<version>0.45</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.calcite.avatica</groupId>
 			<artifactId>avatica-core</artifactId>
@@ -125,6 +125,34 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+
+<!-- https://www.arm64.ca/post/reading-parquet-files-java/ -->
+		<!--dependency>
+			<groupId>io.github.solven-eu.pepper</groupId>
+			<artifactId>pepper-parquet</artifactId>
+			<version>${pepper.version}</version>
+		</dependency-->
+		<dependency>
+			<groupId>org.apache.parquet</groupId>
+			<artifactId>parquet-avro</artifactId>
+			<version>1.12.3</version>
+		</dependency>
+    <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-common</artifactId>
+        <version>3.1.0</version>
+        <exclusions>
+        	<exclusion>
+        		<groupId>org.slf4j</groupId>
+        		<artifactId>slf4j-reload4j</artifactId>
+        	</exclusion>
+        </exclusions>
+    </dependency>
+
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
@@ -135,34 +163,24 @@
 			<artifactId>assertj-core</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
+			<groupId>org.quickperf</groupId>
+			<artifactId>quick-perf-junit4-spring5</artifactId>
+			<version>1.1.0</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
-			<groupId>io.github.solven-eu.pepper</groupId>
-			<artifactId>pepper-parquet</artifactId>
-			<version>${pepper.version}</version>
+			<groupId>org.openjdk.jmh</groupId>
+			<artifactId>jmh-core</artifactId>
+			<version>${jmh.version}</version>
+			<scope>test</scope>
 		</dependency>
-		
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-core</artifactId>
-            <version>${jmh.version}</version>
+		<dependency>
+			<groupId>org.openjdk.jmh</groupId>
+			<artifactId>jmh-generator-annprocess</artifactId>
+			<version>${jmh.version}</version>
 			<scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-generator-annprocess</artifactId>
-            <version>${jmh.version}</version>
-			<scope>test</scope>
-        </dependency>
+		</dependency>
 	</dependencies>
 </project>

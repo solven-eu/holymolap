@@ -109,6 +109,11 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn, IMay
 
 		int[] rowToCoordinates = compressedRowToCoordinate.getIntArray();
 
+		if (cellIndex >= rowToCoordinates.length) {
+			// No need to throw, we can simply say there is no coordinate
+			return IAxisSmallDictionary.NO_COORDINATE_INDEX;
+		}
+
 		return rowToCoordinates[Ints.checkedCast(cellIndex)];
 	}
 

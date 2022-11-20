@@ -1,4 +1,4 @@
-package eu.solven.holymolap.it.nyc;
+package eu.solven.holymolap.sink.arrow;
 
 import java.util.List;
 

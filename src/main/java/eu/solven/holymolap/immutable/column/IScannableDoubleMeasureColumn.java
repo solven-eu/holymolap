@@ -3,7 +3,6 @@ package eu.solven.holymolap.immutable.column;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
-import java.util.function.LongConsumer;
 
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.longs.LongIterator;

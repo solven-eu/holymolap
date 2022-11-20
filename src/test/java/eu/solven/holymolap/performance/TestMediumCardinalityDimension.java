@@ -33,6 +33,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
+@Deprecated(since = "Prefer benchmarks based on specific data-sets")
 public class TestMediumCardinalityDimension {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(TestMediumCardinalityDimension.class);
 
@@ -41,7 +42,7 @@ public class TestMediumCardinalityDimension {
 		IHolyMeasuresDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
-		final int nbRows = 100_000;
+		final int nbRows = 10_000;
 		final float cardinalityFactor = 1;
 		final int nbAxis = 100;
 		final int nbDoubleAxis = 2;

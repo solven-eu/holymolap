@@ -37,6 +37,7 @@ import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.CountBinaryOperator;
 import eu.solven.holymolap.measures.operator.SumDoubleBinaryOperator;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
+import eu.solven.pepper.logging.PepperLogHelper;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
@@ -112,7 +113,7 @@ public class HolyKryoHelper {
 				new File(cacheFolder.toFile(), Paths.get(pathAsString).getFileName().toString() + ".holymolap");
 		fileToPersist.getParentFile().mkdirs();
 
-		if (fileToPersist.length() == 0) {
+		if (fileToPersist.isFile() && fileToPersist.length() == 0) {
 			LOGGER.warn("We delete {} as it is length=0", fileToPersist);
 			boolean deleted = fileToPersist.delete();
 			LOGGER.warn("Result for {} deletion: {}", fileToPersist, deleted);
@@ -120,8 +121,11 @@ public class HolyKryoHelper {
 
 		try (Output output = new Output(new FileOutputStream(fileToPersist))) {
 			kryo.writeObject(output, value);
+
 		} catch (FileNotFoundException e) {
 			throw new UncheckedIOException(e);
+		} finally {
 		}
+		LOGGER.info("We persisted into {} length={}", pathAsString, PepperLogHelper.humanBytes(fileToPersist.length()));
 	}
 }

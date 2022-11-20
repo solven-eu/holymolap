@@ -34,7 +34,7 @@ public class TestHighCardinalityDimension {
 		final Comparable<?>[] values = new Comparable<?>[2];
 
 		final FastEntry reused = new FastEntry(Arrays.asList(TestAggregation.FIRST_KEY,
-				TestAggregation.DOUBLE_FIRSY_KEY), values, new long[0], new double[0]);
+				TestAggregation.DOUBLE_FIRST_KEY), values, new long[0], new double[0]);
 
 		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
 			int rowIndex = 0;
@@ -78,7 +78,7 @@ public class TestHighCardinalityDimension {
 
 		final FastEntry reused = new FastEntry(
 				ImmutableList
-						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
+						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRST_KEY),
 				values);
 
 		Iterator<IHolyRecord> rows = new AbstractIterator<IHolyRecord>() {
@@ -119,7 +119,7 @@ public class TestHighCardinalityDimension {
 
 		IHolyCube cube = sink.sink(new FastEntry(
 				ImmutableList
-						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRSY_KEY),
+						.of(TestAggregation.FIRST_KEY, TestAggregation.SECOND_KEY, TestAggregation.DOUBLE_FIRST_KEY),
 				new Object[] { "a", "b", "c" })).closeToHolyCube();
 
 		// IRoaringCube cube = sink.sink(rows);
@@ -131,7 +131,7 @@ public class TestHighCardinalityDimension {
 			ILazyHolyCube lazyCube = (ILazyHolyCube) cube;
 			lazyCube.getCellSet().startIndexing(ImmutableSet.of(TestAggregation.FIRST_KEY));
 			lazyCube.getCellSet().startIndexing(ImmutableSet.of(TestAggregation.SECOND_KEY));
-			lazyCube.getCellSet().startIndexing(ImmutableSet.of(TestAggregation.DOUBLE_FIRSY_KEY));
+			lazyCube.getCellSet().startIndexing(ImmutableSet.of(TestAggregation.DOUBLE_FIRST_KEY));
 		}
 	}
 }

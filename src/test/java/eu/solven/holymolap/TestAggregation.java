@@ -40,7 +40,7 @@ public class TestAggregation extends ATestAggregation implements IHolyMapDataTes
 
 		for (IAggregationQuery query : getAllQueries()) {
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					query.addAggregations(new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM)));
+					query.addAggregations(new MeasuredAxis(DOUBLE_FIRST_KEY, OperatorFactory.SUM)));
 
 			assertEmptyOrNeutral(result, 0D);
 		}
@@ -56,7 +56,7 @@ public class TestAggregation extends ATestAggregation implements IHolyMapDataTes
 
 	@Test
 	public void testAddOneEmptyEntry() {
-		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
+		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRST_KEY, OperatorFactory.SUM);
 		IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.withCountStar(Arrays.asList(measuredAxis));
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
@@ -86,7 +86,7 @@ public class TestAggregation extends ATestAggregation implements IHolyMapDataTes
 
 	@Test
 	public void testAddOneEntryAggregateNotDoubleKey() {
-		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
+		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRST_KEY, OperatorFactory.SUM);
 		IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 		IHolyCube cube =
@@ -114,15 +114,15 @@ public class TestAggregation extends ATestAggregation implements IHolyMapDataTes
 
 	@Test
 	public void testAddOneEntryAggregateDoubleKey() {
-		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRSY_KEY, OperatorFactory.SUM);
+		MeasuredAxis measuredAxis = new MeasuredAxis(DOUBLE_FIRST_KEY, OperatorFactory.SUM);
 		IHolyMeasuresDefinition definitions = HolyMeasuresTableDefinition.of(measuredAxis);
 
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
-		IHolyCube cube = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRSY_KEY),
+		IHolyCube cube = sink.sink(new FastEntry(Arrays.asList(FIRST_KEY, DOUBLE_FIRST_KEY),
 				new Object[] { FIRST_VALUE, DOUBLE_FIRST_VALUE })).closeToHolyCube();
 
 		Assert.assertEquals(1, cube.getNbRows());
-		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRSY_KEY)),
+		Assert.assertEquals(new TreeSet<>(ImmutableSet.of(FIRST_KEY, DOUBLE_FIRST_KEY)),
 				cube.getCellSet().getAxesWithCoordinates().axes());
 
 		AggregateHelper.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))

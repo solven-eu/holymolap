@@ -15,10 +15,10 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
  * @author Benoit Lacelle
  *
  */
-public class Long2IntHolyCellToRow implements IHolyCellToRow {
+public class FibonacciHolyCellToRow implements IHolyCellToRow {
 	final Long2IntMap underlying;
 
-	public Long2IntHolyCellToRow(Long2IntMap underlying) {
+	public FibonacciHolyCellToRow(Long2IntMap underlying) {
 		this.underlying = underlying;
 
 		if (underlying.defaultReturnValue() != IMutableAxisSmallDictionary.NO_COORDINATE_INDEX) {
@@ -26,7 +26,7 @@ public class Long2IntHolyCellToRow implements IHolyCellToRow {
 		}
 	}
 
-	public Long2IntHolyCellToRow() {
+	public FibonacciHolyCellToRow() {
 		this(defaultUnderlying());
 	}
 
@@ -49,9 +49,16 @@ public class Long2IntHolyCellToRow implements IHolyCellToRow {
 		int newIndex = underlying.size();
 
 		long coordinatesAsLong = packToLong(coordinates);
-		underlying.put(coordinatesAsLong, newIndex);
 
-		return newIndex;
+		int previousValue = underlying.putIfAbsent(coordinatesAsLong, newIndex);
+
+		if (previousValue == IMutableAxisSmallDictionary.NO_COORDINATE_INDEX) {
+			// We mapped a value
+			return newIndex;
+		} else {
+			// It was already mapped
+			return previousValue;
+		}
 	}
 
 	@Override
@@ -60,7 +67,11 @@ public class Long2IntHolyCellToRow implements IHolyCellToRow {
 	}
 
 	private long packToLong(IntList coordinates) {
-		return FibonacciEncoding.fibonacciEncodingToLong(coordinates);
+		assert coordinates.isEmpty() || coordinates.getInt(coordinates.size() - 1) != -1;
+
+		// We may submit arrays with -1 for NO_COORDINATES
+		int minCoordinates = -1;
+		return FibonacciEncoding.fibonacciEncodingToLong(minCoordinates, coordinates);
 	}
 
 }

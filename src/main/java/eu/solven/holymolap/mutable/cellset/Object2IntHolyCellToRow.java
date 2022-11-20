@@ -5,6 +5,13 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+/**
+ * A naive {@link IHolyCellToRow} implementation, covering any case which would not be covered by alternative
+ * implementations (e.g. due to constraints related to compression)
+ * 
+ * @author Benoit Lacelle
+ *
+ */
 public class Object2IntHolyCellToRow implements IHolyCellToRow {
 	final Object2IntMap<IntList> underlying;
 
@@ -37,9 +44,15 @@ public class Object2IntHolyCellToRow implements IHolyCellToRow {
 	public int registerRow(IntList coordinates) {
 		int newIndex = underlying.size();
 
-		underlying.put(coordinates, newIndex);
+		int previousValue = underlying.putIfAbsent(coordinates, newIndex);
 
-		return newIndex;
+		if (previousValue == IMutableAxisSmallDictionary.NO_COORDINATE_INDEX) {
+			// We mapped a value
+			return newIndex;
+		} else {
+			// It was already mapped
+			return previousValue;
+		}
 	}
 
 	@Override
