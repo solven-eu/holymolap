@@ -19,7 +19,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Meter;
 import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.cube.HolyCube;
@@ -47,8 +46,8 @@ import eu.solven.holymolap.mutable.axis.IMutableAxisSmallIntDictionary;
 import eu.solven.holymolap.mutable.axis.IProxyForMutableAxisSmallDictionary;
 import eu.solven.holymolap.mutable.axis.MutableAxisColumn;
 import eu.solven.holymolap.mutable.axis.SkippedHeaderRows;
-import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.FibonacciHolyCellToRow;
+import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
 import eu.solven.holymolap.mutable.column.IMutableAggregatesColumn;
 import eu.solven.holymolap.mutable.column.IMutableDoubleAggregatesColumn;
 import eu.solven.holymolap.mutable.column.IMutableLongAggregatesColumn;
@@ -56,6 +55,7 @@ import eu.solven.holymolap.mutable.column.MutableAggregatesColumn;
 import eu.solven.holymolap.mutable.column.MutableDoubleAggregatesColumn;
 import eu.solven.holymolap.mutable.column.MutableLongAggregatesColumn;
 import eu.solven.holymolap.primitives.IntArrayListFastHashCode;
+import eu.solven.holymolap.sink.LoadingContext;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
 import eu.solven.holymolap.sink.record.IHolyRecord;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
@@ -79,6 +79,8 @@ import it.unimi.dsi.fastutil.ints.IntLists;
 public class MutableHolyCube implements IMutableHolyCube {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MutableHolyCube.class);
 
+	final LoadingContext loadingContext;
+
 	final IHolyMeasuresDefinition measuresDefinition;
 	final Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn;
 	// final ListMultimap<String, IMutableAggregatesColumn> measuredAxisToColumn;
@@ -99,15 +101,14 @@ public class MutableHolyCube implements IMutableHolyCube {
 	final AtomicLong brokenRows = new AtomicLong();
 	final AtomicBoolean closed = new AtomicBoolean();
 
-	final Meter inserts = new Meter();
-	final Meter cells = new Meter();
-	final Meter measures = new Meter();
-
-	protected MutableHolyCube(IHolyMeasuresDefinition measuresDefinition,
+	protected MutableHolyCube(LoadingContext loadingContext,
+			IHolyMeasuresDefinition measuresDefinition,
 			Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn,
 			List<String> orderedAxis,
 			List<IMutableAxisSmallColumn> fifoAxisIndexToColumn,
 			IHolyCellToRow cellToRow) {
+		this.loadingContext = loadingContext;
+
 		this.measuresDefinition = measuresDefinition;
 		this.measureToColumn = measureToColumn;
 
@@ -146,13 +147,19 @@ public class MutableHolyCube implements IMutableHolyCube {
 	 * The {@link IMeasuredAxis} are provided as configuration
 	 * 
 	 * @param aggregations
+	 * @param loadingContext
 	 */
-	public MutableHolyCube(IHolyMeasuresDefinition aggregations) {
-		this(aggregations,
+	public MutableHolyCube(LoadingContext loadingContext, IHolyMeasuresDefinition aggregations) {
+		this(loadingContext,
+				aggregations,
 				prepareAggregationColumns(aggregations),
 				prepareOrderedAxes(),
 				prepareAxesToColumn(),
 				prepareCellToRow());
+	}
+
+	public MutableHolyCube(IHolyMeasuresDefinition aggregations) {
+		this(new LoadingContext(), aggregations);
 	}
 
 	private static IHolyCellToRow prepareCellToRow() {
@@ -202,10 +209,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 		contributeToMeasures(toAdd.getAggregateTableRecord(), cellIndex);
 
-		inserts.mark();
-		if (Long.bitCount(inserts.getCount()) == 1) {
-			logSinkRate();
-		}
+		loadingContext.markInsert(1);
 	}
 
 	@Override
@@ -224,12 +228,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 		contributeToMeasures(measuresToAdd, size, cellIndexes);
 
-		long markBefore = inserts.getCount();
-		inserts.mark(size);
-		long markAfter = inserts.getCount();
-		if (nextPowerOf2(markBefore) != nextPowerOf2(markAfter)) {
-			logSinkRate();
-		}
+		loadingContext.markInsert(size);
 	}
 
 	private NavigableMap<Integer, int[]> cellToCoordinates(IHolyRecordsTable cellsToAdd, long size) {
@@ -367,10 +366,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 			}
 
 			if (newCellIndex >= 0) {
-				cells.mark();
-				if (Long.bitCount(cells.getCount()) == 1) {
-					logCellRate();
-				}
+				loadingContext.markNewCell(1);
 
 				// Register this new cell
 				for (int axisIndex = 0; axisIndex < rowCellCoordinates.size(); axisIndex++) {
@@ -422,10 +418,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 					});
 				}
 
-				measures.mark();
-				if (Long.bitCount(measures.getCount()) == 1) {
-					logMeasureRate();
-				}
+				loadingContext.markMeasureContributions(1);
 			}
 		});
 
@@ -437,29 +430,6 @@ public class MutableHolyCube implements IMutableHolyCube {
 			}
 		}
 	}
-
-	private void logSinkRate() {
-		// TODO Log only since a new row this previous log
-		LOGGER.info("We sinked {} rows. Loading at {}rows/sec",
-				PepperLogHelper.humanBytes(inserts.getCount()),
-				inserts.getMeanRate());
-	}
-
-	// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-	private long nextPowerOf2(long l) {
-		l--;
-		l |= l >> 1;
-		l |= l >> 2;
-		l |= l >> 4;
-		l |= l >> 8;
-		l |= l >> 16;
-		l |= l >> 32;
-		l |= l >> 64;
-		l++;
-
-		return l;
-	}
-
 	private void contributeToMeasures(IHolyRecord measureTableRecord, int cellIndex) {
 		List<String> indexToAxis = measureTableRecord.getAxes();
 		int[] recordToCubeIndexes = computeInference(indexToAxis, sharedAggregatedColumns);
@@ -505,10 +475,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 		}
 
 		if (newCellIndex >= 0) {
-			cells.mark();
-			if (Long.bitCount(cells.getCount()) == 1) {
-				logCellRate();
-			}
+			loadingContext.markNewCell(1);
 
 			// Register this new cell
 			for (int axisIndex = 0; axisIndex < cellCoordinates.size(); axisIndex++) {
@@ -518,18 +485,6 @@ public class MutableHolyCube implements IMutableHolyCube {
 			}
 		}
 		return cellIndex;
-	}
-
-	private void logCellRate() {
-		LOGGER.info("We registered {} cells. Loading at {}cells/sec",
-				PepperLogHelper.humanBytes(cells.getCount()),
-				cells.getMeanRate());
-	}
-
-	private void logMeasureRate() {
-		LOGGER.info("We contributed {} measureAggregates. Loading at {} measureAggregates/sec",
-				PepperLogHelper.humanBytes(measures.getCount()),
-				measures.getMeanRate());
 	}
 
 	private void registerNewAxes(Collection<String> inputAxes) {
@@ -631,8 +586,8 @@ public class MutableHolyCube implements IMutableHolyCube {
 			throw new IllegalStateException("Was already closed");
 		}
 
-		logSinkRate();
-		logCellRate();
+		loadingContext.logSinkRate();
+		loadingContext.logCellRate();
 
 		int nbAxes = fifoAxes.size();
 

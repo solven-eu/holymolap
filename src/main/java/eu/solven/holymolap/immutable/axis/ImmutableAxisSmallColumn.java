@@ -45,8 +45,6 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn, IMay
 				return getCoordinateBitmapNoCache(coordinateRef);
 			}));
 
-	// final long brokenRows;
-
 	protected ImmutableAxisSmallColumn() {
 		this(new EmptyAxisCoordinatesDictionary(), new MutableAxisColumn());
 	}
@@ -60,8 +58,6 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn, IMay
 		input.getRowToIndex(0, rowToIndex, 0, nbRows);
 
 		this.compressedRowToCoordinate = new CompressedIntArray(rowToIndex);
-
-		// this.brokenRows = input.getBrokenRows();
 	}
 
 	@Override
@@ -74,11 +70,6 @@ public class ImmutableAxisSmallColumn implements IScannableAxisSmallColumn, IMay
 		}
 		coordinateRefToBitmap.invalidateAll();
 	}
-
-	// @Override
-	// public long getBrokenRows() {
-	// return brokenRows;
-	// }
 
 	@Override
 	public long getRows() {

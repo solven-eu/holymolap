@@ -38,6 +38,6 @@ public interface ILongBinaryOperator extends LongBinaryOperator, IBinaryOperator
 		} else if (right == null) {
 			return left;
 		}
-		return applyAsLong((((Number) left).longValue()), (((Number) left).longValue()));
+		return applyAsLong((((Number) left).longValue()), (((Number) right).longValue()));
 	}
 }

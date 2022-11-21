@@ -27,7 +27,7 @@ public class Object2IntHolyCellToRow implements IHolyCellToRow {
 		this(defaultUnderlying());
 	}
 
-	private static Object2IntMap<IntList> defaultUnderlying() {
+	protected static Object2IntMap<IntList> defaultUnderlying() {
 		Object2IntOpenHashMap<IntList> cellToRow = new Object2IntOpenHashMap<>();
 
 		cellToRow.defaultReturnValue(IMutableAxisSmallDictionary.NO_COORDINATE_INDEX);
@@ -35,16 +35,28 @@ public class Object2IntHolyCellToRow implements IHolyCellToRow {
 		return cellToRow;
 	}
 
+	/**
+	 * 
+	 * @param coordinates
+	 * @param willbeStored
+	 *            if true, it indicates given array will be referred in the underlying for long-time storage
+	 * @return an {@link IntList}, optionally compressed, but requiring to be inversible into the original IntList (as
+	 *         it is used as key for rows)
+	 */
+	protected IntList compress(IntList coordinates, boolean willbeStored) {
+		return coordinates;
+	}
+
 	@Override
 	public int getRow(IntList coordinates) {
-		return underlying.getInt(coordinates);
+		return underlying.getInt(compress(coordinates, false));
 	}
 
 	@Override
 	public int registerRow(IntList coordinates) {
 		int newIndex = underlying.size();
 
-		int previousValue = underlying.putIfAbsent(coordinates, newIndex);
+		int previousValue = underlying.putIfAbsent(compress(coordinates, true), newIndex);
 
 		if (previousValue == IMutableAxisSmallDictionary.NO_COORDINATE_INDEX) {
 			// We mapped a value

@@ -18,11 +18,17 @@ public class HolyCubeSink implements IHolyCubeSink {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(HolyCubeSink.class);
 
 	final IHolyMeasuresDefinition measures;
+	final LoadingContext loadingContext;
 
 	final AtomicReference<IMutableHolyCube> pending = new AtomicReference<>();
 
-	public HolyCubeSink(IHolyMeasuresDefinition measures) {
+	public HolyCubeSink(LoadingContext loadingContext, IHolyMeasuresDefinition measures) {
 		this.measures = measures;
+		this.loadingContext = loadingContext;
+	}
+
+	public HolyCubeSink(IHolyMeasuresDefinition measures) {
+		this(new LoadingContext(), measures);
 	}
 
 	@Override
@@ -33,7 +39,7 @@ public class HolyCubeSink implements IHolyCubeSink {
 	@Override
 	public IHolyCubeSink sink(Stream<? extends IHolyCubeRecord> toAdd) {
 		while (pending.get() == null) {
-			pending.compareAndSet(null, new MutableHolyCube(measures));
+			pending.compareAndSet(null, new MutableHolyCube(loadingContext, measures));
 		}
 
 		IMutableHolyCube mutableHolyCube = pending.get();
@@ -46,7 +52,7 @@ public class HolyCubeSink implements IHolyCubeSink {
 	@Override
 	public IHolyCubeSink sink(IHolyRecordsTable cellsToAdd, IHolyRecordsTable measuresToAdd) {
 		while (pending.get() == null) {
-			pending.compareAndSet(null, new MutableHolyCube(measures));
+			pending.compareAndSet(null, new MutableHolyCube(loadingContext, measures));
 		}
 
 		IMutableHolyCube mutableHolyCube = pending.get();

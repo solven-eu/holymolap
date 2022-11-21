@@ -10,18 +10,26 @@ import org.junit.runner.RunWith;
 import org.openjdk.jol.info.GraphLayout;
 import org.quickperf.junit4.QuickPerfJUnitRunner;
 import org.quickperf.jvm.annotations.MeasureHeapAllocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import eu.solven.holymolap.primitives.ICompactable;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 @RunWith(QuickPerfJUnitRunner.class)
 public abstract class ATestHolyCellToRow {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ATestHolyCellToRow.class);
 
 	private void standardLoad(IHolyCellToRow cellToRow) {
 		Random r = new Random(123L);
 
-		for (int i = 0; i < 1024; i++) {
-			int[] coordinates = IntStream.range(0, 16).map(c -> r.nextInt(0, 1 + c * c * c)).toArray();
+		for (int cellIndex = 0; cellIndex < 1024; cellIndex++) {
+			int[] coordinates = IntStream.range(0, 16).map(c -> r.nextInt(0, 1 + (int) Math.pow(c, 3))).toArray();
 			cellToRow.registerRow(IntArrayList.wrap(coordinates));
+		}
+
+		if (cellToRow instanceof ICompactable) {
+			((ICompactable) cellToRow).trim();
 		}
 	}
 
@@ -42,13 +50,15 @@ public abstract class ATestHolyCellToRow {
 	}
 
 	@Test
-	public void testHeaplayout() {
+	public void testHeapLayout() {
 		IHolyCellToRow cellToRow = makeCellToRow();
 
 		standardLoad(cellToRow);
 
-		Assertions.assertThat(GraphLayout.parseInstance(cellToRow).totalSize())
-				.isBetween(expectedHeapConsuptionMin(), expectedHeapConsuptionMax());
+		GraphLayout graph = GraphLayout.parseInstance(cellToRow);
+		Assertions.assertThat(graph.totalSize()).isBetween(expectedHeapConsuptionMin(), expectedHeapConsuptionMax());
+
+		LOGGER.info("Graph.footprint: {}", graph.toFootprint());
 	}
 
 	private void consistencyChecks(IHolyCellToRow cellToRow, IntArrayList array) {

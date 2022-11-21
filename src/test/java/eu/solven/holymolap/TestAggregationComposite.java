@@ -8,6 +8,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.assertj.core.api.InstanceOfAssertFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,6 +32,7 @@ import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.record.EmptyHolyRecord;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 
 public class TestAggregationComposite extends ATestAggregation implements IHolyMapDataTestConstants {
@@ -188,9 +191,9 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 	@Test
 	public void testMultipleMeasureIn2Cubes() {
-		MeasuredAxis firstMeasuredAxis = sumFirstKey;
-		MeasuredAxis secondMeasuredAxis = new MeasuredAxis(DOUBLE_SECOND_KEY, OperatorFactory.SUM);
-		MeasuredAxis thirdMeasuredAxis = new MeasuredAxis(DOUBLE_THIRD_KEY, OperatorFactory.SUM);
+		IMeasuredAxis firstMeasuredAxis = sumFirstKey;
+		IMeasuredAxis secondMeasuredAxis = new MeasuredAxis(DOUBLE_SECOND_KEY, OperatorFactory.SUM);
+		IMeasuredAxis thirdMeasuredAxis = new MeasuredAxis(DOUBLE_THIRD_KEY, OperatorFactory.SUM);
 
 		IHolyCube cube1;
 		{
@@ -230,6 +233,19 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 			Assertions.assertThat(result).hasSize(1);
 			Assertions.assertThat(result.get(ImmutableSortedMap.of())).isEqualTo(DOUBLE_SECOND_VALUE * 2D + 7D);
+		}
+
+		{
+			NavigableMap<? extends NavigableMap<?, ?>, Map<IMeasuredAxis, ?>> result =
+					AggregateHelper.measuresToNavigableMap(cube,
+							new EmptyAggregationQuery().addAggregations(firstMeasuredAxis, secondMeasuredAxis));
+
+			Assertions.assertThat(result).hasSize(1);
+			Assertions.assertThat(result.get(ImmutableSortedMap.of()))
+					.asInstanceOf(InstanceOfAssertFactories.MAP)
+					.containsEntry(firstMeasuredAxis, DOUBLE_FIRST_VALUE)
+					.containsEntry(secondMeasuredAxis, DOUBLE_SECOND_VALUE * 2D + 7D)
+					.hasSize(2);
 		}
 
 		{

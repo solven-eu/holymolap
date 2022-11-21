@@ -7,9 +7,12 @@ import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import me.lemire.integercompression.ByteIntegerCODEC;
+import me.lemire.integercompression.IntWrapper;
 
 // https://www.geeksforgeeks.org/fibonacci-coding/
 // https://en.wikipedia.org/wiki/Zeckendorf%27s_theorem
+// https://en.wikipedia.org/wiki/Fibonacci_coding
 public class FibonacciEncoding {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FibonacciEncoding.class);
 
@@ -27,6 +30,7 @@ public class FibonacciEncoding {
 
 	// Stores values in fib and returns index of
 	// the largest fibonacci number smaller than n.
+	// https://www.nayuki.io/page/fast-fibonacci-algorithms
 	private static int initFibo(int n) {
 		// Fib[0] stores 2nd Fibonacci No.
 		fib[0] = 1;
@@ -75,6 +79,7 @@ public class FibonacciEncoding {
 
 	// Returns pointer to the char string which
 	// corresponds to code for n
+	@Deprecated(since = "Used for demo purposes")
 	public static String fibonacciEncoding(int n) {
 		if (n < 1) {
 			throw new IllegalArgumentException("Fibonacci encoding handles only striclty positive integers");
@@ -88,8 +93,7 @@ public class FibonacciEncoding {
 		// Index of the largest Fibonacci f <= n
 		int i = index;
 
-		while (n > 0) {
-
+		do {
 			// Mark usage of Fibonacci f(1 bit)
 			codeword[i] = '1';
 
@@ -106,7 +110,7 @@ public class FibonacciEncoding {
 				codeword[i] = '0';
 				i = i - 1;
 			}
-		}
+		} while (n > 0);
 
 		// Additional '1' bit
 		codeword[index + 1] = '1';
@@ -117,45 +121,7 @@ public class FibonacciEncoding {
 	}
 
 	public static long fibonacciEncodingToLong(int n) {
-		return fibonacciEncodingToLong(n, 0L, 64 - 1);
-	}
-
-	public static long fibonacciEncodingToLong(int n, long codeword, int shift) {
-		if (n < 1) {
-			throw new IllegalArgumentException("Fibonacci encoding handles inly striclty positive integers");
-		}
-
-		int index = indexofLargestFibonacciLessOrEquals(n);
-
-		// Index of the largest Fibonacci f <= n
-		int i = index;
-
-		while (n > 0) {
-
-			// Mark usage of Fibonacci f(1 bit)
-			// codeword[i] = '1';
-			codeword ^= (1L << (shift - i));
-
-			// Subtract f from n
-			n = n - fib[i];
-			assert n >= 0;
-
-			// Move to Fibonacci just smaller than f
-			i = i - 1;
-
-			// Mark all Fibonacci > n as not used
-			// (0 bit), progress backwards
-			while (i >= 0 && fib[i] > n) {
-				// codeword[i] = '0';
-				i = i - 1;
-			}
-		}
-
-		// Additional '1' bit
-		// codeword[index + 1] = '1';
-		codeword ^= (1L << (shift - (index + 1)));
-
-		return codeword;
+		return fibonacciEncodingToLong(1, IntArrayList.wrap(new int[] { n }));
 	}
 
 	// Driver code
@@ -176,24 +142,27 @@ public class FibonacciEncoding {
 	 *            handles only values >= 1
 	 * @param ints
 	 *            the int array to encode
-	 * @return
+	 * @return a long encoding the int array. This long has the property to be inversible to the original int[].
 	 */
 	public static long fibonacciEncodingToLong(int minValue, IntList ints) {
 		long codeword = 0L;
 		int shift = 63;
 
+		int maxAllowed;
 		if (minValue > 0) {
-			throw new UnsupportedOperationException("We need to handle positive minValue: " + minValue);
+			// An int can not be greated than this value
+			maxAllowed = Integer.MAX_VALUE;
+		} else {
+			// This will be lower than Integer.MAX_VALUE
+			maxAllowed = Integer.MAX_VALUE + minValue;
 		}
-
-		int maxAllowed = Integer.MAX_VALUE + minValue;
 
 		int inputSize = ints.size();
 		for (int intIndex = 0; intIndex < inputSize; intIndex++) {
 			int oneInt = ints.getInt(intIndex);
-			if (minValue < 0 && oneInt >= maxAllowed) {
+			if (oneInt >= maxAllowed) {
 				throw new IllegalArgumentException(
-						"We do not accept values above " + maxAllowed + " in the array: " + ints);
+						"We do not accept integers above " + maxAllowed + " in the array: " + ints);
 			} else if (oneInt < minValue) {
 				throw new IllegalArgumentException(
 						"We do not accept integers below " + minValue + " in the array: " + ints);
@@ -201,13 +170,18 @@ public class FibonacciEncoding {
 
 			// We accept 0, by shifting all values by 1
 			int n = oneInt + 1 - minValue;
+			assert n > 0;
 
 			int index = indexofLargestFibonacciLessOrEquals(n);
+
+			if (index + 1 > shift) {
+				throw new IllegalArgumentException("The input can not fit inside a 64-bit long");
+			}
 
 			// Index of the largest Fibonacci f <= n
 			int i = index;
 
-			while (n > 0) {
+			do {
 
 				// Mark usage of Fibonacci f(1 bit)
 				// codeword[i] = '1';
@@ -227,7 +201,7 @@ public class FibonacciEncoding {
 					// codeword[i] = '0';
 					i = i - 1;
 				}
-			}
+			} while (n > 0);
 
 			// Additional '1' bit
 			// codeword[index + 1] = '1';
@@ -241,5 +215,19 @@ public class FibonacciEncoding {
 
 	public static String longToBinaryWithLeading(long longs) {
 		return String.format("%64s", Long.toBinaryString(longs)).replace(' ', '0');
+	}
+
+	public static String byteToBinaryWithLeading(byte bytes) {
+		return String.format("%8s", Integer.toBinaryString(bytes & 0xFF)).replace(' ', '0');
+	}
+
+	public static String byteToBinaryWithLeading(byte[] bytes) {
+		StringBuilder output = new StringBuilder();
+
+		for (int i = 0; i < bytes.length; i++) {
+			output.append(byteToBinaryWithLeading(bytes[i]));
+		}
+
+		return output.toString();
 	}
 }

@@ -3,7 +3,7 @@ package eu.solven.holymolap.sink.arrow;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.apache.arrow.dataset.file.FileFormat;
@@ -27,12 +27,12 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Predicates;
 
 import eu.solven.holymolap.cube.IHolyCube;
-import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.sink.HolyCubeSink;
+import eu.solven.holymolap.sink.LoadingContext;
 import eu.solven.holymolap.sink.csv.LoadResult;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
@@ -47,6 +47,16 @@ import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
 public class LoadFromArrow {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoadFromArrow.class);
 
+	final LoadingContext loadingContext;
+
+	public LoadFromArrow() {
+		this(new LoadingContext());
+	}
+
+	public LoadFromArrow(LoadingContext loadingContext) {
+		this.loadingContext = loadingContext;
+	}
+
 	public LoadResult loadParquetFile(URI uri) {
 		// LOGGER.info("About to parse a PARQUET file with length={}", PepperLogHelper.humanBytes(file.length()));
 
@@ -55,7 +65,7 @@ public class LoadFromArrow {
 		try (BufferAllocator allocator = new RootAllocator();
 				DatasetFactory datasetFactory = new FileSystemDatasetFactory(allocator,
 						NativeMemoryPool.getDefault(),
-						FileFormat.PARQUET,
+						inferFileFormat(uri),
 						uri.toString());
 				Dataset dataset = datasetFactory.finish();
 				Scanner scanner = dataset.newScan(options);
@@ -71,8 +81,7 @@ public class LoadFromArrow {
 
 					if (sink == null) {
 						IHolyMeasuresDefinition measures = defineMeasures(arrowSchema);
-						sink = new HolyCubeSink(measures);
-
+						sink = new HolyCubeSink(loadingContext, measures);
 					}
 
 					List<String> axes = new ArrayList<>(arrowSchema.getFields().size());
@@ -97,10 +106,18 @@ public class LoadFromArrow {
 			}
 
 			IHolyCube holyCube = sink.closeToHolyCube();
-			LOGGER.info("We have an immutable cube ready for querying");
+			LOGGER.info("We have an immutable cube ready for querying from {}", uri);
 			return new LoadResult(recordsCount, holyCube);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	private FileFormat inferFileFormat(URI uri) {
+		if (uri.toASCIIString().toLowerCase(Locale.US).endsWith(".parquet")) {
+			return FileFormat.PARQUET;
+		} else {
+			throw new IllegalArgumentException("Can not infer fileFormat from: " + uri);
 		}
 	}
 

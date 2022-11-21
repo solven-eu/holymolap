@@ -1,11 +1,15 @@
 package eu.solven.holymolap.immutable.table;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.roaringbitmap.RoaringBitmap;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.base.MoreObjects.ToStringHelper;
 import com.google.common.collect.ImmutableList;
 
 import eu.solven.holymolap.cube.IMayCache;
@@ -84,4 +88,19 @@ public class HolyDictionarizedTable implements IHolyDictionarizedTable, IMayCach
 		return RoaringBitmap.bitmapOfRange(0, (long) nbRows);
 	}
 
+	@Override
+	public String toString() {
+		ToStringHelper sb = MoreObjects.toStringHelper(this);
+
+		sb.add("nbRows", "nbRows");
+
+		IntStream.range(0, nbRows).limit(10).forEach(cellIndex -> {
+			long[] cellCoordinates =
+					getCellCoordinates(cellIndex, IntStream.range(0, axisIndexToColumn.size()).toArray());
+
+			sb.add("cell #" + cellIndex, Arrays.toString(cellCoordinates));
+		});
+
+		return sb.toString();
+	}
 }

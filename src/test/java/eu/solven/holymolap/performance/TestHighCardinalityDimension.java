@@ -22,6 +22,7 @@ import eu.solven.holymolap.sink.IHolyCubeSink;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.sink.record.IHolyRecord;
 
+@Deprecated(since = "Prefer benchmarks based on specific data-sets")
 public class TestHighCardinalityDimension {
 
 	@Test
@@ -29,7 +30,7 @@ public class TestHighCardinalityDimension {
 		IHolyMeasuresDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
-		final int cardinality = 10000000;
+		final int cardinality = 100000;
 
 		final Comparable<?>[] values = new Comparable<?>[2];
 
@@ -72,7 +73,7 @@ public class TestHighCardinalityDimension {
 		IHolyMeasuresDefinition definitions = new EmptyHolyMeasureTableDefinition();
 		IHolyCubeSink sink = new HolyCubeSink(definitions);
 
-		final int cardinality = 1000000;
+		final int cardinality = 10000;
 
 		final Comparable<?>[] values = new Comparable<?>[3];
 

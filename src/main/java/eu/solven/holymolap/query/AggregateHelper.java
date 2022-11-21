@@ -46,6 +46,7 @@ import eu.solven.holymolap.measures.operator.IStandardOperators;
 import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IBinaryOperator;
+import eu.solven.holymolap.stable.v1.IHasMeasures;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.utils.HolyIterator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -106,35 +107,36 @@ public class AggregateHelper {
 		IntStream.range(0, partitions.size())
 				.forEach(i -> partitionToLeftovers.add(partitions.get(i).getFiltersBitmap(query)));
 
-		// Will hold null for unknown measures
-		List<IAggregationLogic<?>> compositeAggregationLogics =
-				getAggregationLogics(compositeCube.getMeasuresDefinition(), query);
+		// We will process cube one-by-one, considering all slices for given cube as head, then moving to next cube for
+		// not-covered slices (i.e. slices not known by the previous head cubes)
+		return IntStream.range(0, partitions.size()).mapToObj(headIndex -> {
+			IHolyCube head = partitions.get(headIndex);
 
-		// We will process cube one-by-one, considering all slices for given cube, then moving to next cube for
-		// not-covered slices
-		return IntStream.range(0, partitions.size()).mapToObj(currentCubeIndex -> {
-			IHolyCube head = partitions.get(currentCubeIndex);
+			RoaringBitmap leftIfHead = partitionToLeftovers.get(headIndex);
 
-			RoaringBitmap leftIfHead = partitionToLeftovers.get(currentCubeIndex);
-			Stream<RawCoordinatesToBitmap> headCells = queryToRawCellsIterator(head, query, leftIfHead);
+			if (leftIfHead.isEmpty()) {
+				return Stream.<RawCellToAggregate<List<?>>>empty();
+			}
 
-			final int currentCubeIndexFinal = currentCubeIndex;
+			Stream<RawCoordinatesToBitmap> headSlices = queryToRawCellsIterator(head, query, leftIfHead);
+
+			final int currentCubeIndexFinal = headIndex;
 
 			// Iterate through slices of the head
-			return headCells.flatMap(headCoordinate -> {
+			return headSlices.flatMap(headCoordinate -> {
 				CoordinatesRefs sliceCoordinates = headCoordinate.getSlice();
 
 				IHolyMeasuresTable headMeasuresTable = head.getMeasuresTable();
 
+				List<IAggregationLogic<?>> headAggregationLogics =
+						mapAggregationLogics(head.getMeasuresTable().getMeasuresDefinition(), query);
+
 				RawCellToAggregate<List<?>> headAggregates =
-						cellsToAggregates(headMeasuresTable, compositeAggregationLogics).apply(headCoordinate);
+						cellsToAggregates(headMeasuresTable, headAggregationLogics).apply(headCoordinate);
 
 				List<RawCellToAggregate<List<?>>> aggregatesPartitions = new ArrayList<>();
+				LOGGER.debug("Head={} contributed {}", headIndex, headAggregates);
 				aggregatesPartitions.add(headAggregates);
-
-				List<IBinaryOperator> headOperators = compositeAggregationLogics.stream()
-						.map(al -> al == null ? null : al.getOperator())
-						.collect(Collectors.toList());
 
 				// Scan the same slice for other cubes
 				for (int nextCubeIndex = currentCubeIndexFinal + 1; nextCubeIndex < partitions
@@ -163,11 +165,15 @@ public class AggregateHelper {
 						RoaringBitmap nextToConsider = RoaringBitmap.and(nextLeftovers, nextMatchingSlice);
 						// Compute aggregates in next
 						IHolyMeasuresTable nextMeasuresTable = next.getMeasuresTable();
+						RawCoordinatesToBitmap nextCoordinate =
+								new RawCoordinatesToBitmap(sliceCoordinates, nextToConsider);
+
 						List<IAggregationLogic<?>> nextAggregationLogics =
-								getAggregationLogics(nextMeasuresTable.getMeasuresDefinition(), query);
+								mapAggregationLogics(next.getMeasuresTable().getMeasuresDefinition(), query);
+
 						RawCellToAggregate<List<?>> nextAggregates =
-								cellsToAggregates(nextMeasuresTable, nextAggregationLogics)
-										.apply(new RawCoordinatesToBitmap(sliceCoordinates, nextToConsider));
+								cellsToAggregates(nextMeasuresTable, nextAggregationLogics).apply(nextCoordinate);
+						LOGGER.debug("Next={} contributed {}", nextCubeIndex, nextAggregates);
 						aggregatesPartitions.add(nextAggregates);
 					}
 				}
@@ -176,7 +182,17 @@ public class AggregateHelper {
 					return Stream.empty();
 				}
 
+				// Will hold null for unknown measures
+				List<IAggregationLogic<?>> compositeAggregationLogics =
+						mapAggregationLogics(compositeCube.getMeasuresDefinition(), query);
+
+				List<IBinaryOperator> headOperators = compositeAggregationLogics.stream()
+						.map(al -> al == null ? null : al.getOperator())
+						.collect(Collectors.toList());
+
 				RawCellToAggregate<List<?>> mergedAggregates = mergeAggregates(headOperators, aggregatesPartitions);
+				LOGGER.debug("Head={} merged {}", headIndex, mergedAggregates);
+
 				return Stream.of(mergedAggregates);
 			});
 		}).flatMap(s -> s);
@@ -236,7 +252,7 @@ public class AggregateHelper {
 			final IAggregationQuery query) {
 		IHolyMeasuresTable measuresTable = cube.getMeasuresTable();
 		List<IAggregationLogic<?>> aggregationLogics =
-				getAggregationLogics(measuresTable.getMeasuresDefinition(), query);
+				mapAggregationLogics(measuresTable.getMeasuresDefinition(), query);
 
 		if (aggregationLogics.isEmpty()) {
 			return Stream.empty();
@@ -259,8 +275,8 @@ public class AggregateHelper {
 	 *         index
 	 */
 	@VisibleForTesting
-	static List<IAggregationLogic<?>> getAggregationLogics(final IHolyMeasuresDefinition definition,
-			final IAggregationQuery query) {
+	static List<IAggregationLogic<?>> mapAggregationLogics(final IHolyMeasuresDefinition definition,
+			final IHasMeasures query) {
 		List<IMeasuredAxis> queriedMeasures = query.getMeasures();
 
 		return queriedMeasures.stream().map(queriedMeasured -> {
