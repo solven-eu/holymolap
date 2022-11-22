@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
+@Deprecated(since = "Previous column-oriented structures")
 public class FastEntry implements IHolyRecord {
 	final List<String> axes;
 

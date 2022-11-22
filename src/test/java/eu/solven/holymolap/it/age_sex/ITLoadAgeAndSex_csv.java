@@ -1,20 +1,28 @@
 package eu.solven.holymolap.it.age_sex;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import org.assertj.core.api.Assertions;
+import org.roaringbitmap.IntConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.solven.holymolap.cube.IHolyCube;
+import eu.solven.holymolap.immutable.table.IHolyDictionarizedTable;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
@@ -23,6 +31,7 @@ import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
+import eu.solven.holymolap.sink.LoadingContext;
 import eu.solven.holymolap.sink.csv.LoadFromCsv;
 import eu.solven.holymolap.sink.csv.LoadResult;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
@@ -48,7 +57,7 @@ public class ITLoadAgeAndSex_csv {
 
 		LoadResult loadResult;
 
-		loadResult = new LoadFromCsv() {
+		loadResult = new LoadFromCsv(new LoadingContext("csv_age_sex")) {
 
 			@Override
 			protected IHolyRecordsTable cleanMeasures(IHolyRecordsTable measuresTable) {
@@ -70,6 +79,30 @@ public class ITLoadAgeAndSex_csv {
 				PepperLogHelper.humanBytes(deepSize));
 
 		sanityChecks(holyCube, loadResult.getNumRows());
+
+		generateCellSet(holyCube.getCellSet().getAxesWithCoordinates().axes().size(), holyCube.getCellSet().getTable());
+	}
+
+	private static void generateCellSet(int nbAxes, IHolyDictionarizedTable table) throws IOException {
+		int[] axesIndexes = IntStream.range(0, nbAxes).toArray();
+
+		Path tmpFile = Files.createTempFile("holymolap-cellset-csv_age_sex-", ".txt");
+
+		try (BufferedWriter os = new BufferedWriter(new FileWriter(tmpFile.toFile()))) {
+			table.getAll().forEach((IntConsumer) i -> {
+				long[] coordinates = table.getCellCoordinates(i, axesIndexes);
+
+				String asString =
+						LongStream.of(coordinates).mapToObj(l -> Long.toString(l)).collect(Collectors.joining(","));
+				try {
+					os.write(asString);
+					os.write("\r\n");
+				} catch (IOException e) {
+					throw new UncheckedIOException(e);
+				}
+			});
+		}
+		LOGGER.info("We wrote cells at: {}", tmpFile);
 	}
 
 	// Demonstrate how one can clean data between a source and a HolyCubeSink

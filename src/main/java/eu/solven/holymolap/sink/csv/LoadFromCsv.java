@@ -23,6 +23,7 @@ import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.sink.HolyCubeSink;
+import eu.solven.holymolap.sink.LoadingContext;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.stable.v1.pojo.MeasuredAxis;
@@ -42,6 +43,15 @@ import io.deephaven.csv.util.CsvReaderException;
  */
 public class LoadFromCsv {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoadFromCsv.class);
+	final LoadingContext loadingContext;
+
+	public LoadFromCsv() {
+		this(new LoadingContext());
+	}
+
+	public LoadFromCsv(LoadingContext loadingContext) {
+		this.loadingContext = loadingContext;
+	}
 
 	public LoadResult loadSingleCsvFile(File file) throws CsvReaderException, IOException, FileNotFoundException {
 		LoadResult loadResult;
@@ -64,7 +74,7 @@ public class LoadFromCsv {
 			Set<String> measuredAxes =
 					measures.measures().stream().map(IHolyMeasureColumnMeta::getColumn).collect(Collectors.toSet());
 
-			HolyCubeSink sink = new HolyCubeSink(measures);
+			HolyCubeSink sink = new HolyCubeSink(loadingContext, measures);
 
 			{
 

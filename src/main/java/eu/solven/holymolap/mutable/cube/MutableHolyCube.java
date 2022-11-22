@@ -25,6 +25,8 @@ import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
+import eu.solven.holymolap.factory.HolyDataStructuresFactory;
+import eu.solven.holymolap.factory.IHolyDataStructuresFactory;
 import eu.solven.holymolap.immutable.axes.AxisWithCoordinates;
 import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
 import eu.solven.holymolap.immutable.axis.IScannableAxisSmallColumn;
@@ -80,6 +82,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MutableHolyCube.class);
 
 	final LoadingContext loadingContext;
+	final IHolyDataStructuresFactory factory;
 
 	final IHolyMeasuresDefinition measuresDefinition;
 	final Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn;
@@ -101,12 +104,14 @@ public class MutableHolyCube implements IMutableHolyCube {
 	final AtomicLong brokenRows = new AtomicLong();
 	final AtomicBoolean closed = new AtomicBoolean();
 
-	protected MutableHolyCube(LoadingContext loadingContext,
+	protected MutableHolyCube(IHolyDataStructuresFactory factory,
+			LoadingContext loadingContext,
 			IHolyMeasuresDefinition measuresDefinition,
 			Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn,
 			List<String> orderedAxis,
 			List<IMutableAxisSmallColumn> fifoAxisIndexToColumn,
 			IHolyCellToRow cellToRow) {
+		this.factory = factory;
 		this.loadingContext = loadingContext;
 
 		this.measuresDefinition = measuresDefinition;
@@ -149,22 +154,20 @@ public class MutableHolyCube implements IMutableHolyCube {
 	 * @param aggregations
 	 * @param loadingContext
 	 */
-	public MutableHolyCube(LoadingContext loadingContext, IHolyMeasuresDefinition aggregations) {
-		this(loadingContext,
+	public MutableHolyCube(IHolyDataStructuresFactory factory,
+			LoadingContext loadingContext,
+			IHolyMeasuresDefinition aggregations) {
+		this(factory,
+				loadingContext,
 				aggregations,
-				prepareAggregationColumns(aggregations),
+				prepareAggregationColumns(factory, aggregations),
 				prepareOrderedAxes(),
 				prepareAxesToColumn(),
-				prepareCellToRow());
+				factory.makeCellToRow());
 	}
 
 	public MutableHolyCube(IHolyMeasuresDefinition aggregations) {
-		this(new LoadingContext(), aggregations);
-	}
-
-	private static IHolyCellToRow prepareCellToRow() {
-		// return new Object2IntHolyCellToRow();
-		return new FibonacciHolyCellToRow();
+		this(new HolyDataStructuresFactory(), new LoadingContext(), aggregations);
 	}
 
 	private static List<String> prepareOrderedAxes() {
@@ -180,25 +183,27 @@ public class MutableHolyCube implements IMutableHolyCube {
 	}
 
 	private static Map<IMeasuredAxis, IMutableAggregatesColumn> prepareAggregationColumns(
+			IHolyDataStructuresFactory factory,
 			IHolyMeasuresDefinition aggregations) {
-		OperatorFactory operatorFactory = new OperatorFactory();
+		OperatorFactory operatorFactory = factory.makeOperatorFactory();
 
 		return aggregations.measures()
 				.stream()
 				.collect(Collectors.toMap(a -> a.asMeasuredAxis(),
-						a -> provisionAggregateColumn(operatorFactory, a.asMeasuredAxis())));
+						a -> provisionAggregateColumn(factory, operatorFactory, a.asMeasuredAxis())));
 	}
 
-	protected static IMutableAggregatesColumn provisionAggregateColumn(IOperatorFactory operatorFactory,
+	protected static IMutableAggregatesColumn provisionAggregateColumn(IHolyDataStructuresFactory factory,
+			IOperatorFactory operatorFactory,
 			IMeasuredAxis measure) {
 		IBinaryOperator binaryOperator = operatorFactory.getBinaryOperator(measure.getOperator());
 
 		if (binaryOperator instanceof IDoubleBinaryOperator) {
-			return new MutableDoubleAggregatesColumn((IDoubleBinaryOperator) binaryOperator);
+			return factory.makeMutableDoubleAggregatesColumn((IDoubleBinaryOperator) binaryOperator);
 		} else if (binaryOperator instanceof ILongBinaryOperator) {
-			return new MutableLongAggregatesColumn((ILongBinaryOperator) binaryOperator);
+			return factory.makeMutableLongAggregatesColumn((ILongBinaryOperator) binaryOperator);
 		} else {
-			return new MutableAggregatesColumn(binaryOperator);
+			return factory.makeMutableAggregatesColumn(binaryOperator);
 		}
 	}
 
@@ -430,6 +435,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 			}
 		}
 	}
+
 	private void contributeToMeasures(IHolyRecord measureTableRecord, int cellIndex) {
 		List<String> indexToAxis = measureTableRecord.getAxes();
 		int[] recordToCubeIndexes = computeInference(indexToAxis, sharedAggregatedColumns);
