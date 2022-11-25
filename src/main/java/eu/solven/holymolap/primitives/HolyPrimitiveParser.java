@@ -3,7 +3,7 @@ package eu.solven.holymolap.primitives;
 import ch.randelshofer.fastdoubleparser.FastDoubleParser;
 
 /**
- * Helps parsing primitives.
+ * Helps parsing primitives with sensible error-management.
  * 
  * @author Benoit Lacelle
  *

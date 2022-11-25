@@ -68,6 +68,9 @@ public abstract class ATestHolyCellToRow {
 		Assertions.assertThat(cellToRow.registerRow(IntArrayList.of(-1, 0))).isEqualTo(0);
 
 		Assertions.assertThat(cellToRow.getRow(IntArrayList.of(-1, 0))).isEqualTo(0);
+
+		// A second cell goes into index==1
+		Assertions.assertThat(cellToRow.registerRow(IntArrayList.of(0, 0))).isEqualTo(1);
 	}
 
 	@Test

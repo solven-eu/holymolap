@@ -67,6 +67,9 @@ public class LoadFromCsv {
 					PepperLogHelper.humanBytes(numRows),
 					PepperLogHelper.humanBytes(file.length()));
 
+			Stream.of(csvResult.columns())
+					.forEach(rc -> LOGGER.info("Column: {}->{} ({})", rc.name(), rc.dataType(), rc.data().getClass()));
+
 			List<String> axes = Stream.of(csvResult.columns()).map(rc -> rc.name()).collect(Collectors.toList());
 			IHolyMeasuresDefinition measures = defineMeasures(csvResult.columns());
 			LOGGER.info("Measures: {}", measures);

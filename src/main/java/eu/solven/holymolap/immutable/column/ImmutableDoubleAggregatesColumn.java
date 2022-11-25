@@ -1,7 +1,9 @@
 package eu.solven.holymolap.immutable.column;
 
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.DoubleConsumer;
+import java.util.function.LongConsumer;
 
 import com.google.common.primitives.Ints;
 
@@ -45,8 +47,15 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 	}
 
 	@Override
-	public void acceptAggregates(DoubleConsumer aggregateConsumer) {
-		cellToAggregate.forEach(aggregateConsumer);
+	public void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, DoubleConsumer aggregateConsumer) {
+		rowsIterator.forEachRemaining((LongConsumer) row -> {
+			if (row >= getRows() || row < 0L || row > Integer.MAX_VALUE) {
+				return;
+			}
+
+			double aggregate = cellToAggregate.getDouble(Ints.checkedCast(row));
+			aggregateConsumer.accept(aggregate);
+		});
 	}
 
 	@Override
@@ -62,7 +71,7 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 			public double nextDouble() {
 				long row = cellsIterator.nextLong();
 
-				if (row >= cellToAggregate.size() || row < 0L) {
+				if (row >= getRows() || row < 0L || row > Integer.MAX_VALUE) {
 					return neutral;
 				}
 

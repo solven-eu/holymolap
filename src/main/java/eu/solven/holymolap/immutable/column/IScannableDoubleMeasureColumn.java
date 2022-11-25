@@ -1,8 +1,10 @@
 package eu.solven.holymolap.immutable.column;
 
 import java.util.Iterator;
+import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
+import java.util.stream.LongStream;
 
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -32,7 +34,12 @@ public interface IScannableDoubleMeasureColumn extends IScannableMeasureColumn {
 		};
 	}
 
-	void acceptAggregates(DoubleConsumer aggregateConsumer);
+	@Deprecated
+	default void acceptAggregates(DoubleConsumer aggregateConsumer) {
+		acceptAggregates(LongStream.range(0, getRows()).iterator(), aggregateConsumer);
+	}
+
+	void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, DoubleConsumer aggregateConsumer);
 
 	DoubleIterator mapToDouble(LongIterator rowsIterator);
 }

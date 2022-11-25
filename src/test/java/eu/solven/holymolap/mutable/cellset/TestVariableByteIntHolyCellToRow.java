@@ -24,12 +24,12 @@ public class TestVariableByteIntHolyCellToRow extends ATestHolyCellToRow {
 
 	@Override
 	protected long expectedHeapConsuptionMin() {
-		return 83_000L;
+		return 88_000L;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMax() {
-		return 86_000L;
+		return 89_000L;
 	}
 
 	// This demonstrates byte[] of length 1+N*8->(N+1)*8 has the same footprint
@@ -38,6 +38,14 @@ public class TestVariableByteIntHolyCellToRow extends ATestHolyCellToRow {
 		for (int i = 0; i < 32; i++) {
 			LOGGER.info(i + ": " + GraphLayout.parseInstance(new byte[i]).totalSize());
 		}
+
+		// The following relates with -XX:ObjectAlignmentInBytes
+		// https://lemire.me/blog/2022/11/22/what-is-the-size-of-a-byte-array-in-java/
+		LOGGER.info("long as byte[8]: " + GraphLayout.parseInstance(new byte[8]).totalSize());
+		LOGGER.info("long as long[1]: " + GraphLayout.parseInstance(new long[1]).totalSize());
+
+		LOGGER.info("long as byte[9]: " + GraphLayout.parseInstance(new byte[9]).totalSize());
+		LOGGER.info("long as long[2]: " + GraphLayout.parseInstance(new long[2]).totalSize());
 	}
 
 	// This demonstrates int[] of length 1+N*2->(N+1)*2 has the same footprint
@@ -55,12 +63,17 @@ public class TestVariableByteIntHolyCellToRow extends ATestHolyCellToRow {
 
 		byte[] buffer = new byte[2048];
 		for (int i = 0; i < 1024; i++) {
-			int[] in = IntStream.range(0, i).toArray();
+			int[] in = IntStream.range(0, i + 1).toArray();
 
 			int outPositionFibonacci = compressAndReturnPosition(fibonacci, buffer, in);
 			int outPositionVariableByte = compressAndReturnPosition(variableByte, buffer, in);
 
-			LOGGER.info(i + ": " + outPositionFibonacci + " vs " + outPositionVariableByte);
+			LOGGER.info(i + ": "
+					+ outPositionFibonacci
+					+ " vs "
+					+ outPositionVariableByte
+					+ " "
+					+ (outPositionFibonacci <= outPositionVariableByte ? "F" : "V"));
 		}
 
 		for (int i = Integer.MAX_VALUE - 3; i < Integer.MAX_VALUE - 1; i++) {
@@ -69,7 +82,12 @@ public class TestVariableByteIntHolyCellToRow extends ATestHolyCellToRow {
 			int outPositionFibonacci = compressAndReturnPosition(fibonacci, buffer, in);
 			int outPositionVariableByte = compressAndReturnPosition(variableByte, buffer, in);
 
-			LOGGER.info(i + ": " + outPositionFibonacci + " vs " + outPositionVariableByte);
+			LOGGER.info(i + ": "
+					+ outPositionFibonacci
+					+ " vs "
+					+ outPositionVariableByte
+					+ " "
+					+ (outPositionFibonacci <= outPositionVariableByte ? "F" : "V"));
 		}
 	}
 

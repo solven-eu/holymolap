@@ -29,13 +29,13 @@ public class TestFibonacciHolyCellToRow extends ATestHolyCellToRow {
 	public void testBufferSize() {
 		// Initial size is 1
 		FibonacciHolyCellToRow.resetBufferSize();
-		Assertions.assertThat(FibonacciHolyCellToRow.getBufferSize()).isEqualTo(1);
+		Assertions.assertThat(FibonacciHolyCellToRow.getBufferSize()).isEqualTo(0);
 
 		IHolyCellToRow cellToRow = makeCellToRow();
 
 		// Even a .getRow increased the bufferSize
 		cellToRow.getRow(IntArrayList.of(5 - 2, 1 - 2, 10 - 2, 143 - 2));
 		// The bufferSize is increased 8 by 8
-		Assertions.assertThat(FibonacciHolyCellToRow.getBufferSize()).isEqualTo(1 + 8);
+		Assertions.assertThat(FibonacciHolyCellToRow.getBufferSize()).isEqualTo(8);
 	}
 }

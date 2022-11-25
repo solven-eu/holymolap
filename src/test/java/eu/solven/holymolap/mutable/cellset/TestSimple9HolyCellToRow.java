@@ -1,25 +1,23 @@
 package eu.solven.holymolap.mutable.cellset;
 
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.quickperf.junit4.QuickPerfJUnitRunner;
 
-@Ignore("FastPForHolyCellToRow is not functional")
 @RunWith(QuickPerfJUnitRunner.class)
-public class TestFastPForHolyCellToRow extends ATestHolyCellToRow {
+public class TestSimple9HolyCellToRow extends ATestHolyCellToRow {
 
 	@Override
 	protected IHolyCellToRow makeCellToRow() {
-		return new FastPForHolyCellToRow();
+		return new Simple9HolyCellToRow();
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMin() {
-		return 1_000_000L;
+		return 90_000L;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMax() {
-		return 1_100_000L;
+		return 95_000L;
 	}
 }

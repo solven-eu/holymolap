@@ -83,6 +83,7 @@
 		<dependency>
 			<groupId>ch.randelshofer</groupId>
 			<artifactId>fastdoubleparser</artifactId>
+			<!-- Before 0.5.0: https://github.com/deephaven/deephaven-csv/pull/75 -->
 			<version>0.3.0</version>
 		</dependency>
 

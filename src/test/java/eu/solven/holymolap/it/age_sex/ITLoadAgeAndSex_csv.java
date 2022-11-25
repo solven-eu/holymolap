@@ -125,10 +125,10 @@ public class ITLoadAgeAndSex_csv {
 
 					@Override
 					public void onObject(int axisIndex, List<?> listObjects) {
-						if (getAxes().get(axisIndex).equals("")) {
-							// This column is ill in the sCSV: we prefer cleaning it early
+						if (getAxes().get(axisIndex).equals("count")) {
+							// 'count' is ill in the CSV: we prefer cleaning it early
 							double[] cleanDoubles = listObjects.stream().mapToDouble(o -> {
-								if ("".equals(o)) {
+								if ("..C".equals(o)) {
 									// There is a lot of such Strings in the CSV: it is faster to discard them
 									// early than trying to parse as a double
 									return Double.NaN;
