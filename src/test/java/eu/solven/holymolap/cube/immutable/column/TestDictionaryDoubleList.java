@@ -38,4 +38,14 @@ public class TestDictionaryDoubleList extends ATestCompressedDoubleList {
 	protected long expectedHeapConsuptionMax_wereFloats() {
 		return 13_000;
 	}
+
+	@Override
+	protected long expectedHeapConsuptionMin_positiveInts() {
+		return 12_000;
+	}
+
+	@Override
+	protected long expectedHeapConsuptionMax_positiveInts() {
+		return 13_000;
+	}
 }

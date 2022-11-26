@@ -53,8 +53,9 @@ public class CompressedDoubleColumn extends AbstractDoubleList {
 		IntStream.range(0, array.length).forEach(index -> {
 			double d = array[index];
 			long bits = Double.doubleToRawLongBits(d);
-			assert FibonacciEncoding.longToBinaryWithLeading(bits)
-					.length() == 64 : "This is useful for debugging sessions";
+			// assert FibonacciEncoding.longToBinaryWithLeading(bits)
+			// .length() == 64 : "This is useful for debugging sessions";
+			LOGGER.info("{} -> {}", d, FibonacciEncoding.longToBinaryWithLeading(bits));
 
 			reader.position(0);
 			reader.put(bits);

@@ -50,7 +50,7 @@ public abstract class ATestCompressedDoubleList {
 	@Test
 	public void testCompressDoubleArray_aroundOne() {
 		Random r = new Random(123);
-		double[] array = IntStream.range(0, 1024).mapToDouble(i -> r.nextDouble()).toArray();
+		double[] array = IntStream.range(0, 1024).mapToDouble(i -> 1D + r.nextDouble()).toArray();
 
 		long nbDistincts = DoubleStream.of(array).distinct().limit(array.length / 16).count();
 		Assertions.assertThat(nbDistincts).isEqualTo(64L);
@@ -85,4 +85,22 @@ public abstract class ATestCompressedDoubleList {
 	protected abstract long expectedHeapConsuptionMin_wereFloats();
 
 	protected abstract long expectedHeapConsuptionMax_wereFloats();
+
+	@Test
+	public void testCompressDoubleArray_positiveInts() {
+		double[] array = IntStream.range(0, 1024).mapToDouble(i -> i).toArray();
+
+		long nbDistincts = DoubleStream.of(array).distinct().limit(array.length / 16).count();
+		Assertions.assertThat(nbDistincts).isEqualTo(64L);
+
+		GraphLayout graph = GraphLayout.parseInstance(makeInstance(array));
+		Assertions.assertThat(graph.totalSize())
+				.isBetween(expectedHeapConsuptionMin_positiveInts(), expectedHeapConsuptionMax_positiveInts());
+
+		LOGGER.info("Graph.footprint: {}", graph.toFootprint());
+	}
+
+	protected abstract long expectedHeapConsuptionMin_positiveInts();
+
+	protected abstract long expectedHeapConsuptionMax_positiveInts();
 }

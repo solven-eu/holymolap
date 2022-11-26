@@ -213,8 +213,8 @@ public class FibonacciEncoding {
 		return codeword;
 	}
 
-	public static String longToBinaryWithLeading(long longs) {
-		return String.format("%64s", Long.toBinaryString(longs)).replace(' ', '0');
+	public static String longToBinaryWithLeading(long l) {
+		return String.format("%64s", Long.toBinaryString(l)).replace(' ', '0');
 	}
 
 	public static String byteToBinaryWithLeading(byte bytes) {

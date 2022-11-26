@@ -39,4 +39,14 @@ public class TestDoubleArray extends ATestCompressedDoubleList {
 	protected long expectedHeapConsuptionMax_wereFloats() {
 		return 8_500;
 	}
+
+	@Override
+	protected long expectedHeapConsuptionMin_positiveInts() {
+		return 8_000;
+	}
+
+	@Override
+	protected long expectedHeapConsuptionMax_positiveInts() {
+		return 8_500;
+	}
 }
