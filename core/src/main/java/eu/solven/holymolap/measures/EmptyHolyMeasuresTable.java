@@ -1,7 +1,6 @@
 package eu.solven.holymolap.measures;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.PrimitiveIterator;
 
 import eu.solven.holymolap.measures.definition.EmptyHolyMeasureTableDefinition;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
@@ -26,12 +25,12 @@ public class EmptyHolyMeasuresTable implements IHolyMeasuresTable {
 	}
 
 	@Override
-	public DoubleIterator readDouble(LongIterator rowsIterator, int axisIndex) {
+	public DoubleIterator readDouble(PrimitiveIterator.OfLong rowsIterator, int axisIndex) {
 		return DoubleIterators.EMPTY_ITERATOR;
 	}
 
 	@Override
-	public LongIterator readLong(LongIterator rowsIterator, int measureIndex) {
+	public LongIterator readLong(PrimitiveIterator.OfLong rowsIterator, int measureIndex) {
 		return LongIterators.EMPTY_ITERATOR;
 	}
 }

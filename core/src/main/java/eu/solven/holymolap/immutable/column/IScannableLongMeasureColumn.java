@@ -1,23 +1,22 @@
 package eu.solven.holymolap.immutable.column;
 
 import java.util.Iterator;
+import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
-
-import it.unimi.dsi.fastutil.longs.LongIterator;
 
 public interface IScannableLongMeasureColumn extends IScannableMeasureColumn {
 
 	@Override
 	@Deprecated
-	default void acceptAggregates(Consumer<Object> aggregateConsumer) {
-		acceptAggregates((LongConsumer) aggregateConsumer);
+	default void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, Consumer<Object> aggregateConsumer) {
+		acceptAggregates(rowsIterator, (LongConsumer) aggregateConsumer);
 	}
 
 	@Override
 	@Deprecated
-	default Iterator<Object> map(LongIterator rowsIterator) {
-		LongIterator primitiveIterator = mapToLong(rowsIterator);
+	default Iterator<Object> map(PrimitiveIterator.OfLong rowsIterator) {
+		PrimitiveIterator.OfLong primitiveIterator = mapToLong(rowsIterator);
 		return new Iterator<Object>() {
 
 			@Override
@@ -32,7 +31,15 @@ public interface IScannableLongMeasureColumn extends IScannableMeasureColumn {
 		};
 	}
 
-	void acceptAggregates(LongConsumer aggregateConsumer);
+	@Deprecated
+	@Override
+	default Object neutral() {
+		return neutralAsLong();
+	}
 
-	LongIterator mapToLong(LongIterator rowsIterator);
+	long neutralAsLong();
+
+	void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, LongConsumer aggregateConsumer);
+
+	PrimitiveIterator.OfLong mapToLong(PrimitiveIterator.OfLong rowsIterator);
 }

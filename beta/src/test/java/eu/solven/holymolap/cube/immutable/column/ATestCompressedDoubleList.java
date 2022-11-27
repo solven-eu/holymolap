@@ -1,5 +1,6 @@
 package eu.solven.holymolap.cube.immutable.column;
 
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.Random;
 import java.util.stream.DoubleStream;

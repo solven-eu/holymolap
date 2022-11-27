@@ -1,11 +1,11 @@
 package eu.solven.holymolap.measures.aggregation;
 
+import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicLong;
 
 import eu.solven.holymolap.aggregate.CoordinatesRefs;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
-import eu.solven.holymolap.stable.v1.IBinaryOperator;
 import eu.solven.holymolap.stable.v1.ILongBinaryOperator;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -46,7 +46,7 @@ public class LongAggregationLogic implements ILongAggregationLogic {
 		// The following is discarded due to early optimization
 		// return alternativeAggregateTo(roaringCube, rowsIterator, neutral);
 
-		LongIterator aggregateIt = measuresTable.readLong(rowsIterator, measureIndex);
+		PrimitiveIterator.OfLong aggregateIt = measuresTable.readLong(rowsIterator, measureIndex);
 
 		// Initialize ourself with the aggregation neutral element
 		long aggregate = neutral;
@@ -62,7 +62,9 @@ public class LongAggregationLogic implements ILongAggregationLogic {
 	}
 
 	// This would enable easily concurrent aggregation
-	protected double alternativeAggregateTo(IHolyMeasuresTable measuresTable, LongIterator rowsIterator, long neutral) {
+	protected double alternativeAggregateTo(IHolyMeasuresTable measuresTable,
+			PrimitiveIterator.OfLong rowsIterator,
+			long neutral) {
 		AtomicLong ref = new AtomicLong(neutral);
 
 		measuresTable.acceptLongs(rowsIterator, measureIndex, next -> {

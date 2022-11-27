@@ -1,13 +1,13 @@
 package eu.solven.holymolap.compression.doubles;
 
 import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import eu.solven.holymolap.mutable.cellset.FibonacciEncoding;
 import me.lemire.integercompression.IntWrapper;
 import me.lemire.integercompression.VariableByte;
 import me.lemire.longcompression.LongVariableByte;
@@ -15,6 +15,9 @@ import me.lemire.longcompression.RoaringIntPacking;
 
 public class ReOrderVariableByteDoubleCodec implements IDoubleCodec {
 	private static final int ARRANGEMENT_COMPRESSED_INTS = 16;
+
+	private final VariableByte intCodec = new VariableByte();
+	private final LongVariableByte longCodec = new LongVariableByte();
 
 	/**
 	 * 
@@ -61,9 +64,6 @@ public class ReOrderVariableByteDoubleCodec implements IDoubleCodec {
 
 	@Override
 	public void compress(double[] doubles, ByteBuffer buffer) {
-
-		// this.size = array.length;
-
 		int[] nbChanges = new int[64];
 
 		long[] asLongs = DoubleStream.of(doubles).mapToLong(d -> Double.doubleToRawLongBits(d)).toArray();
@@ -82,19 +82,6 @@ public class ReOrderVariableByteDoubleCodec implements IDoubleCodec {
 				.mapToInt(i -> i)
 				.toArray();
 
-		// With variableByte, the compressed output of the N-th first integers (whatever the order) is always 16
-		int[] compressedArrangement = new int[ARRANGEMENT_COMPRESSED_INTS];
-		IntWrapper outPositionArrangement = new IntWrapper();
-		new VariableByte()
-				.compress(lessFrequentFirst, new IntWrapper(), 64, compressedArrangement, outPositionArrangement);
-		assert outPositionArrangement.get() == compressedArrangement.length;
-
-		long[] compressedArrangementAsLongs = new long[compressedArrangement.length / 2];
-		for (int i = 0; i < compressedArrangementAsLongs.length; i++) {
-			compressedArrangementAsLongs[i] =
-					RoaringIntPacking.pack(compressedArrangement[i * 2], compressedArrangement[i * 2 + 1]);
-		}
-
 		// https://www.timescale.com/blog/time-series-compression-algorithms-explained/
 		// https://www.baeldung.com/java-xor-operator
 		// https://github.com/burmanm/gorilla-tsc
@@ -105,60 +92,110 @@ public class ReOrderVariableByteDoubleCodec implements IDoubleCodec {
 		}
 
 		// We expect the arranged longs to be generally small (to push 0 bits on the left)
-		long[] asArrangedLongs =
-				LongStream
-						.concat(LongStream.of(compressedArrangementAsLongs),
-								LongStream.of(asXorLongs).map(l -> reArrange(lessFrequentFirst, l)))
-						.toArray();
+		long[] asArrangedLongs = LongStream.of(asXorLongs).map(l -> reArrange(lessFrequentFirst, l)).toArray();
 
-		LongStream.of(asArrangedLongs).forEach(l -> System.out.println(FibonacciEncoding.longToBinaryWithLeading(l)));
+		// LongStream.of(asArrangedLongs).forEach(l ->
+		// System.out.println(FibonacciEncoding.longToBinaryWithLeading(l)));
 
 		IntWrapper outPosition = new IntWrapper();
-		long[] compressed = new long[asArrangedLongs.length * 2];
-		new LongVariableByte()
-				.compress(asArrangedLongs, new IntWrapper(), asArrangedLongs.length, compressed, outPosition);
+		long[] compressed = new long[ARRANGEMENT_COMPRESSED_INTS / 2 + asArrangedLongs.length * 2];
 
-		buffer.asLongBuffer().put(Arrays.copyOf(compressed, outPosition.get()));
+		// We write the arrangement as is (no compression as it is already compressed)
+		{
+			// With variableByte, the compressed output of the N-th first integers (whatever the order) is always 16
+			int[] compressedArrangement = new int[ARRANGEMENT_COMPRESSED_INTS];
+			IntWrapper outPositionArrangement = new IntWrapper();
+			intCodec.compress(lessFrequentFirst, new IntWrapper(), 64, compressedArrangement, outPositionArrangement);
+			assert outPositionArrangement.get() == compressedArrangement.length;
+
+			// long[] compressedArrangementAsLongs = new long[compressedArrangement.length / 2];
+			for (int i = 0; i < ARRANGEMENT_COMPRESSED_INTS / 2; i++) {
+				compressed[i] = RoaringIntPacking.pack(compressedArrangement[i * 2], compressedArrangement[i * 2 + 1]);
+			}
+
+			outPosition.add(ARRANGEMENT_COMPRESSED_INTS / 2);
+		}
+
+		longCodec.compress(asArrangedLongs, new IntWrapper(), asArrangedLongs.length, compressed, outPosition);
+
+		LongBuffer longBuffer = buffer.asLongBuffer();
+		longBuffer.put(Arrays.copyOf(compressed, outPosition.get()));
+
+		// Transfer the position of longBuffer to byteBuffer
+		buffer.position(longBuffer.position() * 8);
+	}
+
+	// @Override
+	// public void compress(double[] in, IntWrapper inpos, int inlength, double[] out, IntWrapper outpos) {
+	// if (inpos.get() != 0) {
+	// throw new UnsupportedOperationException("TODO");
+	// } else if (outpos.get() != 0) {
+	// throw new UnsupportedOperationException("TODO");
+	// }
+	//
+	// }
+
+	private long[] asArray(ByteBuffer buffer) {
+		LongBuffer longBuffer = buffer.asLongBuffer();
+		// if (longBuffer.hasArray()) {
+		// return longBuffer.array();
+		// }
+
+		long[] array = new long[longBuffer.limit()];
+		longBuffer.get(array);
+
+		return array;
 	}
 
 	@Override
 	public void uncompress(ByteBuffer buffer, double[] doubles) {
 		buffer.position(0);
+		// LongBuffer longBuffer = buffer.asLongBuffer();
 
 		int[] compressedArrangement = new int[ARRANGEMENT_COMPRESSED_INTS];
 
 		int size = doubles.length;
-		long[] uncompressed = new long[compressedArrangement.length / 2 + size];
-		IntWrapper outPosition = new IntWrapper();
-		long[] compressedLongs = buffer.asLongBuffer().array();
-		new LongVariableByte()
-				.uncompress(compressedLongs, new IntWrapper(), compressedLongs.length, uncompressed, outPosition);
-		assert outPosition.get() == uncompressed.length;
+		long[] compressedLongs = asArray(buffer);
+		int[] arrangement = new int[64];
+		{
+			for (int i = 0; i < compressedArrangement.length / 2; i++) {
+				compressedArrangement[i * 2] = RoaringIntPacking.high(compressedLongs[i]);
+				compressedArrangement[i * 2 + 1] = RoaringIntPacking.low(compressedLongs[i]);
+			}
 
-		for (int i = 0; i < compressedArrangement.length / 2; i++) {
-			compressedArrangement[i * 2] = RoaringIntPacking.high(uncompressed[i]);
-			compressedArrangement[i * 2 + 1] = RoaringIntPacking.low(uncompressed[i]);
+			IntWrapper outPositionArrangement = new IntWrapper();
+			intCodec.uncompress(compressedArrangement,
+					new IntWrapper(),
+					compressedArrangement.length,
+					arrangement,
+					outPositionArrangement);
+			assert outPositionArrangement.get() == arrangement.length;
 		}
 
-		int[] arrangement = new int[64];
-		IntWrapper outPositionArrangement = new IntWrapper();
-		new VariableByte().uncompress(compressedArrangement,
-				new IntWrapper(),
-				compressedArrangement.length,
-				arrangement,
-				outPositionArrangement);
-		assert outPositionArrangement.get() == arrangement.length;
-
+		long[] uncompressed = new long[size];
+		{
+			longCodec.uncompress(compressedLongs,
+					new IntWrapper(compressedArrangement.length / 2),
+					compressedLongs.length - compressedArrangement.length / 2,
+					uncompressed,
+					new IntWrapper());
+		}
 		for (int index = 0; index < doubles.length; index++) {
-			long l = uncompressed[8 + index];
+			long l = uncompressed[index];
 			long reArranged = reverseArrange(arrangement, l);
 
 			if (index >= 1) {
-				reArranged ^= reverseArrange(arrangement, uncompressed[8 + index - 1]);
+				reArranged ^= reverseArrange(arrangement, uncompressed[index - 1]);
 			}
 
 			doubles[index] = Double.longBitsToDouble(reArranged);
 		}
 	}
+
+	// @Override
+	// public void uncompress(double[] in, IntWrapper inpos, int inlength, double[] out, IntWrapper outpos) {
+	// // TODO Auto-generated method stub
+	//
+	// }
 
 }

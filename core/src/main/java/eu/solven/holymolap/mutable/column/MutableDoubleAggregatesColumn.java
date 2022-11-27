@@ -4,9 +4,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import eu.solven.holymolap.immutable.column.DynamicSchemeDoubleList;
 import eu.solven.holymolap.immutable.column.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.immutable.column.ImmutableDoubleAggregatesColumn;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
@@ -41,7 +43,9 @@ public class MutableDoubleAggregatesColumn implements IMutableDoubleAggregatesCo
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		if (cellToAggregate instanceof DoubleArrayList) {
+		if (cellToAggregate instanceof IHasMemoryFootprint) {
+			sizeInBytes += ((IHasMemoryFootprint) cellToAggregate).getSizeInBytes();
+		} else if (cellToAggregate instanceof DoubleArrayList) {
 			sizeInBytes += IPepperMemoryConstants.DOUBLE * ((DoubleArrayList) cellToAggregate).elements().length;
 		} else {
 			sizeInBytes += IPepperMemoryConstants.DOUBLE * cellToAggregate.size();
@@ -95,7 +99,8 @@ public class MutableDoubleAggregatesColumn implements IMutableDoubleAggregatesCo
 		if (!flushed.compareAndSet(false, true)) {
 			throw new IllegalStateException("Already flushed");
 		}
-		return new ImmutableDoubleAggregatesColumn(cellToAggregate, operator.neutralAsDouble());
+		DynamicSchemeDoubleList dynamicScheme = new DynamicSchemeDoubleList(cellToAggregate);
+		return new ImmutableDoubleAggregatesColumn(dynamicScheme, operator.neutralAsDouble());
 	}
 
 }

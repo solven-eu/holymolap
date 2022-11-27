@@ -1,5 +1,7 @@
 package eu.solven.holymolap.measures.aggregation;
 
+import java.util.PrimitiveIterator;
+
 import com.google.common.util.concurrent.AtomicDouble;
 
 import eu.solven.holymolap.aggregate.CoordinatesRefs;
@@ -7,7 +9,6 @@ import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
-import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
 public class DoubleAggregationLogic implements IDoubleAggregationLogic {
@@ -55,7 +56,7 @@ public class DoubleAggregationLogic implements IDoubleAggregationLogic {
 		// The following is discarded due to early optimization
 		// return alternativeAggregateTo(roaringCube, rowsIterator, neutral);
 
-		DoubleIterator aggregateIt = measuresTable.readDouble(rowsIterator, measureIndex);
+		PrimitiveIterator.OfDouble aggregateIt = measuresTable.readDouble(rowsIterator, measureIndex);
 
 		// Initialize ourself with the aggregation neutral element
 		double aggregate = neutral;

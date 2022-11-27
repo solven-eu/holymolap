@@ -1,5 +1,6 @@
 package eu.solven.holymolap.measures;
 
+import java.util.PrimitiveIterator;
 import java.util.function.DoubleConsumer;
 import java.util.function.LongConsumer;
 
@@ -7,8 +8,6 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.measures.aggregation.IAggregationLogic;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
-import it.unimi.dsi.fastutil.doubles.DoubleIterator;
-import it.unimi.dsi.fastutil.longs.LongIterator;
 
 /**
  * Holds the aggregates of an {@link IHolyCube}. It should be seen as a table with N rows, each row being attached to a
@@ -24,17 +23,17 @@ public interface IHolyMeasuresTable extends IHasMemoryFootprint, IHasMeasuresDef
 	 * 
 	 * @param rowsIterator
 	 * @param measureIndex
-	 * @return a {@link DoubleIterator} covering the rows described by the iterator.
+	 * @return a {@link PrimitiveIterator.OfDouble} covering the rows described by the iterator.
 	 */
-	DoubleIterator readDouble(LongIterator rowsIterator, int measureIndex);
+	PrimitiveIterator.OfDouble readDouble(PrimitiveIterator.OfLong rowsIterator, int measureIndex);
 
-	default void acceptDoubles(LongIterator rowsIterator, int measureIndex, DoubleConsumer doubleConsumer) {
+	default void acceptDoubles(PrimitiveIterator.OfLong rowsIterator, int measureIndex, DoubleConsumer doubleConsumer) {
 		readDouble(rowsIterator, measureIndex).forEachRemaining(doubleConsumer);
 	}
 
-	LongIterator readLong(LongIterator rowsIterator, int measureIndex);
+	PrimitiveIterator.OfLong readLong(PrimitiveIterator.OfLong rowsIterator, int measureIndex);
 
-	default void acceptLongs(LongIterator rowsIterator, int measureIndex, LongConsumer longConsumer) {
+	default void acceptLongs(PrimitiveIterator.OfLong rowsIterator, int measureIndex, LongConsumer longConsumer) {
 		readLong(rowsIterator, measureIndex).forEachRemaining(longConsumer);
 	}
 

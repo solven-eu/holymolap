@@ -7,12 +7,11 @@ import java.util.function.LongConsumer;
 
 import com.google.common.primitives.Ints;
 
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.doubles.AbstractDoubleIterator;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
-import it.unimi.dsi.fastutil.longs.LongIterator;
 
 /**
  * A column of aggregates. Each row is typically associated to a cell (i.e. a {@link Set} of coordinates).
@@ -47,6 +46,11 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 	}
 
 	@Override
+	public double neutralAsDouble() {
+		return neutral;
+	}
+
+	@Override
 	public void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, DoubleConsumer aggregateConsumer) {
 		rowsIterator.forEachRemaining((LongConsumer) row -> {
 			if (row >= getRows() || row < 0L || row > Integer.MAX_VALUE) {
@@ -59,17 +63,17 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 	}
 
 	@Override
-	public DoubleIterator mapToDouble(LongIterator cellsIterator) {
+	public PrimitiveIterator.OfDouble mapToDouble(PrimitiveIterator.OfLong rowsIterator) {
 		return new AbstractDoubleIterator() {
 
 			@Override
 			public boolean hasNext() {
-				return cellsIterator.hasNext();
+				return rowsIterator.hasNext();
 			}
 
 			@Override
 			public double nextDouble() {
-				long row = cellsIterator.nextLong();
+				long row = rowsIterator.nextLong();
 
 				if (row >= getRows() || row < 0L || row > Integer.MAX_VALUE) {
 					return neutral;
@@ -84,12 +88,21 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		if (cellToAggregate instanceof DoubleArrayList) {
-			sizeInBytes += IPepperMemoryConstants.DOUBLE * ((DoubleArrayList) cellToAggregate).elements().length;
-		} else {
-			sizeInBytes += IPepperMemoryConstants.DOUBLE * cellToAggregate.size();
-		}
+		sizeInBytes = estimateDoubleListFootprint(cellToAggregate);
 
+		return sizeInBytes;
+	}
+
+	public static long estimateDoubleListFootprint(DoubleList doubleList) {
+		long sizeInBytes = 0L;
+		if (doubleList instanceof IHasMemoryFootprint) {
+			sizeInBytes += ((IHasMemoryFootprint) doubleList).getSizeInBytes();
+		} else if (doubleList instanceof DoubleArrayList) {
+			// There may be some leftovers in the underlying array
+			sizeInBytes += IPepperMemoryConstants.DOUBLE * ((DoubleArrayList) doubleList).elements().length;
+		} else {
+			sizeInBytes += IPepperMemoryConstants.DOUBLE * doubleList.size();
+		}
 		return sizeInBytes;
 	}
 

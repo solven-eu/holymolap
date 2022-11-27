@@ -1,11 +1,13 @@
 package eu.solven.holymolap.immutable.column;
 
 import java.util.Iterator;
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import com.google.common.primitives.Ints;
 
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.AbstractObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -39,22 +41,27 @@ public class ImmutableObjectAggregatesColumn implements IScannableMeasureColumn 
 	}
 
 	@Override
-	public void acceptAggregates(Consumer<? super Object> aggregateConsumer) {
+	public Object neutral() {
+		return neutral;
+	}
+
+	@Override
+	public void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, Consumer<? super Object> aggregateConsumer) {
 		cellToAggregate.forEach(aggregateConsumer);
 	}
 
 	@Override
-	public Iterator<Object> map(LongIterator cellsIterator) {
+	public Iterator<Object> map(PrimitiveIterator.OfLong rowsIterator) {
 		return new AbstractObjectIterator<Object>() {
 
 			@Override
 			public boolean hasNext() {
-				return cellsIterator.hasNext();
+				return rowsIterator.hasNext();
 			}
 
 			@Override
 			public Object next() {
-				long row = cellsIterator.nextLong();
+				long row = rowsIterator.nextLong();
 
 				if (row >= cellToAggregate.size() || row < 0L) {
 					return neutral;
@@ -69,7 +76,9 @@ public class ImmutableObjectAggregatesColumn implements IScannableMeasureColumn 
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		if (cellToAggregate instanceof ObjectArrayList) {
+		if (cellToAggregate instanceof IHasMemoryFootprint) {
+			sizeInBytes += ((IHasMemoryFootprint) cellToAggregate).getSizeInBytes();
+		} else if (cellToAggregate instanceof ObjectArrayList) {
 			sizeInBytes += 8 * ((ObjectArrayList<?>) cellToAggregate).elements().length;
 		} else {
 			sizeInBytes += 8 * cellToAggregate.size();

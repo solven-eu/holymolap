@@ -1,10 +1,10 @@
 package eu.solven.holymolap.immutable.column;
 
 import java.util.Iterator;
+import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
 
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
-import it.unimi.dsi.fastutil.longs.LongIterator;
 
 public interface IScannableMeasureColumn extends IHasMemoryFootprint {
 
@@ -14,7 +14,10 @@ public interface IScannableMeasureColumn extends IHasMemoryFootprint {
 	 */
 	long getRows();
 
-	void acceptAggregates(Consumer<Object> aggregateConsumer);
+	Object neutral();
 
-	Iterator<Object> map(LongIterator rowsIterator);
+	void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, Consumer<Object> aggregateConsumer);
+
+	Iterator<Object> map(PrimitiveIterator.OfLong rowsIterator);
+
 }

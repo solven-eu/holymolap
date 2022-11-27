@@ -1,6 +1,7 @@
 package eu.solven.holymolap.measures;
 
 import java.util.List;
+import java.util.PrimitiveIterator;
 
 import com.google.common.collect.ImmutableList;
 
@@ -9,7 +10,6 @@ import eu.solven.holymolap.immutable.column.IScannableLongMeasureColumn;
 import eu.solven.holymolap.immutable.column.IScannableMeasureColumn;
 import eu.solven.holymolap.measures.definition.EmptyHolyMeasureTableDefinition;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
-import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.doubles.DoubleIterators;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
@@ -53,7 +53,7 @@ public class HolyMeasuresTable implements IHolyMeasuresTable {
 	}
 
 	@Override
-	public DoubleIterator readDouble(final LongIterator rowsIterator, final int measureIndex) {
+	public PrimitiveIterator.OfDouble readDouble(final PrimitiveIterator.OfLong rowsIterator, final int measureIndex) {
 		if (measureIndex < 0) {
 			return DoubleIterators.EMPTY_ITERATOR;
 		} else if (measureIndex >= axisIndexToAggregates.size()) {
@@ -69,7 +69,7 @@ public class HolyMeasuresTable implements IHolyMeasuresTable {
 	}
 
 	@Override
-	public LongIterator readLong(LongIterator rowsIterator, int measureIndex) {
+	public PrimitiveIterator.OfLong readLong(PrimitiveIterator.OfLong rowsIterator, int measureIndex) {
 		if (measureIndex == IHolyMeasuresDefinition.CELLCOUNT_MEASURE_INDEX) {
 			// When counting, we need to consider any input cell
 			return new LongIterator() {

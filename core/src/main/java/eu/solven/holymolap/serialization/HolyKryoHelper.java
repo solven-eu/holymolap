@@ -25,6 +25,7 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.immutable.axes.AxisWithCoordinates;
 import eu.solven.holymolap.immutable.axis.ImmutableAxisSmallColumn;
+import eu.solven.holymolap.immutable.column.DynamicSchemeDoubleList;
 import eu.solven.holymolap.immutable.column.ImmutableDoubleAggregatesColumn;
 import eu.solven.holymolap.immutable.column.ImmutableLongAggregatesColumn;
 import eu.solven.holymolap.immutable.dictionary.AxisCoordinatesDictionary;
@@ -70,6 +71,7 @@ public class HolyKryoHelper {
 		kryo.register(DoubleAggregationLogic.class);
 		kryo.register(LongAggregationLogic.class);
 		kryo.register(ArrayList.class);
+		kryo.register(DynamicSchemeDoubleList.class);
 		kryo.register(ImmutableDoubleAggregatesColumn.class);
 		kryo.register(ImmutableLongAggregatesColumn.class);
 		kryo.register(DoubleArrayList.class);

@@ -6,20 +6,18 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.stream.LongStream;
 
-import it.unimi.dsi.fastutil.doubles.DoubleIterator;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-
 public interface IScannableDoubleMeasureColumn extends IScannableMeasureColumn {
 	@Override
 	@Deprecated
-	default void acceptAggregates(Consumer<Object> aggregateConsumer) {
-		acceptAggregates((DoubleConsumer) aggregateConsumer);
+	default void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, Consumer<Object> aggregateConsumer) {
+		acceptAggregates(rowsIterator, (DoubleConsumer) aggregateConsumer);
 	}
 
 	@Override
 	@Deprecated
-	default Iterator<Object> map(LongIterator rowsIterator) {
-		DoubleIterator primitiveIterator = mapToDouble(rowsIterator);
+	default Iterator<Object> map(PrimitiveIterator.OfLong rowsIterator) {
+		PrimitiveIterator.OfDouble primitiveIterator = mapToDouble(rowsIterator);
+
 		return new Iterator<Object>() {
 
 			@Override
@@ -39,7 +37,15 @@ public interface IScannableDoubleMeasureColumn extends IScannableMeasureColumn {
 		acceptAggregates(LongStream.range(0, getRows()).iterator(), aggregateConsumer);
 	}
 
+	@Deprecated
+	@Override
+	default Object neutral() {
+		return neutralAsDouble();
+	}
+
+	double neutralAsDouble();
+
 	void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, DoubleConsumer aggregateConsumer);
 
-	DoubleIterator mapToDouble(LongIterator rowsIterator);
+	PrimitiveIterator.OfDouble mapToDouble(PrimitiveIterator.OfLong rowsIterator);
 }

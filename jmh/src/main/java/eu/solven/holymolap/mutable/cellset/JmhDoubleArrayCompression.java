@@ -21,7 +21,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import eu.solven.holymolap.compression.doubles.DictionaryDoubleList;
-import eu.solven.holymolap.compression.doubles.ReOrderVariableByteDoubleColumn;
+import eu.solven.holymolap.compression.doubles.FcpDoubleColumn;
 import eu.solven.holymolap.mutable.cellset.FibonacciHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.Object2IntHolyCellToRow;
@@ -40,7 +40,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 @Fork(value = 2, jvmArgs = { "-Xms2G", "-Xmx2G" })
 @Warmup(iterations = 2, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 2, time = 2, timeUnit = TimeUnit.SECONDS)
-public class DoubleArrayCompression {
+public class JmhDoubleArrayCompression {
 
 	private DoubleList array;
 	private DoubleList dictionary;
@@ -52,7 +52,7 @@ public class DoubleArrayCompression {
 	private double[] DATA_FOR_TESTING;
 
 	public static void main(String[] args) throws RunnerException {
-		Options opt = new OptionsBuilder().include(DoubleArrayCompression.class.getSimpleName()).forks(1).build();
+		Options opt = new OptionsBuilder().include(JmhDoubleArrayCompression.class.getSimpleName()).forks(1).build();
 		new Runner(opt).run();
 	}
 
@@ -63,7 +63,7 @@ public class DoubleArrayCompression {
 		// Used to benchmark reads
 		array = new DoubleArrayList(DATA_FOR_TESTING);
 		dictionary = new DictionaryDoubleList(DATA_FOR_TESTING);
-		variableByte = new ReOrderVariableByteDoubleColumn(DATA_FOR_TESTING);
+		variableByte = new FcpDoubleColumn(DATA_FOR_TESTING);
 	}
 
 	@Benchmark
@@ -78,22 +78,22 @@ public class DoubleArrayCompression {
 
 	@Benchmark
 	public void makeReOrderVariableByte(Blackhole bh) {
-		bh.consume(new ReOrderVariableByteDoubleColumn(DATA_FOR_TESTING));
+		bh.consume(new FcpDoubleColumn(DATA_FOR_TESTING));
 	}
 
 	@Benchmark
 	public void readObject(Blackhole bh) {
-		bh.consume(array.toArray());
+		bh.consume(array.toDoubleArray());
 	}
 
 	@Benchmark
 	public void readDictionary(Blackhole bh) {
-		bh.consume(dictionary.toArray());
+		bh.consume(dictionary.toDoubleArray());
 	}
 
 	@Benchmark
 	public void readReOrderVariableByte(Blackhole bh) {
-		bh.consume(variableByte.toArray());
+		bh.consume(variableByte.toDoubleArray());
 	}
 
 }

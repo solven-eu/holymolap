@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import eu.solven.holymolap.immutable.column.IScannableMeasureColumn;
 import eu.solven.holymolap.immutable.column.ImmutableObjectAggregatesColumn;
 import eu.solven.holymolap.stable.v1.IBinaryOperator;
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
+import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 
@@ -34,6 +36,21 @@ public class MutableAggregatesColumn implements IMutableAggregatesColumn {
 	public MutableAggregatesColumn(IBinaryOperator operator) {
 		this.operator = operator;
 		this.cellToAggregate = new ObjectArrayList<>();
+	}
+
+	@Override
+	public long getSizeInBytes() {
+		long sizeInBytes = 0;
+
+		if (cellToAggregate instanceof IHasMemoryFootprint) {
+			sizeInBytes += ((IHasMemoryFootprint) cellToAggregate).getSizeInBytes();
+		} else if (cellToAggregate instanceof ObjectArrayList) {
+			sizeInBytes += IPepperMemoryConstants.LONG * ((ObjectArrayList<?>) cellToAggregate).elements().length;
+		} else {
+			sizeInBytes += IPepperMemoryConstants.LONG * cellToAggregate.size();
+		}
+
+		return sizeInBytes;
 	}
 
 	@Override

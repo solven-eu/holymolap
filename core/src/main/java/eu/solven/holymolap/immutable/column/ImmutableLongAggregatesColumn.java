@@ -1,13 +1,14 @@
 package eu.solven.holymolap.immutable.column;
 
+import java.util.PrimitiveIterator;
 import java.util.Set;
 import java.util.function.LongConsumer;
 
 import com.google.common.primitives.Ints;
 
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.longs.AbstractLongIterator;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongList;
 
 /**
@@ -38,12 +39,24 @@ public class ImmutableLongAggregatesColumn implements IScannableLongMeasureColum
 	}
 
 	@Override
-	public void acceptAggregates(LongConsumer aggregateConsumer) {
-		cellToAggregate.forEach(aggregateConsumer);
+	public long neutralAsLong() {
+		return neutral;
 	}
 
 	@Override
-	public LongIterator mapToLong(LongIterator cellsIterator) {
+	public void acceptAggregates(PrimitiveIterator.OfLong rowsIterator, LongConsumer aggregateConsumer) {
+		rowsIterator.forEachRemaining((LongConsumer) row -> {
+			if (row >= getRows() || row < 0L || row > Integer.MAX_VALUE) {
+				return;
+			}
+
+			long aggregate = cellToAggregate.getLong(Ints.checkedCast(row));
+			aggregateConsumer.accept(aggregate);
+		});
+	}
+
+	@Override
+	public PrimitiveIterator.OfLong mapToLong(PrimitiveIterator.OfLong cellsIterator) {
 		return new AbstractLongIterator() {
 
 			@Override
@@ -68,7 +81,9 @@ public class ImmutableLongAggregatesColumn implements IScannableLongMeasureColum
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		if (cellToAggregate instanceof LongArrayList) {
+		if (cellToAggregate instanceof IHasMemoryFootprint) {
+			sizeInBytes += ((IHasMemoryFootprint) cellToAggregate).getSizeInBytes();
+		} else if (cellToAggregate instanceof LongArrayList) {
 			sizeInBytes += 8 * ((LongArrayList) cellToAggregate).elements().length;
 		} else {
 			sizeInBytes += 8 * cellToAggregate.size();

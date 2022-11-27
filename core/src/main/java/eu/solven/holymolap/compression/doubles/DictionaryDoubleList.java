@@ -3,6 +3,8 @@ package eu.solven.holymolap.compression.doubles;
 import java.util.Arrays;
 import java.util.stream.DoubleStream;
 
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
+import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.doubles.AbstractDoubleList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 
@@ -12,7 +14,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
  * @author Benoit Lacelle
  *
  */
-public class DictionaryDoubleList extends AbstractDoubleList {
+public class DictionaryDoubleList extends AbstractDoubleList implements IHasMemoryFootprint {
 	final double[] indexToDouble;
 	final int[] rowToIndex;
 
@@ -31,5 +33,15 @@ public class DictionaryDoubleList extends AbstractDoubleList {
 	@Override
 	public int size() {
 		return rowToIndex.length;
+	}
+
+	@Override
+	public long getSizeInBytes() {
+		long size = 0L;
+
+		size += IPepperMemoryConstants.INT * rowToIndex.length;
+		size += IPepperMemoryConstants.DOUBLE * indexToDouble.length;
+
+		return size;
 	}
 }

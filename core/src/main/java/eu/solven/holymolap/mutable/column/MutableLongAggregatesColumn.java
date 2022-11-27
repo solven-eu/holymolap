@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import eu.solven.holymolap.immutable.column.IScannableLongMeasureColumn;
 import eu.solven.holymolap.immutable.column.ImmutableLongAggregatesColumn;
 import eu.solven.holymolap.stable.v1.ILongBinaryOperator;
+import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
@@ -41,7 +42,9 @@ public class MutableLongAggregatesColumn implements IMutableLongAggregatesColumn
 	public long getSizeInBytes() {
 		long sizeInBytes = 0;
 
-		if (cellToAggregate instanceof LongArrayList) {
+		if (cellToAggregate instanceof IHasMemoryFootprint) {
+			sizeInBytes += ((IHasMemoryFootprint) cellToAggregate).getSizeInBytes();
+		} else if (cellToAggregate instanceof LongArrayList) {
 			sizeInBytes += IPepperMemoryConstants.LONG * ((LongArrayList) cellToAggregate).elements().length;
 		} else {
 			sizeInBytes += IPepperMemoryConstants.LONG * cellToAggregate.size();
