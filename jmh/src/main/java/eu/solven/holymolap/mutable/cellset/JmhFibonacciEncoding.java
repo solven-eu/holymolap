@@ -1,4 +1,4 @@
-package eu.solven.holymolap.jmh.mutable.cellset;
+package eu.solven.holymolap.mutable.cellset;
 
 import java.util.concurrent.TimeUnit;
 

@@ -1,4 +1,4 @@
-package eu.solven.holymolap.cube.immutable.column;
+package eu.solven.holymolap.compression.doubles;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -23,8 +23,8 @@ import me.lemire.integercompression.IntCompressor;
  *
  */
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
-public class CompressedDoubleColumn extends AbstractDoubleList {
-	private static final Logger LOGGER = LoggerFactory.getLogger(CompressedDoubleColumn.class);
+public class DoubleAsFourBytesDoubleColumn extends AbstractDoubleList {
+	private static final Logger LOGGER = LoggerFactory.getLogger(DoubleAsFourBytesDoubleColumn.class);
 
 	private static final int CHUNKS_PER_LONG = 4;
 	private static final int BYTES_PER_LONG = 8;
@@ -38,7 +38,7 @@ public class CompressedDoubleColumn extends AbstractDoubleList {
 	final transient IntCompressor intCompressor = new IntCompressor();
 	final List<int[]> compressedIntegers;
 
-	public CompressedDoubleColumn(double[] array) {
+	public DoubleAsFourBytesDoubleColumn(double[] array) {
 		this.size = array.length;
 
 		final List<ByteBuffer> byteBuffers;

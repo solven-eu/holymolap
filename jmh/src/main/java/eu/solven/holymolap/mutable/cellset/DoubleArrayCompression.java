@@ -1,4 +1,4 @@
-package eu.solven.holymolap.jmh.mutable.cellset;
+package eu.solven.holymolap.mutable.cellset;
 
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -20,10 +20,14 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import eu.solven.holymolap.compression.doubles.DictionaryDoubleList;
+import eu.solven.holymolap.compression.doubles.ReOrderVariableByteDoubleColumn;
 import eu.solven.holymolap.mutable.cellset.FibonacciHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.Object2IntHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.VariableByteHolyCellToRow;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
@@ -36,41 +40,60 @@ import it.unimi.dsi.fastutil.ints.IntList;
 @Fork(value = 2, jvmArgs = { "-Xms2G", "-Xmx2G" })
 @Warmup(iterations = 2, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 2, time = 2, timeUnit = TimeUnit.SECONDS)
-public class JmhCellToRows {
+public class DoubleArrayCompression {
 
-	private IHolyCellToRow object = new Object2IntHolyCellToRow();
-	private IHolyCellToRow fibonacci = new FibonacciHolyCellToRow();
-	private IHolyCellToRow variableByte = new VariableByteHolyCellToRow();
+	private DoubleList array;
+	private DoubleList dictionary;
+	private DoubleList variableByte;
 
 	@Param({ "1", "8", "16", "32" })
 	private int size;
 
-	private IntList DATA_FOR_TESTING;
+	private double[] DATA_FOR_TESTING;
 
 	public static void main(String[] args) throws RunnerException {
-		Options opt = new OptionsBuilder().include(JmhCellToRows.class.getSimpleName()).forks(1).build();
+		Options opt = new OptionsBuilder().include(DoubleArrayCompression.class.getSimpleName()).forks(1).build();
 		new Runner(opt).run();
 	}
 
 	@Setup
 	public void setup() {
-		int[] ints = IntStream.range(0, size).toArray();
-		DATA_FOR_TESTING = new IntArrayList(ints);
+		DATA_FOR_TESTING = IntStream.range(0, size).mapToDouble(i -> (double) i).toArray();
+
+		// Used to benchmark reads
+		array = new DoubleArrayList(DATA_FOR_TESTING);
+		dictionary = new DictionaryDoubleList(DATA_FOR_TESTING);
+		variableByte = new ReOrderVariableByteDoubleColumn(DATA_FOR_TESTING);
 	}
 
 	@Benchmark
-	public void object(Blackhole bh) {
-		bh.consume(object.getRow(DATA_FOR_TESTING));
+	public void makeObject(Blackhole bh) {
+		bh.consume(new DoubleArrayList(DATA_FOR_TESTING));
 	}
 
 	@Benchmark
-	public void fibonacci(Blackhole bh) {
-		bh.consume(fibonacci.getRow(DATA_FOR_TESTING));
+	public void makeDictionary(Blackhole bh) {
+		bh.consume(new DictionaryDoubleList(DATA_FOR_TESTING));
 	}
 
 	@Benchmark
-	public void variableByte(Blackhole bh) {
-		bh.consume(variableByte.getRow(DATA_FOR_TESTING));
+	public void makeReOrderVariableByte(Blackhole bh) {
+		bh.consume(new ReOrderVariableByteDoubleColumn(DATA_FOR_TESTING));
+	}
+
+	@Benchmark
+	public void readObject(Blackhole bh) {
+		bh.consume(array.toArray());
+	}
+
+	@Benchmark
+	public void readDictionary(Blackhole bh) {
+		bh.consume(dictionary.toArray());
+	}
+
+	@Benchmark
+	public void readReOrderVariableByte(Blackhole bh) {
+		bh.consume(variableByte.toArray());
 	}
 
 }

@@ -1,4 +1,4 @@
-package eu.solven.holymolap.cube.immutable.column;
+package eu.solven.holymolap.compression.doubles;
 
 import java.util.Arrays;
 import java.util.stream.DoubleStream;

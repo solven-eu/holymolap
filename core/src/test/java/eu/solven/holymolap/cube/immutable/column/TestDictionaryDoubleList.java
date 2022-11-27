@@ -1,5 +1,6 @@
 package eu.solven.holymolap.cube.immutable.column;
 
+import eu.solven.holymolap.compression.doubles.DictionaryDoubleList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 public class TestDictionaryDoubleList extends ATestCompressedDoubleList {
