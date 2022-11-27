@@ -13,11 +13,16 @@
 	<properties>
 		<jmh.version>1.21</jmh.version>
 	</properties>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>io.github.solven-eu.holymolap</groupId>
 			<artifactId>holymolap-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.solven-eu.holymolap</groupId>
+			<artifactId>holymolap-beta</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

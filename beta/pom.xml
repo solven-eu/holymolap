@@ -32,7 +32,7 @@
 			<artifactId>calcite-file</artifactId>
 			<version>1.32.0</version>
 		</dependency>
-		
+
 		<!-- https://www.arm64.ca/post/reading-parquet-files-java/ -->
 		<!--dependency>
 			<groupId>io.github.solven-eu.pepper</groupId>
@@ -54,6 +54,12 @@
 					<artifactId>slf4j-reload4j</artifactId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.solven-eu.holymolap</groupId>
+			<artifactId>holymolap-fpc</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 
 		<dependency>
