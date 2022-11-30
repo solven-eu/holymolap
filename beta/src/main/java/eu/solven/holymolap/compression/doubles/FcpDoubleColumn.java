@@ -8,7 +8,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
  * @author Benoit Lacelle
  *
  */
-public class FcpDoubleColumn extends ADoubleCodecCompressedDoubleColumn {
+public class FcpDoubleColumn extends ACodecDoubleList {
 
 	public FcpDoubleColumn(double[] array) {
 		super(new FcpDoubleCodec(), array);

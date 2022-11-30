@@ -11,6 +11,7 @@ import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.solven.holymolap.compression.doubles.ReOrderVariableByteDoubleList;
 import eu.solven.holymolap.primitives.ICompactable;
 import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
@@ -35,6 +36,19 @@ public abstract class ATestCompressedDoubleList {
 			((ICompactable) instance).trim();
 		}
 		return instance;
+	}
+
+	public void checkReadWrite(double... inputs) {
+		DoubleList c = new ReOrderVariableByteDoubleList(inputs);
+
+		for (int i = 0; i < inputs.length; i++) {
+			double input = inputs[i];
+			if (Double.isNaN(input)) {
+				Assertions.assertThat(c.getDouble(i)).isNaN();
+			} else {
+				Assertions.assertThat(c.getDouble(i)).isEqualTo(input);
+			}
+		}
 	}
 
 	@Test

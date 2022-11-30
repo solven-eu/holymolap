@@ -1,10 +1,11 @@
-package eu.solven.holymolap.immutable.column;
+package eu.solven.holymolap.compression.doubles;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import eu.solven.holymolap.compression.doubles.DictionaryDoubleList;
-import eu.solven.holymolap.compression.doubles.ReOrderVariableByteDoubleColumn;
+import eu.solven.holymolap.cube.IMayCache;
+import eu.solven.holymolap.immutable.column.ImmutableDoubleAggregatesColumn;
 import eu.solven.holymolap.primitives.ICompactable;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.doubles.AbstractDoubleList;
@@ -12,11 +13,13 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 /**
+ * An immutable {@link DoubleList} which can be compressed (with {@link ICompactable}) through multiple schemes.
  * 
  * @author Benoit Lacelle
  *
  */
-public class DynamicSchemeDoubleList extends AbstractDoubleList implements ICompactable, IHasMemoryFootprint {
+public class DynamicSchemeDoubleList extends AbstractDoubleList
+		implements ICompactable, IMayCache, IHasMemoryFootprint {
 	protected final AtomicReference<DoubleList> underlying = new AtomicReference<>();
 	protected final AtomicBoolean trimmed = new AtomicBoolean(false);
 
@@ -30,6 +33,11 @@ public class DynamicSchemeDoubleList extends AbstractDoubleList implements IComp
 
 	public DynamicSchemeDoubleList(double[] doubles) {
 		this(new DoubleArrayList(doubles));
+	}
+
+	@Override
+	public long getSizeInBytes() {
+		return ImmutableDoubleAggregatesColumn.estimateDoubleListFootprint(underlying.get());
 	}
 
 	@Override
@@ -54,26 +62,41 @@ public class DynamicSchemeDoubleList extends AbstractDoubleList implements IComp
 		long currentSize = ImmutableDoubleAggregatesColumn.estimateDoubleListFootprint(currentUnderlying);
 
 		if (!(currentUnderlying instanceof DictionaryDoubleList)) {
-			DictionaryDoubleList lowDistincts = new DictionaryDoubleList(currentUnderlying.toDoubleArray());
-			long candidateSize = ImmutableDoubleAggregatesColumn.estimateDoubleListFootprint(lowDistincts);
+			Optional<DictionaryDoubleList> optLowDistincts =
+					DictionaryDoubleList.tryMake(currentUnderlying.toDoubleArray());
 
-			if (candidateSize < currentSize) {
-				underlying.compareAndSet(currentUnderlying, lowDistincts);
-				currentSize = candidateSize;
+			if (optLowDistincts.isPresent()) {
+				DictionaryDoubleList lowDistincts = optLowDistincts.get();
+				long candidateSize = ImmutableDoubleAggregatesColumn.estimateDoubleListFootprint(lowDistincts);
+
+				if (candidateSize < currentSize) {
+					underlying.compareAndSet(currentUnderlying, lowDistincts);
+					currentUnderlying = lowDistincts;
+					currentSize = candidateSize;
+				}
 			}
 		}
 
-		if (!(currentUnderlying instanceof ReOrderVariableByteDoubleColumn)) {
-			ReOrderVariableByteDoubleColumn reorderVariableByteList =
-					new ReOrderVariableByteDoubleColumn(currentUnderlying.toDoubleArray());
+		if (!(currentUnderlying instanceof ReOrderVariableByteDoubleList)) {
+			ReOrderVariableByteDoubleList reorderVariableByteList =
+					new ReOrderVariableByteDoubleList(currentUnderlying.toDoubleArray());
 			long candidateSize = ImmutableDoubleAggregatesColumn.estimateDoubleListFootprint(reorderVariableByteList);
 
 			if (candidateSize < currentSize) {
 				underlying.compareAndSet(currentUnderlying, reorderVariableByteList);
+				currentUnderlying = reorderVariableByteList;
 				currentSize = candidateSize;
 			}
 		}
 
 		trimmed.set(true);
+	}
+
+	@Override
+	public void invalidateCache() {
+		DoubleList currentUnderlying = underlying.get();
+		if (currentUnderlying instanceof IMayCache) {
+			((IMayCache) currentUnderlying).invalidateCache();
+		}
 	}
 }

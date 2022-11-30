@@ -23,8 +23,8 @@ import me.lemire.integercompression.IntCompressor;
  *
  */
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
-public class DoubleAsFourBytesDoubleColumn extends AbstractDoubleList {
-	private static final Logger LOGGER = LoggerFactory.getLogger(DoubleAsFourBytesDoubleColumn.class);
+public class DoubleAsFourBytesDoubleList extends AbstractDoubleList {
+	private static final Logger LOGGER = LoggerFactory.getLogger(DoubleAsFourBytesDoubleList.class);
 
 	private static final int CHUNKS_PER_LONG = 4;
 	private static final int BYTES_PER_LONG = 8;
@@ -38,7 +38,7 @@ public class DoubleAsFourBytesDoubleColumn extends AbstractDoubleList {
 	final transient IntCompressor intCompressor = new IntCompressor();
 	final List<int[]> compressedIntegers;
 
-	public DoubleAsFourBytesDoubleColumn(double[] array) {
+	public DoubleAsFourBytesDoubleList(double[] array) {
 		this.size = array.length;
 
 		final List<ByteBuffer> byteBuffers;

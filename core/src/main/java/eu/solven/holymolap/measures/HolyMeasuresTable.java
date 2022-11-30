@@ -5,10 +5,12 @@ import java.util.PrimitiveIterator;
 
 import com.google.common.collect.ImmutableList;
 
+import eu.solven.holymolap.cube.IMayCache;
 import eu.solven.holymolap.immutable.column.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.immutable.column.IScannableLongMeasureColumn;
 import eu.solven.holymolap.immutable.column.IScannableMeasureColumn;
 import eu.solven.holymolap.measures.definition.EmptyHolyMeasureTableDefinition;
+import eu.solven.holymolap.primitives.ICompactable;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.doubles.DoubleIterators;
 import it.unimi.dsi.fastutil.longs.LongIterator;
@@ -19,7 +21,7 @@ import it.unimi.dsi.fastutil.longs.LongIterators;
  * @author Benoit Lacelle
  *
  */
-public class HolyMeasuresTable implements IHolyMeasuresTable {
+public class HolyMeasuresTable implements IHolyMeasuresTable, IMayCache, ICompactable {
 	final IHolyMeasuresDefinition definition;
 
 	/**
@@ -45,6 +47,22 @@ public class HolyMeasuresTable implements IHolyMeasuresTable {
 		sizeInBytes += axisIndexToAggregates.stream().mapToLong(IHasMemoryFootprint::getSizeInBytes).sum();
 
 		return sizeInBytes;
+	}
+
+	@Override
+	public void invalidateCache() {
+		axisIndexToAggregates.stream()
+				.filter(c -> c instanceof IMayCache)
+				.map(c -> (IMayCache) c)
+				.forEach(IMayCache::invalidateCache);
+	}
+
+	@Override
+	public void trim() {
+		axisIndexToAggregates.stream()
+				.filter(c -> c instanceof ICompactable)
+				.map(c -> (ICompactable) c)
+				.forEach(ICompactable::trim);
 	}
 
 	@Override

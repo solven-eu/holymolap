@@ -8,9 +8,9 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
  * @author Benoit Lacelle
  *
  */
-public class ReOrderVariableByteDoubleColumn extends ADoubleCodecCompressedDoubleColumn {
+public class GZipDoubleList extends ACodecDoubleList {
 
-	public ReOrderVariableByteDoubleColumn(double[] array) {
-		super(new ReOrderVariableByteDoubleCodec(), array);
+	public GZipDoubleList(double[] array) {
+		super(new GZipDoubleCodec(), array);
 	}
 }

@@ -1,29 +1,15 @@
 package eu.solven.holymolap.cube.immutable.column;
 
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
-import eu.solven.holymolap.compression.doubles.DoubleAsFourBytesDoubleColumn;
+import eu.solven.holymolap.compression.doubles.DoubleAsFourBytesDoubleList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 public class TestCompressedDoubleColumn extends ATestCompressedDoubleList {
 
 	@Override
 	public Class<? extends DoubleList> getClazz() {
-		return DoubleAsFourBytesDoubleColumn.class;
-	}
-
-	private void checkReadWrite(double... inputs) {
-		DoubleList c = new DoubleAsFourBytesDoubleColumn(inputs);
-
-		for (int i = 0; i < inputs.length; i++) {
-			double input = inputs[i];
-			if (Double.isNaN(input)) {
-				Assertions.assertThat(c.getDouble(i)).isNaN();
-			} else {
-				Assertions.assertThat(c.getDouble(i)).isEqualTo(input);
-			}
-		}
+		return DoubleAsFourBytesDoubleList.class;
 	}
 
 	@Override

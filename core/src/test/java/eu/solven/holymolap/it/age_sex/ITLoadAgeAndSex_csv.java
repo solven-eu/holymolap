@@ -71,13 +71,27 @@ public class ITLoadAgeAndSex_csv {
 		}.loadSingleCsvFile(file);
 
 		IHolyCube holyCube = loadResult.getHolyCube();
-		long sizeInBytes = holyCube.getSizeInBytes();
-		long deepSize = PepperFootprintHelper.deepSize(holyCube);
-		LOGGER.info("CSV.length={} is represented by holyCube.length={} holyCube.deepSize={}",
-				PepperLogHelper.humanBytes(file.length()),
-				PepperLogHelper.humanBytes(sizeInBytes),
-				PepperLogHelper.humanBytes(deepSize));
+		{
+			long sizeInBytes = holyCube.getSizeInBytes();
+			long deepSize = PepperFootprintHelper.deepSize(holyCube);
+			LOGGER.info("(Before .trim()) CSV.length={} is represented by holyCube.length={} holyCube.deepSize={}",
+					PepperLogHelper.humanBytes(file.length()),
+					PepperLogHelper.humanBytes(sizeInBytes),
+					PepperLogHelper.humanBytes(deepSize));
+		}
+		sanityChecks(holyCube, loadResult.getNumRows());
 
+		holyCube.trim();
+		// Invalidate cache after trim, as some cache may help the trim
+		holyCube.invalidateCache();
+		{
+			long sizeInBytes = holyCube.getSizeInBytes();
+			long deepSize = PepperFootprintHelper.deepSize(holyCube);
+			LOGGER.info("(After .trim()) CSV.length={} is represented by holyCube.length={} holyCube.deepSize={}",
+					PepperLogHelper.humanBytes(file.length()),
+					PepperLogHelper.humanBytes(sizeInBytes),
+					PepperLogHelper.humanBytes(deepSize));
+		}
 		sanityChecks(holyCube, loadResult.getNumRows());
 
 		generateCellSet(holyCube.getCellSet().getAxesWithCoordinates().axes().size(), holyCube.getCellSet().getTable());
@@ -179,6 +193,14 @@ public class ITLoadAgeAndSex_csv {
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
 					AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
 			LOGGER.info("Total records by '{}': {}", wildcard, result);
+		}
+
+		SimpleAggregationQuery sumCounts = AggregateQueryBuilder.grandTotal().sum("count").build();
+		{
+			String wildcard = "Sex";
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
+					AggregateQueryBuilder.edit(sumCounts).addWildcard(wildcard).build());
+			LOGGER.info("SUM(count) by '{}': {}", wildcard, result);
 		}
 	}
 

@@ -8,6 +8,7 @@ import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.cube.composite.CompositeHolyCube;
 import eu.solven.holymolap.cube.composite.ICompositeHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
+import eu.solven.holymolap.primitives.ICompactable;
 import eu.solven.holymolap.stable.v1.IHasFilters;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
@@ -17,7 +18,7 @@ import eu.solven.holymolap.tools.IHasMemoryFootprint;
  * @author Benoit Lacelle
  *
  */
-public interface IHolyCube extends IHasMemoryFootprint, IMayCache {
+public interface IHolyCube extends IHasMemoryFootprint, IMayCache, ICompactable {
 
 	@Deprecated
 	default long getNbRows() {

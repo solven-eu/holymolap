@@ -1,6 +1,6 @@
 package eu.solven.holymolap.cube.immutable.column;
 
-import eu.solven.holymolap.immutable.column.DynamicSchemeDoubleList;
+import eu.solven.holymolap.compression.doubles.DynamicSchemeDoubleList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 public class TestDynamicSchemeImmutableDoubleColumn extends ATestCompressedDoubleList {

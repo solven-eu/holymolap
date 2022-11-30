@@ -20,12 +20,12 @@ import com.esotericsoftware.kryo.serializers.JavaSerializer;
 
 import de.javakaffee.kryoserializers.guava.ImmutableListSerializer;
 import eu.solven.holymolap.cache.CompressedIntArray;
+import eu.solven.holymolap.compression.doubles.DynamicSchemeDoubleList;
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.cellset.HolyBitmapCellMultiSet;
 import eu.solven.holymolap.immutable.axes.AxisWithCoordinates;
 import eu.solven.holymolap.immutable.axis.ImmutableAxisSmallColumn;
-import eu.solven.holymolap.immutable.column.DynamicSchemeDoubleList;
 import eu.solven.holymolap.immutable.column.ImmutableDoubleAggregatesColumn;
 import eu.solven.holymolap.immutable.column.ImmutableLongAggregatesColumn;
 import eu.solven.holymolap.immutable.dictionary.AxisCoordinatesDictionary;

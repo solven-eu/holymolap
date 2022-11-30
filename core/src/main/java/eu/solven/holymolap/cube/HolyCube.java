@@ -17,6 +17,7 @@ import eu.solven.holymolap.immutable.axes.EmptyAxisWithCoordinates;
 import eu.solven.holymolap.immutable.table.EmptyHolyDictionarizedTable;
 import eu.solven.holymolap.measures.EmptyHolyMeasuresTable;
 import eu.solven.holymolap.measures.IHolyMeasuresTable;
+import eu.solven.holymolap.primitives.ICompactable;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
 import eu.solven.holymolap.stable.v1.IHasFilters;
 import eu.solven.holymolap.stable.v1.filters.IAxesFilterAnd;
@@ -70,6 +71,16 @@ public class HolyCube implements IHolyCube {
 		}
 		if (aggregateTable instanceof IMayCache) {
 			((IMayCache) aggregateTable).invalidateCache();
+		}
+	}
+
+	@Override
+	public void trim() {
+		if (cellSet instanceof ICompactable) {
+			((ICompactable) cellSet).trim();
+		}
+		if (aggregateTable instanceof ICompactable) {
+			((ICompactable) aggregateTable).trim();
 		}
 	}
 

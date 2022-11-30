@@ -1,5 +1,13 @@
 package eu.solven.holymolap.primitives;
 
+/**
+ * This interface can be put on any data-structure which can be compacted. Compaction may take different forms: some
+ * array-based may re-allocate a smaller array if the initial one was buffered too large. Others may compress (with any
+ * compression-scheme), hence requiring CPU to later uncompress the data.
+ * 
+ * @author Benoit Lacelle
+ *
+ */
 @Deprecated(since = "beta")
 public interface ICompactable {
 

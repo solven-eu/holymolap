@@ -7,6 +7,8 @@ import java.util.function.LongConsumer;
 
 import com.google.common.primitives.Ints;
 
+import eu.solven.holymolap.cube.IMayCache;
+import eu.solven.holymolap.primitives.ICompactable;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.doubles.AbstractDoubleIterator;
@@ -20,7 +22,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
  *
  */
 // https://lemire.me/blog/2017/11/10/how-should-you-build-a-high-performance-column-store-for-the-2020s/
-public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureColumn {
+public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureColumn, ICompactable, IMayCache {
 	final DoubleList cellToAggregate;
 	final double neutral;
 
@@ -104,6 +106,20 @@ public class ImmutableDoubleAggregatesColumn implements IScannableDoubleMeasureC
 			sizeInBytes += IPepperMemoryConstants.DOUBLE * doubleList.size();
 		}
 		return sizeInBytes;
+	}
+
+	@Override
+	public void trim() {
+		if (cellToAggregate instanceof ICompactable) {
+			((ICompactable) cellToAggregate).trim();
+		}
+	}
+
+	@Override
+	public void invalidateCache() {
+		if (cellToAggregate instanceof IMayCache) {
+			((IMayCache) cellToAggregate).invalidateCache();
+		}
 	}
 
 }

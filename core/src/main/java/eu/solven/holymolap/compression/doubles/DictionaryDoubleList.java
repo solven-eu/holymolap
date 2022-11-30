@@ -1,6 +1,7 @@
 package eu.solven.holymolap.compression.doubles;
 
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.DoubleStream;
 
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
@@ -14,6 +15,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
  * @author Benoit Lacelle
  *
  */
+// To be memory efficient, we need indexToDouble to be at most 4 times smaller than the input array
 public class DictionaryDoubleList extends AbstractDoubleList implements IHasMemoryFootprint {
 	final double[] indexToDouble;
 	final int[] rowToIndex;
@@ -23,6 +25,23 @@ public class DictionaryDoubleList extends AbstractDoubleList implements IHasMemo
 		// It will enable better compression of the rowToIndex structure
 		indexToDouble = DoubleStream.of(array).distinct().toArray();
 		rowToIndex = DoubleStream.of(array).mapToInt(d -> Arrays.binarySearch(indexToDouble, d)).toArray();
+	}
+
+	public static Optional<DictionaryDoubleList> tryMake(double[] array) {
+		int safeLimit = 16 * 1024;
+		if (array.length < safeLimit) {
+			// It is small enough: we can safely return an instance
+			return Optional.of(new DictionaryDoubleList(array));
+		}
+
+		// The input array is getting big: just materializing the distinct set can be expensive
+		long disctintCountWithin1k = DoubleStream.of(array).limit(safeLimit).distinct().count();
+		if (disctintCountWithin1k >= disctintCountWithin1k * 0.01) {
+			// There is more than 1% of variance: we prefer not trying materializing the DictionaryDoubleList
+			return Optional.empty();
+		}
+
+		return Optional.of(new DictionaryDoubleList(array));
 	}
 
 	@Override

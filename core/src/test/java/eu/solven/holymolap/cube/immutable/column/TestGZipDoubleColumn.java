@@ -2,54 +2,54 @@ package eu.solven.holymolap.cube.immutable.column;
 
 import org.junit.Test;
 
-import eu.solven.holymolap.compression.doubles.ReOrderVariableByteDoubleList;
+import eu.solven.holymolap.compression.doubles.GZipDoubleList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 
-public class TestReOrderVariableByteDoubleColumn extends ATestCompressedDoubleList {
+public class TestGZipDoubleColumn extends ATestCompressedDoubleList {
 
 	@Override
 	public Class<? extends DoubleList> getClazz() {
-		return ReOrderVariableByteDoubleList.class;
+		return GZipDoubleList.class;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMin_lowDistinct() {
-		return 4_000;
+		return 100;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMax_lowDistinct() {
-		return 4_500;
+		return 200;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMin_aroundOne() {
-		return 8_000;
+		return 7_500;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMax_aroundOne() {
-		return 8_500;
+		return 8_000;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMin_wereFloats() {
-		return 4_000;
-	}
-
-	@Override
-	protected long expectedHeapConsuptionMax_wereFloats() {
 		return 4_500;
 	}
 
 	@Override
+	protected long expectedHeapConsuptionMax_wereFloats() {
+		return 5_000;
+	}
+
+	@Override
 	protected long expectedHeapConsuptionMin_positiveInts() {
-		return 1_000;
+		return 2_000;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMax_positiveInts() {
-		return 1_500;
+		return 2_500;
 	}
 
 	@Test
