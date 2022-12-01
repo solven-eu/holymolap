@@ -5,11 +5,11 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 
 public class HolyCubeRecord implements IHolyCubeRecord {
 	final IHolyRecord cellsetRecord;
-	final IHolyRecord aggregateTableRecord;
+	final IHolyMeasuresRecord measuresRecord;
 
-	public HolyCubeRecord(IHolyRecord cellsetRecord, IHolyRecord aggregateTableRecord) {
+	public HolyCubeRecord(IHolyRecord cellsetRecord, IHolyMeasuresRecord measuresRecord) {
 		this.cellsetRecord = cellsetRecord;
-		this.aggregateTableRecord = aggregateTableRecord;
+		this.measuresRecord = measuresRecord;
 	}
 
 	@Override
@@ -18,8 +18,8 @@ public class HolyCubeRecord implements IHolyCubeRecord {
 	}
 
 	@Override
-	public IHolyRecord getAggregateTableRecord() {
-		return aggregateTableRecord;
+	public IHolyMeasuresRecord getMeasuresTableRecord() {
+		return measuresRecord;
 	}
 
 	@Override
@@ -27,7 +27,7 @@ public class HolyCubeRecord implements IHolyCubeRecord {
 		ToStringHelper toStringhelper = MoreObjects.toStringHelper(this);
 
 		toStringhelper.add("cell", cellsetRecord.toString());
-		toStringhelper.add("measures", aggregateTableRecord.toString());
+		toStringhelper.add("measures", measuresRecord.toString());
 
 		return toStringhelper.toString();
 	}

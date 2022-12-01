@@ -4,6 +4,7 @@ import java.util.stream.Stream;
 
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
+import eu.solven.holymolap.sink.record.IHolyMeasuresRecordsTable;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 
 /**
@@ -16,5 +17,5 @@ public interface IMutableHolyCube extends ICloseableToHolyCube {
 
 	void acceptRowToCell(Stream<? extends IHolyCubeRecord> toAdd);
 
-	void acceptRowToCell(IHolyRecordsTable cellsToAdd, IHolyRecordsTable measuresToAdd);
+	void acceptRowToCell(IHolyRecordsTable cellsToAdd, IHolyMeasuresRecordsTable measuresToAdd);
 }

@@ -3,12 +3,19 @@ package eu.solven.holymolap.sink.record;
 import java.util.Collections;
 import java.util.List;
 
-public class EmptyHolyRecord implements IHolyRecord {
+import eu.solven.holymolap.stable.v1.IMeasuredAxis;
+
+public class EmptyHolyRecord implements IHolyRecord, IHolyMeasuresRecord {
 
 	public static EmptyHolyRecord INSTANCE = new EmptyHolyRecord();
 
 	@Override
 	public List<String> getAxes() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public List<IMeasuredAxis> getMeasuredAxes() {
 		return Collections.emptyList();
 	}
 

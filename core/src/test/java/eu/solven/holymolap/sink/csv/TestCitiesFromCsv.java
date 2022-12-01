@@ -78,7 +78,7 @@ public class TestCitiesFromCsv {
 						new CsvHolyRecordsTable(axes, numRows, csvResult, Predicates.not(measuredAxesNames::contains));
 				IHolyRecordsTable measuresTable =
 						new CsvHolyRecordsTable(axes, numRows, csvResult, measuredAxesNames::contains);
-				sink.sink(cellsTable, measuresTable);
+				sink.sink(cellsTable, new DenormalizeHolyMeasuresRecordsTable(measuresTable, measures));
 			}
 
 			IHolyCube holyCube = sink.closeToHolyCube();
@@ -113,7 +113,7 @@ public class TestCitiesFromCsv {
 					String wildcard = "State";
 					NavigableMap<? extends NavigableMap<?, ?>, ?> result =
 							AggregateHelper.singleMeasureToNavigableMap(holyCube,
-									AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
+									AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 					// LOGGER.info("Total records by '{}': {}", wildcard, result);
 
 					Assertions.assertThat(result.get(ImmutableSortedMap.of(wildcard, "AL"))).isEqualTo(2L);

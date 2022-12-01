@@ -108,7 +108,7 @@ public class ITLoadNycTaxiRides_Arrow_Single {
 			String wildcard = "VendorID";
 			NavigableMap<? extends NavigableMap<String, ?>, ?> result =
 					AggregateHelper.singleMeasureToNavigableMap(holyCube,
-							AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
+							AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 			LOGGER.info("Total records by '{}': {}", wildcard, result);
 
 			Assertions.assertThat(result.get(ImmutableSortedMap.of(wildcard, 1L))).isEqualTo(742_273L);

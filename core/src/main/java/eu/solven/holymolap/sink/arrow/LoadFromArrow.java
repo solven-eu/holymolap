@@ -33,6 +33,7 @@ import eu.solven.holymolap.measures.operator.IStandardOperators;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.LoadingContext;
+import eu.solven.holymolap.sink.csv.DenormalizeHolyMeasuresRecordsTable;
 import eu.solven.holymolap.sink.csv.LoadResult;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
@@ -72,6 +73,7 @@ public class LoadFromArrow {
 				ArrowReader reader = scanner.scanBatches()) {
 
 			HolyCubeSink sink = null;
+			IHolyMeasuresDefinition measures = null;
 
 			long recordsCount = 0L;
 
@@ -80,7 +82,7 @@ public class LoadFromArrow {
 					Schema arrowSchema = root.getSchema();
 
 					if (sink == null) {
-						IHolyMeasuresDefinition measures = defineMeasures(arrowSchema);
+						measures = defineMeasures(arrowSchema);
 						sink = new HolyCubeSink(loadingContext, measures);
 					}
 
@@ -101,7 +103,7 @@ public class LoadFromArrow {
 					IHolyRecordsTable measuresToAdd =
 							new ArrowHolyRecordsTable(axes, rowCount, fieldVectors, Predicates.not(axes::contains));
 
-					sink.sink(cellsToAdd, measuresToAdd);
+					sink.sink(cellsToAdd, new DenormalizeHolyMeasuresRecordsTable(measuresToAdd, measures));
 				}
 			}
 

@@ -84,7 +84,7 @@ public class TestGradesFromCsv {
 						new CsvHolyRecordsTable(axes, numRows, csvResult, Predicates.not(measuredAxesNames::contains));
 				IHolyRecordsTable measuresTable =
 						new CsvHolyRecordsTable(axes, numRows, csvResult, measuredAxesNames::contains);
-				sink.sink(cellsTable, measuresTable);
+				sink.sink(cellsTable, new DenormalizeHolyMeasuresRecordsTable(measuresTable, measures));
 			}
 
 			IHolyCube holyCube = sink.closeToHolyCube();
@@ -98,7 +98,7 @@ public class TestGradesFromCsv {
 					PepperLogHelper.humanBytes(deepSize));
 
 			{
-				// Check eachCSV columns are an axis
+				// Check each CSV column is an axis
 				Assertions.assertThat(holyCube.getCellSet().getAxesWithCoordinates().axes())
 						.containsExactlyElementsOf(Stream.of(csvResult.columns())
 								.map(rc -> rc.name())
@@ -119,7 +119,7 @@ public class TestGradesFromCsv {
 					String wildcard = "Grade";
 					NavigableMap<? extends NavigableMap<?, ?>, ?> result =
 							AggregateHelper.singleMeasureToNavigableMap(holyCube,
-									AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
+									AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 					LOGGER.info("Total records by '{}': {}", wildcard, result);
 
 					Assertions.assertThat(result.get(ImmutableSortedMap.of(wildcard, "B-"))).isEqualTo(3L);
@@ -128,7 +128,7 @@ public class TestGradesFromCsv {
 				{
 					SimpleAggregationQuery queryAvg = AggregateQueryBuilder.grandTotal()
 							.addFilter("Grade", "B-")
-							.addAggregation(test1Avg)
+							.addAggregations(test1Avg)
 							.build();
 					Optional<?> resultAvg = AggregateHelper.singleMeasureCell(holyCube, queryAvg);
 					LOGGER.info("query={} -> {}", queryAvg, resultAvg);
@@ -136,7 +136,7 @@ public class TestGradesFromCsv {
 
 					SimpleAggregationQuery querySum = AggregateQueryBuilder.grandTotal()
 							.addFilter("Grade", "B-")
-							.addAggregation(test1Sum)
+							.addAggregations(test1Sum)
 							.build();
 					Optional<?> resultSum = AggregateHelper.singleMeasureCell(holyCube, querySum);
 					LOGGER.info("query={} -> {}", querySum, resultSum);
@@ -144,7 +144,7 @@ public class TestGradesFromCsv {
 
 					SimpleAggregationQuery queryCount = AggregateQueryBuilder.grandTotal()
 							.addFilter("Grade", "B-")
-							.addAggregation(ICountMeasuresConstants.COUNT_MEASURED_AXIS)
+							.addAggregations(ICountMeasuresConstants.COUNT_MEASURED_AXIS)
 							.build();
 					Optional<?> resultCount = AggregateHelper.singleMeasureCell(holyCube, queryCount);
 					LOGGER.info("query={} -> {}", queryCount, resultCount);

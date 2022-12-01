@@ -93,8 +93,11 @@ public class ITLoadAgeAndSex_csv {
 					PepperLogHelper.humanBytes(deepSize));
 		}
 		sanityChecks(holyCube, loadResult.getNumRows());
+		
+//		holyCube.reduceBy()
 
-		generateCellSet(holyCube.getCellSet().getAxesWithCoordinates().axes().size(), holyCube.getCellSet().getTable());
+		// generateCellSet(holyCube.getCellSet().getAxesWithCoordinates().axes().size(),
+		// holyCube.getCellSet().getTable());
 	}
 
 	private static void generateCellSet(int nbAxes, IHolyDictionarizedTable table) throws IOException {
@@ -191,7 +194,7 @@ public class ITLoadAgeAndSex_csv {
 		{
 			String wildcard = "Sex";
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
-					AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
+					AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 			LOGGER.info("Total records by '{}': {}", wildcard, result);
 		}
 
@@ -199,7 +202,7 @@ public class ITLoadAgeAndSex_csv {
 		{
 			String wildcard = "Sex";
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
-					AggregateQueryBuilder.edit(sumCounts).addWildcard(wildcard).build());
+					AggregateQueryBuilder.edit(sumCounts).addWildcards(wildcard).build());
 			LOGGER.info("SUM(count) by '{}': {}", wildcard, result);
 		}
 	}

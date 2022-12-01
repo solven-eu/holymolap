@@ -1,11 +1,13 @@
 package eu.solven.holymolap.query;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 
 import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.stable.v1.IAxesFilter;
@@ -21,16 +23,20 @@ public class AggregateQueryBuilder {
 	protected final List<IAxesFilter> andFilters = new CopyOnWriteArrayList<>();
 
 	// By default, no aggregation
-	protected final List<IMeasuredAxis> aggregatesKeys = new CopyOnWriteArrayList<>();
+	protected final List<IMeasuredAxis> measures = new CopyOnWriteArrayList<>();
 
-	public AggregateQueryBuilder addWildcard(String wildcard) {
-		wildcards.add(wildcard);
+	public AggregateQueryBuilder addWildcards(String wildcard, String... more) {
+		return addWildcards(Lists.asList(wildcard, more));
+	}
+
+	public AggregateQueryBuilder addWildcards(Iterable<String> moreWildcards) {
+		Iterables.addAll(this.wildcards, moreWildcards);
 
 		return this;
 	}
 
-	public AggregateQueryBuilder andFilter(IAxesFilter filter) {
-		andFilters.add(filter);
+	public AggregateQueryBuilder andFilter(IAxesFilter moreAndFilter) {
+		andFilters.add(moreAndFilter);
 
 		return this;
 	}
@@ -39,11 +45,14 @@ public class AggregateQueryBuilder {
 		return andFilter(new AxisEqualsFilter(key, value));
 	}
 
-	public AggregateQueryBuilder addAggregation(IMeasuredAxis aggregatedAxis, IMeasuredAxis... more) {
-		aggregatesKeys.add(aggregatedAxis);
-		aggregatesKeys.addAll(Arrays.asList(more));
+	public AggregateQueryBuilder addAggregations(Iterable<IMeasuredAxis> moreMeasures) {
+		Iterables.addAll(this.measures, moreMeasures);
 
 		return this;
+	}
+
+	public AggregateQueryBuilder addAggregations(IMeasuredAxis aggregatedAxis, IMeasuredAxis... more) {
+		return addAggregations(Lists.asList(aggregatedAxis, more));
 	}
 
 	/**
@@ -54,7 +63,7 @@ public class AggregateQueryBuilder {
 	 * @return current builder.
 	 */
 	public AggregateQueryBuilder sum(String axis) {
-		return addAggregation(OperatorFactory.sum(axis));
+		return addAggregations(OperatorFactory.sum(axis));
 	}
 
 	/**
@@ -65,17 +74,17 @@ public class AggregateQueryBuilder {
 	 * @return current builder.
 	 */
 	public AggregateQueryBuilder count(String axis) {
-		return addAggregation(OperatorFactory.count(axis));
+		return addAggregations(OperatorFactory.count(axis));
 	}
 
 	public AggregateQueryBuilder cellCount(String axis) {
-		return addAggregation(OperatorFactory.cellCount(axis));
+		return addAggregations(OperatorFactory.cellCount(axis));
 	}
 
 	public SimpleAggregationQuery build() {
 		SimpleAggregationQuery query = new SimpleAggregationQuery(() -> new AxesFilterAnd(andFilters),
 				() -> new ArrayList<>(wildcards),
-				() -> aggregatesKeys);
+				() -> measures);
 
 		return query;
 	}
@@ -92,35 +101,27 @@ public class AggregateQueryBuilder {
 		return queryBuilder;
 	}
 
-	public static AggregateQueryBuilder wildcard(String wildcard) {
-		AggregateQueryBuilder queryBuilder = new AggregateQueryBuilder();
-
-		queryBuilder.addWildcard(wildcard);
-
-		return queryBuilder;
+	public static AggregateQueryBuilder wildcards(String wildcard, String... more) {
+		return wildcards(Lists.asList(wildcard, more));
 	}
 
 	public static AggregateQueryBuilder wildcards(Iterable<String> wildcards) {
 		AggregateQueryBuilder queryBuilder = new AggregateQueryBuilder();
 
-		for (String wildcard : wildcards) {
-			queryBuilder.addWildcard(wildcard);
-		}
-
-		return queryBuilder;
+		return queryBuilder.addWildcards(wildcards);
 	}
 
 	public static AggregateQueryBuilder edit(SimpleAggregationQuery base) {
 		AggregateQueryBuilder queryBuilder = new AggregateQueryBuilder();
 
 		for (IMeasuredAxis wildcard : base.getMeasures()) {
-			queryBuilder.addAggregation(wildcard);
+			queryBuilder.addAggregations(wildcard);
 		}
 
 		queryBuilder.andFilter(base.getFilters());
 
 		for (String wildcard : base.getAxes()) {
-			queryBuilder.addWildcard(wildcard);
+			queryBuilder.addWildcards(wildcard);
 		}
 
 		return queryBuilder;

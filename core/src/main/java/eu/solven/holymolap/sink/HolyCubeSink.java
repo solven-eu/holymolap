@@ -14,6 +14,7 @@ import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.mutable.cube.IMutableHolyCube;
 import eu.solven.holymolap.mutable.cube.MutableHolyCube;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
+import eu.solven.holymolap.sink.record.IHolyMeasuresRecordsTable;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 
 public class HolyCubeSink implements IHolyCubeSink {
@@ -70,7 +71,7 @@ public class HolyCubeSink implements IHolyCubeSink {
 	}
 
 	@Override
-	public IHolyCubeSink sink(IHolyRecordsTable cellsToAdd, IHolyRecordsTable measuresToAdd) {
+	public IHolyCubeSink sink(IHolyRecordsTable cellsToAdd, IHolyMeasuresRecordsTable measuresToAdd) {
 		IMutableHolyCube mutableHolyCube = getOptInit();
 
 		mutableHolyCube.acceptRowToCell(cellsToAdd, measuresToAdd);

@@ -88,7 +88,7 @@ public class LoadFromCsv {
 
 				IHolyRecordsTable cleanMeasuresTable = cleanMeasures(measuresTable);
 
-				sink.sink(cellsTable, cleanMeasuresTable);
+				sink.sink(cellsTable, new DenormalizeHolyMeasuresRecordsTable(cleanMeasuresTable, measures));
 			}
 
 			holyCube = sink.closeToHolyCube();

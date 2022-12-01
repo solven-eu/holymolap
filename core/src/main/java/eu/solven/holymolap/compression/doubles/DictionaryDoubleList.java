@@ -17,14 +17,14 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
  */
 // To be memory efficient, we need indexToDouble to be at most 4 times smaller than the input array
 public class DictionaryDoubleList extends AbstractDoubleList implements IHasMemoryFootprint {
-	final double[] indexToDouble;
-	final int[] rowToIndex;
+	final double[] refToDouble;
+	final int[] rowToRef;
 
 	public DictionaryDoubleList(double[] array) {
 		// TODO We should ensure most frequent doubles are first
 		// It will enable better compression of the rowToIndex structure
-		indexToDouble = DoubleStream.of(array).distinct().toArray();
-		rowToIndex = DoubleStream.of(array).mapToInt(d -> Arrays.binarySearch(indexToDouble, d)).toArray();
+		refToDouble = DoubleStream.of(array).distinct().sorted().toArray();
+		rowToRef = DoubleStream.of(array).mapToInt(d -> Arrays.binarySearch(refToDouble, d)).toArray();
 	}
 
 	public static Optional<DictionaryDoubleList> tryMake(double[] array) {
@@ -46,20 +46,20 @@ public class DictionaryDoubleList extends AbstractDoubleList implements IHasMemo
 
 	@Override
 	public double getDouble(int index) {
-		return indexToDouble[index];
+		return refToDouble[rowToRef[index]];
 	}
 
 	@Override
 	public int size() {
-		return rowToIndex.length;
+		return rowToRef.length;
 	}
 
 	@Override
 	public long getSizeInBytes() {
 		long size = 0L;
 
-		size += IPepperMemoryConstants.INT * rowToIndex.length;
-		size += IPepperMemoryConstants.DOUBLE * indexToDouble.length;
+		size += IPepperMemoryConstants.INT * rowToRef.length;
+		size += IPepperMemoryConstants.DOUBLE * refToDouble.length;
 
 		return size;
 	}

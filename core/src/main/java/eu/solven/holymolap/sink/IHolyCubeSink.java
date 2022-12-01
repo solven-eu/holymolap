@@ -11,10 +11,12 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.mutable.cube.ICloseableToHolyCube;
-import eu.solven.holymolap.sink.record.FilterInHolyRecord;
+import eu.solven.holymolap.sink.record.CellsetToMeasuresHolyRecord;
 import eu.solven.holymolap.sink.record.FilterOutHolyRecord;
 import eu.solven.holymolap.sink.record.HolyCubeRecord;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
+import eu.solven.holymolap.sink.record.IHolyMeasuresRecord;
+import eu.solven.holymolap.sink.record.IHolyMeasuresRecordsTable;
 import eu.solven.holymolap.sink.record.IHolyRecord;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 
@@ -50,8 +52,9 @@ public interface IHolyCubeSink extends ICloseableToHolyCube {
 				measures.measures().stream().map(IHolyMeasureColumnMeta::getColumn).collect(Collectors.toSet());
 
 		// By default, we consider as cellAxes only if not a measure column
-		FilterOutHolyRecord cellRecord = new FilterOutHolyRecord(r, measuredAxes);
-		FilterInHolyRecord measuresRecord = new FilterInHolyRecord(r, measuredAxes);
+		IHolyRecord cellRecord = new FilterOutHolyRecord(r, measuredAxes);
+
+		IHolyMeasuresRecord measuresRecord = new CellsetToMeasuresHolyRecord(r, measures);
 
 		return new HolyCubeRecord(cellRecord, measuresRecord);
 	}
@@ -70,6 +73,6 @@ public interface IHolyCubeSink extends ICloseableToHolyCube {
 
 	IHolyCubeSink sink(Stream<? extends IHolyCubeRecord> toAdd);
 
-	IHolyCubeSink sink(IHolyRecordsTable cellsToAdd, IHolyRecordsTable measuresToAdd);
+	IHolyCubeSink sink(IHolyRecordsTable cellsToAdd, IHolyMeasuresRecordsTable measuresToAdd);
 
 }

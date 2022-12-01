@@ -3,6 +3,7 @@ package eu.solven.holymolap.compression.doubles;
 import java.nio.ByteBuffer;
 
 import eu.solven.holymolap.cache.CompressedDoubleArray;
+import eu.solven.holymolap.cube.IMayCache;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 import it.unimi.dsi.fastutil.doubles.AbstractDoubleList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
@@ -14,7 +15,7 @@ import it.unimi.dsi.fastutil.doubles.DoubleList;
  *
  */
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
-public class ACodecDoubleList extends AbstractDoubleList implements IHasMemoryFootprint {
+public class ACodecDoubleList extends AbstractDoubleList implements IHasMemoryFootprint, IMayCache {
 	final int size;
 
 	final CompressedDoubleArray compressedArray;
@@ -48,5 +49,10 @@ public class ACodecDoubleList extends AbstractDoubleList implements IHasMemoryFo
 	@Override
 	public long getSizeInBytes() {
 		return compressedArray.getSizeInBytes();
+	}
+
+	@Override
+	public void invalidateCache() {
+		compressedArray.invalidateCache();
 	}
 }

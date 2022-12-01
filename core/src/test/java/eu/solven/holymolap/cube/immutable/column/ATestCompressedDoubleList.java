@@ -11,7 +11,7 @@ import org.openjdk.jol.info.GraphLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.solven.holymolap.compression.doubles.ReOrderVariableByteDoubleList;
+import eu.solven.holymolap.cube.IMayCache;
 import eu.solven.holymolap.primitives.ICompactable;
 import eu.solven.pepper.memory.IPepperMemoryConstants;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
@@ -35,11 +35,14 @@ public abstract class ATestCompressedDoubleList {
 		if (instance instanceof ICompactable) {
 			((ICompactable) instance).trim();
 		}
+		if (instance instanceof IMayCache) {
+			((IMayCache) instance).invalidateCache();
+		}
 		return instance;
 	}
 
 	public void checkReadWrite(double... inputs) {
-		DoubleList c = new ReOrderVariableByteDoubleList(inputs);
+		DoubleList c = makeRawInstance(inputs);
 
 		for (int i = 0; i < inputs.length; i++) {
 			double input = inputs[i];
@@ -49,6 +52,47 @@ public abstract class ATestCompressedDoubleList {
 				Assertions.assertThat(c.getDouble(i)).isEqualTo(input);
 			}
 		}
+	}
+
+	@Test
+	public void testBasics_singleValue() {
+		checkReadWrite(0D);
+		checkReadWrite(1D);
+		checkReadWrite(-1D);
+
+		checkReadWrite(132.456D);
+		checkReadWrite(-456.123D);
+
+		checkReadWrite(132456789.456789132465789123456789e132D);
+		checkReadWrite(-132456789.456789132465789123456789e132D);
+
+		checkReadWrite(Double.NEGATIVE_INFINITY);
+		checkReadWrite(Double.POSITIVE_INFINITY);
+		checkReadWrite(Double.NaN);
+		checkReadWrite(Double.MIN_NORMAL);
+		checkReadWrite(Double.MIN_VALUE);
+		checkReadWrite(Double.MAX_VALUE);
+	}
+
+	@Test
+	public void testBasics_twoValues() {
+		checkReadWrite(0D, 0D);
+
+		checkReadWrite(0D, 1D);
+		checkReadWrite(1D, -1D);
+		checkReadWrite(-1D, 1D);
+
+		checkReadWrite(132.456D, -456.123D);
+		checkReadWrite(-456.123D, 132.456D);
+
+		checkReadWrite(132456789.456789132465789123456789e132D, -132456789.456789132465789123456789e132D);
+
+		checkReadWrite(1D, Double.NEGATIVE_INFINITY);
+		checkReadWrite(Double.POSITIVE_INFINITY, 1D);
+		checkReadWrite(1D, Double.NaN);
+		checkReadWrite(Double.MIN_NORMAL, 1D);
+		checkReadWrite(1D, Double.MIN_VALUE);
+		checkReadWrite(Double.MAX_VALUE, 1D);
 	}
 
 	@Test

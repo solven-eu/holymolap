@@ -22,14 +22,14 @@ public class ATestAggregation implements IHolyMapDataTestConstants {
 
 	public static SimpleAggregationQuery FILTER_FIRST_KEY =
 			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build();
-	public static SimpleAggregationQuery DD_FIRST_KEY = AggregateQueryBuilder.wildcard(FIRST_KEY).build();
+	public static SimpleAggregationQuery DD_FIRST_KEY = AggregateQueryBuilder.wildcards(FIRST_KEY).build();
 
 	public static SimpleAggregationQuery FILTER_FIRST_FILTER_SECOND_KEY =
 			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addFilter(SECOND_KEY, SECOND_VALUE).build();
 	public static SimpleAggregationQuery DD_FIRST_DD_SECOND_KEY =
-			AggregateQueryBuilder.wildcard(FIRST_KEY).addWildcard(SECOND_KEY).build();
+			AggregateQueryBuilder.wildcards(FIRST_KEY).addWildcards(SECOND_KEY).build();
 	public static SimpleAggregationQuery FILTER_FIRST_DD_SECOND_KEY =
-			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addWildcard(SECOND_KEY).build();
+			AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).addWildcards(SECOND_KEY).build();
 
 	public static List<IAggregationQuery> getAllQueries() {
 		List<IAggregationQuery> queries = new ArrayList<>();

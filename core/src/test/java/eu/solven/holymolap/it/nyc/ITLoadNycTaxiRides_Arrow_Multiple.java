@@ -114,7 +114,7 @@ public class ITLoadNycTaxiRides_Arrow_Multiple {
 			String wildcard = "VendorID";
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
 					AggregateHelper.singleMeasureToNavigableMap(partitionnedCube,
-							AggregateQueryBuilder.edit(countRecords).addWildcard(wildcard).build());
+							AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 			LOGGER.info("Total records by '{}': {}", wildcard, result);
 		}
 	}

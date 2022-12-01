@@ -35,6 +35,8 @@ import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.cellset.IHolyCellMultiSet;
 import eu.solven.holymolap.cube.composite.ICompositeHolyCube;
+import eu.solven.holymolap.factory.HolyDataStructuresFactory;
+import eu.solven.holymolap.factory.IHolyDataStructuresFactory;
 import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
 import eu.solven.holymolap.immutable.axes.IHasNavigableAxes;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
@@ -417,6 +419,13 @@ public class AggregateHelper {
 	}
 
 	public static NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> measuresToNavigableMap(
+			final ICompositeHolyCube compositeCube,
+			final IAggregationQuery query) {
+		return measuresToNavigableMap(new HolyDataStructuresFactory(), compositeCube, query);
+	}
+
+	public static NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> measuresToNavigableMap(
+			IHolyDataStructuresFactory factory,
 			final ICompositeHolyCube compositeCube,
 			final IAggregationQuery query) {
 

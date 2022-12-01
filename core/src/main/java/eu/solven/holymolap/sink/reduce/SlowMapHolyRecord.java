@@ -1,29 +1,26 @@
-package eu.solven.holymolap.sink.record.avro;
+package eu.solven.holymolap.sink.reduce;
 
 import java.util.List;
+import java.util.Map;
 
-import org.apache.avro.generic.GenericRecord;
+import com.google.common.collect.ImmutableList;
 
 import eu.solven.holymolap.sink.record.IHolyRecord;
 import eu.solven.holymolap.sink.record.IHolyRecordVisitor;
 
 /**
- * Converts a {@link GenericRecord} into a {@link IHolyRecord}
+ * Converts a {@link Map} into a {@link IHolyRecord}
  * 
  * @author Benoit Lacelle
  *
  */
-public class ListHolyRecord implements IHolyRecord {
+public class SlowMapHolyRecord implements IHolyRecord {
 	private final List<String> axes;
-	private final List<?> coordinates;
+	private final Map<String, ?> coordinates;
 
-	public ListHolyRecord(List<String> axes, List<?> coordinates) {
-		this.axes = axes;
+	public SlowMapHolyRecord(Map<String, ?> coordinates) {
+		this.axes = ImmutableList.copyOf(coordinates.keySet());
 		this.coordinates = coordinates;
-
-		if (axes.size() != coordinates.size()) {
-			throw new IllegalArgumentException(axes.size() + " != " + coordinates.size());
-		}
 	}
 
 	@Override
@@ -34,13 +31,12 @@ public class ListHolyRecord implements IHolyRecord {
 	@Override
 	public void accept(IHolyRecordVisitor visitor) {
 		for (int i = 0; i < axes.size(); i++) {
-			// String axis = axes.get(i);
-			Object coordinate = coordinates.get(i);
+			String axis = axes.get(i);
+			Object coordinate = coordinates.get(axis);
 
 			if (coordinate instanceof Double) {
 				visitor.onDouble(i, ((Double) coordinate).doubleValue());
 			} else {
-				// tpep_pickup_datetime
 				visitor.onObject(i, coordinate);
 			}
 		}

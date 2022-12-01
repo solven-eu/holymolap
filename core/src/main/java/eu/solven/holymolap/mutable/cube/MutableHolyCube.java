@@ -48,17 +48,15 @@ import eu.solven.holymolap.mutable.axis.IMutableAxisSmallIntDictionary;
 import eu.solven.holymolap.mutable.axis.IProxyForMutableAxisSmallDictionary;
 import eu.solven.holymolap.mutable.axis.MutableAxisColumn;
 import eu.solven.holymolap.mutable.axis.SkippedHeaderRows;
-import eu.solven.holymolap.mutable.cellset.FibonacciHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
 import eu.solven.holymolap.mutable.column.IMutableAggregatesColumn;
 import eu.solven.holymolap.mutable.column.IMutableDoubleAggregatesColumn;
 import eu.solven.holymolap.mutable.column.IMutableLongAggregatesColumn;
-import eu.solven.holymolap.mutable.column.MutableAggregatesColumn;
-import eu.solven.holymolap.mutable.column.MutableDoubleAggregatesColumn;
-import eu.solven.holymolap.mutable.column.MutableLongAggregatesColumn;
 import eu.solven.holymolap.primitives.IntArrayListFastHashCode;
 import eu.solven.holymolap.sink.LoadingContext;
 import eu.solven.holymolap.sink.record.IHolyCubeRecord;
+import eu.solven.holymolap.sink.record.IHolyMeasuresRecord;
+import eu.solven.holymolap.sink.record.IHolyMeasuresRecordsTable;
 import eu.solven.holymolap.sink.record.IHolyRecord;
 import eu.solven.holymolap.sink.record.IHolyRecordsTable;
 import eu.solven.holymolap.stable.v1.IBinaryOperator;
@@ -87,8 +85,8 @@ public class MutableHolyCube implements IMutableHolyCube {
 	final IHolyMeasuresDefinition measuresDefinition;
 	final Map<IMeasuredAxis, IMutableAggregatesColumn> measureToColumn;
 	// final ListMultimap<String, IMutableAggregatesColumn> measuredAxisToColumn;
-	final List<String> sharedAggregatedColumns;
-	final List<List<IMutableAggregatesColumn>> sharedAggregatedColumnToColumns;
+	final List<IMeasuredAxis> orderedMeasuredAxis;
+	final List<IMutableAggregatesColumn> measuredIndexToColumn;
 	final List<IMutableLongAggregatesColumn> countColumns;
 
 	// FIFO: we register axes in encounter order, to keep cellToRow consistent. It may not be lexicographical
@@ -117,18 +115,10 @@ public class MutableHolyCube implements IMutableHolyCube {
 		this.measuresDefinition = measuresDefinition;
 		this.measureToColumn = measureToColumn;
 
-		this.sharedAggregatedColumns = measureToColumn.keySet()
-				.stream()
-				.map(measuredAxis -> measuredAxis.getAxis())
-				.distinct()
+		this.orderedMeasuredAxis = measureToColumn.keySet().stream().distinct().collect(Collectors.toList());
+		this.measuredIndexToColumn = orderedMeasuredAxis.stream()
+				.map(measuredAxis -> measureToColumn.get(measuredAxis))
 				.collect(Collectors.toList());
-		this.sharedAggregatedColumnToColumns = sharedAggregatedColumns.stream().map(sharedAggregatedColumn -> {
-			return measureToColumn.keySet()
-					.stream()
-					.filter(ma -> sharedAggregatedColumn.equals(ma.getAxis()))
-					.map(measureToColumn::get)
-					.collect(Collectors.toList());
-		}).collect(Collectors.toList());
 
 		this.countColumns = measureToColumn.entrySet()
 				.stream()
@@ -212,13 +202,13 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 		int cellIndex = ensureCellRegistration(cellCoordinates);
 
-		contributeToMeasures(toAdd.getAggregateTableRecord(), cellIndex);
+		contributeToMeasures(toAdd.getMeasuresTableRecord(), cellIndex);
 
 		loadingContext.markInsert(1);
 	}
 
 	@Override
-	public void acceptRowToCell(IHolyRecordsTable cellsToAdd, IHolyRecordsTable measuresToAdd) {
+	public void acceptRowToCell(IHolyRecordsTable cellsToAdd, IHolyMeasuresRecordsTable measuresToAdd) {
 		long size = cellsToAdd.size();
 		if (size != measuresToAdd.size()) {
 			throw new IllegalArgumentException("Inconsistency between " + cellsToAdd + " and " + measuresToAdd);
@@ -386,20 +376,20 @@ public class MutableHolyCube implements IMutableHolyCube {
 		return cellIndexesAsList.elements();
 	}
 
-	private void contributeToMeasures(IHolyRecordsTable measuresToAdd, long size, int[] cellIndexes) {
-		List<String> indexToAxis = measuresToAdd.getAxes();
-		int[] recordToCubeIndexes = computeInference(indexToAxis, sharedAggregatedColumns);
+	private void contributeToMeasures(IHolyMeasuresRecordsTable measuresRecordTable, long size, int[] cellIndexes) {
+		List<IMeasuredAxis> indexToAxis = measuresRecordTable.getMeasures();
+		int[] recordToCubeIndexes = computeInference(indexToAxis, orderedMeasuredAxis);
 
-		measuresToAdd.accept((recordAggregatedIndex, list) -> {
-			int cubeAggregatedIndex = recordToCubeIndexes[recordAggregatedIndex];
+		measuresRecordTable.accept((recordMeasureIndex, list) -> {
+			int cubeMeasureIndex = recordToCubeIndexes[recordMeasureIndex];
 
-			if (cubeAggregatedIndex < 0) {
+			if (cubeMeasureIndex < 0) {
 				// Given column does not exist in the cube: it happens if the record is a bit too wide (e.g. because
 				// it lazy discard fields)
 				return;
 			}
 
-			List<IMutableAggregatesColumn> columns = sharedAggregatedColumnToColumns.get(cubeAggregatedIndex);
+			IMutableAggregatesColumn column = measuredIndexToColumn.get(cubeMeasureIndex);
 			for (int rowIndex = 0; rowIndex < size; rowIndex++) {
 				int cellIndex = cellIndexes[rowIndex];
 
@@ -407,20 +397,16 @@ public class MutableHolyCube implements IMutableHolyCube {
 					double contribution = ((DoubleList) list).getDouble(rowIndex);
 
 					// Multiple measures may rely on the same axis (e.g. input.SUM and input.MAX)
-					columns.forEach(column -> {
-						if (column instanceof IMutableDoubleAggregatesColumn) {
-							((IMutableDoubleAggregatesColumn) column).aggregateDouble(cellIndex, contribution);
-						} else {
-							column.aggregateObject(cellIndex, contribution);
-						}
-					});
+					if (column instanceof IMutableDoubleAggregatesColumn) {
+						((IMutableDoubleAggregatesColumn) column).aggregateDouble(cellIndex, contribution);
+					} else {
+						column.aggregateObject(cellIndex, contribution);
+					}
 				} else {
 					Object contribution = list.get(rowIndex);
 
 					// Multiple measures may rely on the same axis (e.g. input.SUM and input.MAX)
-					columns.forEach(column -> {
-						column.aggregateObject(cellIndex, contribution);
-					});
+					column.aggregateObject(cellIndex, contribution);
 				}
 
 				loadingContext.markMeasureContributions(1);
@@ -436,25 +422,23 @@ public class MutableHolyCube implements IMutableHolyCube {
 		}
 	}
 
-	private void contributeToMeasures(IHolyRecord measureTableRecord, int cellIndex) {
-		List<String> indexToAxis = measureTableRecord.getAxes();
-		int[] recordToCubeIndexes = computeInference(indexToAxis, sharedAggregatedColumns);
+	private void contributeToMeasures(IHolyMeasuresRecord measuresRecord, int cellIndex) {
+		List<IMeasuredAxis> indexToAxis = measuresRecord.getMeasuredAxes();
+		int[] recordToCubeIndexes = computeInference(indexToAxis, orderedMeasuredAxis);
 
-		measureTableRecord.accept((i, contribution) -> {
+		measuresRecord.accept((i, contribution) -> {
 			// String axis = indexToAxis.get(i);
 			// if (contribution != null) {
-			int aggregatedAxesIndex = recordToCubeIndexes[i];
+			int cubeMeasureIndex = recordToCubeIndexes[i];
 
-			if (aggregatedAxesIndex < 0) {
+			if (cubeMeasureIndex < 0) {
 				// Given column does not exist in the cube: it happens if the record is a bit too wide (e.g. because it
 				// lazy discard fields)
 				return;
 			}
 
 			// Multiple measures may rely on the same axis (e.g. input.SUM and input.MAX)
-			sharedAggregatedColumnToColumns.get(aggregatedAxesIndex).forEach(column -> {
-				column.aggregateObject(cellIndex, contribution);
-			});
+			measuredIndexToColumn.get(cubeMeasureIndex).aggregateObject(cellIndex, contribution);
 		});
 
 		countColumns.forEach(column -> column.aggregateLong(cellIndex, 1L));
@@ -568,7 +552,7 @@ public class MutableHolyCube implements IMutableHolyCube {
 	 * @param outputAxes
 	 * @return the index of input within output
 	 */
-	protected int[] computeInference(List<String> inputAxes, List<String> outputAxes) {
+	protected <T> int[] computeInference(List<T> inputAxes, List<T> outputAxes) {
 		return inputAxes.stream().mapToInt(inputAxis -> {
 			int indexInOutput = outputAxes.indexOf(inputAxis);
 			if (indexInOutput < 0) {

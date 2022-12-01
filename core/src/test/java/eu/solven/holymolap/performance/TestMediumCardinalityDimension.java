@@ -96,7 +96,7 @@ public class TestMediumCardinalityDimension {
 
 			final AtomicInteger resultSize = new AtomicInteger();
 			AggregateHelper
-					.consumeQueryResult(cube, AggregateQueryBuilder.wildcard(axis).sum(doubleKey).build(), param -> {
+					.consumeQueryResult(cube, AggregateQueryBuilder.wildcards(axis).sum(doubleKey).build(), param -> {
 						resultSize.incrementAndGet();
 					});
 
@@ -117,7 +117,7 @@ public class TestMediumCardinalityDimension {
 
 			final AtomicInteger resultSize = new AtomicInteger();
 			AggregateHelper.consumeQueryResult(cube,
-					AggregateQueryBuilder.wildcards(subKeys).addAggregation(OperatorFactory.sum(doubleKey)).build(),
+					AggregateQueryBuilder.wildcards(subKeys).addAggregations(OperatorFactory.sum(doubleKey)).build(),
 					new Consumer<RawCoordinatesToBitmap>() {
 
 						@Override
