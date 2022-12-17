@@ -7,7 +7,7 @@ import org.quickperf.junit4.QuickPerfJUnitRunner;
 public class TestObject2IntHolyCellToRow extends ATestHolyCellToRow {
 
 	@Override
-	protected IHolyCellToRow makeCellToRow() {
+	protected IReadableHolyCellToRow makeCellToRow() {
 		return new Object2IntHolyCellToRow();
 	}
 

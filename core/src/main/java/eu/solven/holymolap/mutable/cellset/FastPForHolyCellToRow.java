@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import me.lemire.integercompression.FastPFOR128;
 
 /**
- * This implementation of {@link IHolyCellToRow} will compress {@link IntList} into a long by packing coordinates into a
+ * This implementation of {@link IReadableHolyCellToRow} will compress {@link IntList} into a long by packing coordinates into a
  * long. At some point, the underlying algorithm will not be able to accept additional {@link IntList} (as not packable
  * into a long). It would then be time to switch to a different algorithm.
  * 

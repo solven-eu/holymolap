@@ -1,14 +1,17 @@
 package eu.solven.holymolap.measures;
 
+import java.util.Arrays;
 import java.util.PrimitiveIterator;
 
-import eu.solven.holymolap.measures.definition.EmptyHolyMeasureTableDefinition;
+import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
+import eu.solven.holymolap.query.ICountMeasuresConstants;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
 import it.unimi.dsi.fastutil.doubles.DoubleIterators;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongIterators;
 
 /**
+ * A minimal {@link IHolyMeasuresTable}. It can answer COUNT(*).
  * 
  * @author Benoit Lacelle
  *
@@ -21,7 +24,7 @@ public class EmptyHolyMeasuresTable implements IHolyMeasuresTable {
 
 	@Override
 	public IHolyMeasuresDefinition getMeasuresDefinition() {
-		return new EmptyHolyMeasureTableDefinition();
+		return new HolyMeasuresTableDefinition(Arrays.asList(ICountMeasuresConstants.COUNT_MEASURE));
 	}
 
 	@Override

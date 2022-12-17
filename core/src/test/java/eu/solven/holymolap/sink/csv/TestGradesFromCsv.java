@@ -26,8 +26,9 @@ import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
-import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.AggregationHelper;
+import eu.solven.holymolap.query.AggregationToMapHelper;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
@@ -69,8 +70,7 @@ public class TestGradesFromCsv {
 			// Enable querying COUNT(*)
 			IMeasuredAxis test1Sum = new MeasuredAxis("Test1", IStandardOperators.SUM);
 			IMeasuredAxis test1Avg = new MeasuredAxis("Test1", IStandardOperators.AVG);
-			List<IMeasuredAxis> measuredAxes =
-					Arrays.asList(test1Avg, test1Sum, ICountMeasuresConstants.COUNT_MEASURED_AXIS);
+			List<IMeasuredAxis> measuredAxes = Arrays.asList(test1Avg, test1Sum, ICountMeasuresConstants.COUNT_MEASURE);
 			IHolyMeasuresDefinition measures = new HolyMeasuresTableDefinition(measuredAxes);
 			LOGGER.info("Measures: {}", measures);
 
@@ -109,7 +109,7 @@ public class TestGradesFromCsv {
 
 				{
 					NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-							AggregateHelper.singleMeasureToNavigableMap(holyCube, countRecords);
+							AggregationToMapHelper.singleMeasureToNavigableMap(holyCube, countRecords);
 					LOGGER.info("Total records: {}", result);
 
 					Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(numRows);
@@ -118,7 +118,7 @@ public class TestGradesFromCsv {
 				{
 					String wildcard = "Grade";
 					NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-							AggregateHelper.singleMeasureToNavigableMap(holyCube,
+							AggregationToMapHelper.singleMeasureToNavigableMap(holyCube,
 									AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 					LOGGER.info("Total records by '{}': {}", wildcard, result);
 
@@ -130,7 +130,7 @@ public class TestGradesFromCsv {
 							.addFilter("Grade", "B-")
 							.addAggregations(test1Avg)
 							.build();
-					Optional<?> resultAvg = AggregateHelper.singleMeasureCell(holyCube, queryAvg);
+					Optional<?> resultAvg = AggregationHelper.singleMeasureCell(holyCube, queryAvg);
 					LOGGER.info("query={} -> {}", queryAvg, resultAvg);
 					Assertions.assertThat((Optional) resultAvg).isPresent().contains(20.75D);
 
@@ -138,15 +138,15 @@ public class TestGradesFromCsv {
 							.addFilter("Grade", "B-")
 							.addAggregations(test1Sum)
 							.build();
-					Optional<?> resultSum = AggregateHelper.singleMeasureCell(holyCube, querySum);
+					Optional<?> resultSum = AggregationHelper.singleMeasureCell(holyCube, querySum);
 					LOGGER.info("query={} -> {}", querySum, resultSum);
 					Assertions.assertThat((Optional) resultSum).isPresent().contains(137.0D);
 
 					SimpleAggregationQuery queryCount = AggregateQueryBuilder.grandTotal()
 							.addFilter("Grade", "B-")
-							.addAggregations(ICountMeasuresConstants.COUNT_MEASURED_AXIS)
+							.addAggregations(ICountMeasuresConstants.COUNT_MEASURE)
 							.build();
-					Optional<?> resultCount = AggregateHelper.singleMeasureCell(holyCube, queryCount);
+					Optional<?> resultCount = AggregationHelper.singleMeasureCell(holyCube, queryCount);
 					LOGGER.info("query={} -> {}", queryCount, resultCount);
 
 					Assertions.assertThat((Optional) resultCount).isPresent().contains(3L);

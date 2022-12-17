@@ -1,11 +1,13 @@
 package eu.solven.holymolap.factory;
 
 import eu.solven.holymolap.measures.operator.OperatorFactory;
-import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
+import eu.solven.holymolap.mutable.cellset.IAppendableHolyCellToRow;
+import eu.solven.holymolap.mutable.cellset.IBijectiveHolyCellToRow;
 import eu.solven.holymolap.mutable.column.IMutableAggregatesColumn;
 import eu.solven.holymolap.stable.v1.IBinaryOperator;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
 import eu.solven.holymolap.stable.v1.ILongBinaryOperator;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 /**
  * Provides default implementation for various internal data-structures.
@@ -14,7 +16,9 @@ import eu.solven.holymolap.stable.v1.ILongBinaryOperator;
  *
  */
 public interface IHolyDataStructuresFactory {
-	IHolyCellToRow makeCellToRow();
+	IAppendableHolyCellToRow makeCellToRow();
+
+	IBijectiveHolyCellToRow makeBijectiveCellToRow();
 
 	OperatorFactory makeOperatorFactory();
 
@@ -23,5 +27,7 @@ public interface IHolyDataStructuresFactory {
 	IMutableAggregatesColumn makeMutableDoubleAggregatesColumn(IDoubleBinaryOperator binaryOperator);
 
 	IMutableAggregatesColumn makeMutableLongAggregatesColumn(ILongBinaryOperator binaryOperator);
+
+	DoubleList makeDoubleList(DoubleList cellToAggregate);
 
 }

@@ -1,5 +1,6 @@
 package eu.solven.holymolap.mutable.column;
 
+import eu.solven.holymolap.factory.IHolyDataStructuresFactory;
 import eu.solven.holymolap.immutable.column.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.primitives.HolyPrimitiveParser;
 
@@ -20,6 +21,6 @@ public interface IMutableDoubleAggregatesColumn extends IMutableAggregatesColumn
 	void aggregateDouble(int rowIndex, double contribution);
 
 	@Override
-	IScannableDoubleMeasureColumn flush();
+	IScannableDoubleMeasureColumn flush(IHolyDataStructuresFactory factory);
 
 }

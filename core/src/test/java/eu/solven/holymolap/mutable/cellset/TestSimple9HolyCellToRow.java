@@ -7,7 +7,7 @@ import org.quickperf.junit4.QuickPerfJUnitRunner;
 public class TestSimple9HolyCellToRow extends ATestHolyCellToRow {
 
 	@Override
-	protected IHolyCellToRow makeCellToRow() {
+	protected IReadableHolyCellToRow makeCellToRow() {
 		return new Simple9HolyCellToRow();
 	}
 

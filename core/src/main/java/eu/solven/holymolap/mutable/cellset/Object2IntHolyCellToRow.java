@@ -1,18 +1,19 @@
 package eu.solven.holymolap.mutable.cellset;
 
 import eu.solven.holymolap.mutable.axis.IMutableAxisSmallDictionary;
+import eu.solven.holymolap.primitives.IntArrayListFastHashCode;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
- * A naive {@link IHolyCellToRow} implementation, covering any case which would not be covered by alternative
- * implementations (e.g. due to constraints related to compression)
+ * The simplest {@link IBijectiveHolyCellToRow} implementation, covering any case which would not be covered by
+ * alternative implementations (e.g. due to constraints related to compression)
  * 
  * @author Benoit Lacelle
  *
  */
-public class Object2IntHolyCellToRow implements IHolyCellToRow {
+public class Object2IntHolyCellToRow implements IBijectiveHolyCellToRow {
 	final Object2IntMap<IntList> underlying;
 
 	public Object2IntHolyCellToRow(Object2IntMap<IntList> underlying) {
@@ -40,11 +41,11 @@ public class Object2IntHolyCellToRow implements IHolyCellToRow {
 	 * @param coordinates
 	 * @param willbeStored
 	 *            if true, it indicates given array will be referred in the underlying for long-time storage
-	 * @return an {@link IntList}, optionally compressed, but requiring to be inversible into the original IntList (as
+	 * @return an {@link IntList}, optionally compressed, but requiring to be invertible into the original IntList (as
 	 *         it is used as key for rows)
 	 */
 	protected IntList compress(IntList coordinates, boolean willbeStored) {
-		return coordinates;
+		return new IntArrayListFastHashCode(coordinates);
 	}
 
 	@Override
@@ -53,14 +54,14 @@ public class Object2IntHolyCellToRow implements IHolyCellToRow {
 	}
 
 	@Override
-	public int registerRow(IntList coordinates) {
+	public int getMayAppendRow(IntList coordinates) {
 		int newIndex = underlying.size();
 
 		int previousValue = underlying.putIfAbsent(compress(coordinates, true), newIndex);
 
 		if (previousValue == IMutableAxisSmallDictionary.NO_COORDINATE_INDEX) {
 			// We mapped a value
-			return newIndex;
+			return -newIndex - 1;
 		} else {
 			// It was already mapped
 			return previousValue;

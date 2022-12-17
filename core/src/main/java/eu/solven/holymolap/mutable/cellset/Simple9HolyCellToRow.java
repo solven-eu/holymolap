@@ -6,7 +6,7 @@ import me.lemire.integercompression.Simple9;
 import me.lemire.integercompression.VariableByte;
 
 /**
- * A {@link IHolyCellToRow} compressing coordinates with {@link VariableByte}
+ * A {@link IReadableHolyCellToRow} compressing coordinates with {@link VariableByte}
  * 
  * @author Benoit Lacelle
  *

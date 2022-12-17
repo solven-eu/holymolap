@@ -23,7 +23,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import eu.solven.holymolap.compression.doubles.DictionaryDoubleList;
 import eu.solven.holymolap.compression.doubles.FcpDoubleColumn;
 import eu.solven.holymolap.mutable.cellset.FibonacciHolyCellToRow;
-import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
+import eu.solven.holymolap.mutable.cellset.IReadableHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.Object2IntHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.VariableByteHolyCellToRow;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;

@@ -22,7 +22,7 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.EmptyHolyMeasureTableDefinition;
 import eu.solven.holymolap.measures.operator.OperatorFactory;
-import eu.solven.holymolap.query.AggregateHelper;
+import eu.solven.holymolap.query.AggregationHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
@@ -95,7 +95,7 @@ public class TestMediumCardinalityDimension {
 			long start = System.currentTimeMillis();
 
 			final AtomicInteger resultSize = new AtomicInteger();
-			AggregateHelper
+			AggregationHelper
 					.consumeQueryResult(cube, AggregateQueryBuilder.wildcards(axis).sum(doubleKey).build(), param -> {
 						resultSize.incrementAndGet();
 					});
@@ -116,7 +116,7 @@ public class TestMediumCardinalityDimension {
 			long start = System.currentTimeMillis();
 
 			final AtomicInteger resultSize = new AtomicInteger();
-			AggregateHelper.consumeQueryResult(cube,
+			AggregationHelper.consumeQueryResult(cube,
 					AggregateQueryBuilder.wildcards(subKeys).addAggregations(OperatorFactory.sum(doubleKey)).build(),
 					new Consumer<RawCoordinatesToBitmap>() {
 

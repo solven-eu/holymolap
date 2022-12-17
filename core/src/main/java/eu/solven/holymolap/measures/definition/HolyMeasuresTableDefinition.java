@@ -51,8 +51,8 @@ public class HolyMeasuresTableDefinition implements IHolyMeasuresDefinition {
 	public static IHolyMeasuresDefinition withCountStar(List<IMeasuredAxis> measuredAxis) {
 		List<IMeasuredAxis> withCountStar = new ArrayList<>();
 
-		if (!measuredAxis.contains(ICountMeasuresConstants.COUNT_MEASURED_AXIS)) {
-			withCountStar.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
+		if (!measuredAxis.contains(ICountMeasuresConstants.COUNT_MEASURE)) {
+			withCountStar.add(ICountMeasuresConstants.COUNT_MEASURE);
 		}
 
 		withCountStar.addAll(measuredAxis);

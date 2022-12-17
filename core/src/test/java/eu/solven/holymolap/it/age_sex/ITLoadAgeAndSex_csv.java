@@ -27,8 +27,8 @@ import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
 import eu.solven.holymolap.primitives.HolyPrimitiveParser;
-import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.AggregationToMapHelper;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.LoadingContext;
@@ -93,13 +93,20 @@ public class ITLoadAgeAndSex_csv {
 					PepperLogHelper.humanBytes(deepSize));
 		}
 		sanityChecks(holyCube, loadResult.getNumRows());
-		
-//		holyCube.reduceBy()
+
+		// holyCube.reduceBy()
 
 		// generateCellSet(holyCube.getCellSet().getAxesWithCoordinates().axes().size(),
 		// holyCube.getCellSet().getTable());
 	}
 
+	/**
+	 * Used to write as file. Useful to benchmark cellSet compression schemes.
+	 * 
+	 * @param nbAxes
+	 * @param table
+	 * @throws IOException
+	 */
 	private static void generateCellSet(int nbAxes, IHolyDictionarizedTable table) throws IOException {
 		int[] axesIndexes = IntStream.range(0, nbAxes).toArray();
 
@@ -174,7 +181,7 @@ public class ITLoadAgeAndSex_csv {
 		Assertions.assertThat(measuredAxes).hasSize(1).contains(new MeasuredAxis("count", IStandardOperators.SUM));
 
 		// Enable querying COUNT(*)
-		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
+		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURE);
 
 		IHolyMeasuresDefinition measures = new HolyMeasuresTableDefinition(measuredAxes);
 		return measures;
@@ -185,7 +192,7 @@ public class ITLoadAgeAndSex_csv {
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(holyCube, countRecords);
+					AggregationToMapHelper.singleMeasureToNavigableMap(holyCube, countRecords);
 			LOGGER.info("Total records: {}", result);
 
 			Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(numRows);
@@ -193,16 +200,18 @@ public class ITLoadAgeAndSex_csv {
 
 		{
 			String wildcard = "Sex";
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
-					AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregationToMapHelper.singleMeasureToNavigableMap(holyCube,
+							AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 			LOGGER.info("Total records by '{}': {}", wildcard, result);
 		}
 
 		SimpleAggregationQuery sumCounts = AggregateQueryBuilder.grandTotal().sum("count").build();
 		{
 			String wildcard = "Sex";
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
-					AggregateQueryBuilder.edit(sumCounts).addWildcards(wildcard).build());
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregationToMapHelper.singleMeasureToNavigableMap(holyCube,
+							AggregateQueryBuilder.edit(sumCounts).addWildcards(wildcard).build());
 			LOGGER.info("SUM(count) by '{}': {}", wildcard, result);
 		}
 	}

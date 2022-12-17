@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
-import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.AggregationToMapHelper;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.LoadingContext;
 import eu.solven.holymolap.sink.csv.LoadFromCsv;
@@ -54,7 +54,7 @@ public class HolyCubeReducer {
 
 			List<IMeasuredAxis> measures = defineMeasures(inputHolyCube);
 			NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> result =
-					AggregateHelper.measuresToNavigableMap(inputHolyCube.asComposite(),
+					AggregationToMapHelper.measuresToNavigableMap(inputHolyCube.asComposite(),
 							AggregateQueryBuilder.grandTotal().addWildcards(newAxes).addAggregations(measures).build());
 
 			HolyCubeSink sink = new HolyCubeSink(loadingContext, new HolyMeasuresTableDefinition(measures));

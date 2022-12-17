@@ -18,7 +18,7 @@ public class TestVariableByteIntHolyCellToRow extends ATestHolyCellToRow {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestVariableByteIntHolyCellToRow.class);
 
 	@Override
-	protected IHolyCellToRow makeCellToRow() {
+	protected IReadableHolyCellToRow makeCellToRow() {
 		return new VariableByteHolyCellToRow();
 	}
 

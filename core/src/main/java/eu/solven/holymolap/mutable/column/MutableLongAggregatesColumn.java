@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import eu.solven.holymolap.factory.IHolyDataStructuresFactory;
 import eu.solven.holymolap.immutable.column.IScannableLongMeasureColumn;
 import eu.solven.holymolap.immutable.column.ImmutableLongAggregatesColumn;
 import eu.solven.holymolap.stable.v1.ILongBinaryOperator;
@@ -93,7 +94,7 @@ public class MutableLongAggregatesColumn implements IMutableLongAggregatesColumn
 	}
 
 	@Override
-	public IScannableLongMeasureColumn flush() {
+	public IScannableLongMeasureColumn flush(IHolyDataStructuresFactory factory) {
 		if (!flushed.compareAndSet(false, true)) {
 			throw new IllegalStateException("Already flushed");
 		}

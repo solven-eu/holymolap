@@ -5,7 +5,7 @@ import java.util.stream.IntStream;
 
 import eu.solven.holymolap.immutable.axes.IHasAxesWithCoordinates;
 
-public class CoordinatesRefs {
+public class CoordinatesRefs implements ICoordinatesRefs {
 	final IHasAxesWithCoordinates axesWithCoordinates;
 	final int[] axesIndexes;
 	final long[] coordinatesRef;

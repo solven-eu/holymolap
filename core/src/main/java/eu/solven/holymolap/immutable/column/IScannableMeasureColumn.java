@@ -6,6 +6,12 @@ import java.util.function.Consumer;
 
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
+/**
+ * A measure column is a read-only column of aggregates.
+ * 
+ * @author Benoit Lacelle
+ *
+ */
 public interface IScannableMeasureColumn extends IHasMemoryFootprint {
 
 	/**

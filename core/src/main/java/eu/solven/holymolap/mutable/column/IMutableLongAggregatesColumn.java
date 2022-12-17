@@ -1,5 +1,6 @@
 package eu.solven.holymolap.mutable.column;
 
+import eu.solven.holymolap.factory.IHolyDataStructuresFactory;
 import eu.solven.holymolap.immutable.column.IScannableLongMeasureColumn;
 
 /**
@@ -19,6 +20,6 @@ public interface IMutableLongAggregatesColumn extends IMutableAggregatesColumn {
 	void aggregateLong(int rowIndex, long contribution);
 
 	@Override
-	IScannableLongMeasureColumn flush();
+	IScannableLongMeasureColumn flush(IHolyDataStructuresFactory factory);
 
 }

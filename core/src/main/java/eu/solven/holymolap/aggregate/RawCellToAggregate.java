@@ -1,15 +1,15 @@
 package eu.solven.holymolap.aggregate;
 
 public class RawCellToAggregate<T> {
-	final CoordinatesRefs coordinates;
+	final ICoordinatesRefs coordinates;
 	final T measureValue;
 
-	public RawCellToAggregate(CoordinatesRefs coordinates, T measureValue) {
+	public RawCellToAggregate(ICoordinatesRefs coordinates, T measureValue) {
 		this.coordinates = coordinates;
 		this.measureValue = measureValue;
 	}
 
-	public CoordinatesRefs getCoordinatesRefs() {
+	public ICoordinatesRefs getCoordinatesRefs() {
 		return coordinates;
 	}
 
@@ -22,5 +22,4 @@ public class RawCellToAggregate<T> {
 		return "RawCellToAggregate [coordinates=" + coordinates + ", measureValue=" + measureValue + "]";
 	}
 
-	
 }

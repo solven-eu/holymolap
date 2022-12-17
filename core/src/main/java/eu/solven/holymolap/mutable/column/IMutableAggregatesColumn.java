@@ -1,5 +1,6 @@
 package eu.solven.holymolap.mutable.column;
 
+import eu.solven.holymolap.factory.IHolyDataStructuresFactory;
 import eu.solven.holymolap.immutable.column.IScannableMeasureColumn;
 import eu.solven.holymolap.tools.IHasMemoryFootprint;
 
@@ -13,6 +14,6 @@ public interface IMutableAggregatesColumn extends IHasMemoryFootprint {
 
 	void aggregateObject(int cellIndex, Object doubleValue);
 
-	IScannableMeasureColumn flush();
+	IScannableMeasureColumn flush(IHolyDataStructuresFactory factory);
 
 }

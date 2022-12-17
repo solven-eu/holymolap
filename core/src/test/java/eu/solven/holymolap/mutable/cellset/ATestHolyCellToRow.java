@@ -20,12 +20,12 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 public abstract class ATestHolyCellToRow {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ATestHolyCellToRow.class);
 
-	private void standardLoad(IHolyCellToRow cellToRow) {
+	private void standardLoad(IReadableHolyCellToRow cellToRow) {
 		Random r = new Random(123L);
 
 		for (int cellIndex = 0; cellIndex < 1024; cellIndex++) {
 			int[] coordinates = IntStream.range(0, 16).map(c -> r.nextInt(0, 1 + (int) Math.pow(c, 3))).toArray();
-			cellToRow.registerRow(IntArrayList.wrap(coordinates));
+			cellToRow.getMayAppendRow(IntArrayList.wrap(coordinates));
 		}
 
 		if (cellToRow instanceof ICompactable) {
@@ -33,7 +33,7 @@ public abstract class ATestHolyCellToRow {
 		}
 	}
 
-	protected abstract IHolyCellToRow makeCellToRow();
+	protected abstract IReadableHolyCellToRow makeCellToRow();
 
 	protected abstract long expectedHeapConsuptionMin();
 
@@ -44,14 +44,14 @@ public abstract class ATestHolyCellToRow {
 	// @ExpectMaxHeapAllocation(value = 440, unit = AllocationUnit.BYTE)
 	@Test
 	public void testHeapAllocation() {
-		IHolyCellToRow cellToRow = makeCellToRow();
+		IReadableHolyCellToRow cellToRow = makeCellToRow();
 
 		standardLoad(cellToRow);
 	}
 
 	@Test
 	public void testHeapLayout() {
-		IHolyCellToRow cellToRow = makeCellToRow();
+		IReadableHolyCellToRow cellToRow = makeCellToRow();
 
 		standardLoad(cellToRow);
 
@@ -61,21 +61,21 @@ public abstract class ATestHolyCellToRow {
 		LOGGER.info("Graph.footprint: {}", graph.toFootprint());
 	}
 
-	private void consistencyChecks(IHolyCellToRow cellToRow, IntArrayList array) {
+	private void consistencyChecks(IReadableHolyCellToRow cellToRow, IntArrayList array) {
 		Assertions.assertThat(cellToRow.getRow(array)).isEqualTo(-1);
 
-		Assertions.assertThat(cellToRow.registerRow(IntArrayList.of(-1, 0))).isEqualTo(0);
-		Assertions.assertThat(cellToRow.registerRow(IntArrayList.of(-1, 0))).isEqualTo(0);
+		Assertions.assertThat(cellToRow.getMayAppendRow(IntArrayList.of(-1, 0))).isEqualTo(0);
+		Assertions.assertThat(cellToRow.getMayAppendRow(IntArrayList.of(-1, 0))).isEqualTo(0);
 
 		Assertions.assertThat(cellToRow.getRow(IntArrayList.of(-1, 0))).isEqualTo(0);
 
 		// A second cell goes into index==1
-		Assertions.assertThat(cellToRow.registerRow(IntArrayList.of(0, 0))).isEqualTo(1);
+		Assertions.assertThat(cellToRow.getMayAppendRow(IntArrayList.of(0, 0))).isEqualTo(1);
 	}
 
 	@Test
 	public void testHandleArray() {
-		IHolyCellToRow cellToRow = makeCellToRow();
+		IReadableHolyCellToRow cellToRow = makeCellToRow();
 
 		IntArrayList array = IntArrayList.of(123);
 		consistencyChecks(cellToRow, array);
@@ -83,7 +83,7 @@ public abstract class ATestHolyCellToRow {
 
 	@Test
 	public void testHandleArrayWithMissingCoordinates() {
-		IHolyCellToRow cellToRow = makeCellToRow();
+		IReadableHolyCellToRow cellToRow = makeCellToRow();
 
 		consistencyChecks(cellToRow, IntArrayList.of(-1, 123));
 	}

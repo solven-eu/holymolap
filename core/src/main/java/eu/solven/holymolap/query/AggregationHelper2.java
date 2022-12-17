@@ -1,7 +1,6 @@
 package eu.solven.holymolap.query;
 
 import java.util.Iterator;
-import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.Executor;
@@ -22,7 +21,6 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 
 import com.codahale.metrics.Meter;
 import com.google.common.collect.AbstractIterator;
-import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
 
 import eu.solven.holymolap.aggregate.CoordinatesRefs;
@@ -39,29 +37,31 @@ import it.unimi.dsi.fastutil.longs.LongLists;
 public class AggregationHelper2 {
 	protected static final Logger LOGGER = LoggerFactory.getLogger(AggregationHelper2.class);
 
-	protected final Set<RowsConsumerStatus> activeGroupBy = Sets.newConcurrentHashSet();
+	// protected final Set<RowsConsumerStatus> activeGroupBy = Sets.newConcurrentHashSet();
 
 	/**
+	 * This will compute the next cell/slice to be considered. Typically, it will select the first matchingRow to define
+	 * the next cell/slice.
 	 * 
 	 * @param cellSet
-	 * @param axesKeys
+	 * @param axesIndexes
 	 * @param candidateRows
 	 * @param rowAggregateConsumer
+	 *            a {@link Consumer} of the selected coordinates, and the associated rows. The associated rows may
+	 *            report rows not in filteredRows.
 	 * @return the matching rows
 	 */
-	public RoaringBitmap computeNextCellRows(IHolyCellMultiSet cellSet,
+	public void computeNextCellRows(IHolyCellMultiSet cellSet,
 			int[] axesIndexes,
 			RoaringBitmap candidateRows,
 			Consumer<RawCoordinatesToBitmap> rowAggregateConsumer) {
 		if (candidateRows.isEmpty()) {
-			return candidateRows;
-		}
-
-		if (axesIndexes.length == 0) {
+			return;
+		} else if (axesIndexes.length == 0) {
 			// All rows match as we requested the grand total
 			rowAggregateConsumer.accept(new RawCoordinatesToBitmap(EmptyCoordinatesRefs.EMPTY, candidateRows));
 
-			return candidateRows;
+			return;
 		}
 
 		// Pick-up next valid row
@@ -71,14 +71,14 @@ public class AggregationHelper2 {
 
 		RoaringBitmap matchingRowsBitmap = cellSet.getTable().getCoordinateToRows(axesIndexes, valuesRefs);
 
+		// BEWARE this is an assertion
 		if (!matchingRowsBitmap.contains(Ints.checkedCast(rowToConsider))) {
+			// TODO This does not handle int between Integer.MAX_VALUE and 2*Integer.MAX_VALUE
 			throw new IllegalStateException("We should have spot at least current row");
 		}
 
 		CoordinatesRefs coordinates = new CoordinatesRefs(cellSet.getAxesWithCoordinates(), axesIndexes, valuesRefs);
 		rowAggregateConsumer.accept(new RawCoordinatesToBitmap(coordinates, matchingRowsBitmap));
-
-		return matchingRowsBitmap;
 	}
 
 	public void computeParallelNextCellRows(IHolyCellMultiSet index,
@@ -97,7 +97,7 @@ public class AggregationHelper2 {
 		AtomicLong nbAsyncTasks = new AtomicLong();
 
 		RowsConsumerStatus status = new RowsConsumerStatus(candidateRows.getCardinality());
-		activeGroupBy.add(status);
+		// activeGroupBy.add(status);
 
 		try {
 			computeParallelNextCellRows(index,
@@ -122,7 +122,7 @@ public class AggregationHelper2 {
 				LOGGER.warn("We encountered an issue after consuming {} rows out of {}", status);
 			}
 
-			activeGroupBy.remove(status);
+			// activeGroupBy.remove(status);
 
 			es.shutdown();
 		}
@@ -188,6 +188,7 @@ public class AggregationHelper2 {
 								+ axisName);
 					}
 
+					// This section is mono-threaded
 					final RoaringBitmap valueBitmap = cellSet.getTable().getCoordinateToRows(axisIndex, valueIndex);
 
 					final RoaringBitmap finalCandidateRowsLeft = candidateRowsLeft;
@@ -264,43 +265,16 @@ public class AggregationHelper2 {
 				status);
 	}
 
-	/**
-	 * 
-	 * @param index
-	 * @param wildcards
-	 * @param rows
-	 * @param consumer
-	 * @return rows left to process
-	 */
-	public RoaringBitmap consumeNextCellRows(final IHolyCellMultiSet index,
-			final int[] axesIndexes,
-			final RoaringBitmap rows,
-			Consumer<RawCoordinatesToBitmap> consumer) {
-		if (rows.isEmpty()) {
-			return rows;
-		} else {
-			RoaringBitmap matchingRows = computeNextCellRows(index, axesIndexes, rows, consumer);
-
-			// LOGGER.debug("We consumed {} rows out of {}",
-			// matchingRows.getCardinality(), rows.getCardinality());
-
-			// Do not consider the matching rows for future
-			// aggregation
-			// TODO: could we modify rows in place?
-			return RoaringBitmap.andNot(rows, matchingRows);
-		}
-	}
-
 	public Iterator<RawCoordinatesToBitmap> asIterator(final IHolyCellMultiSet index,
 			final int[] axesIndexes,
-			final RoaringBitmap rows) {
+			final RoaringBitmap candidateRows) {
 		final AtomicReference<RawCoordinatesToBitmap> nextAggregate = new AtomicReference<>();
 
-		final Consumer<RawCoordinatesToBitmap> consumer = newValue -> {
+		final Consumer<RawCoordinatesToBitmap> aggregateSaver = newValue -> {
 			nextAggregate.set(newValue);
 		};
 
-		final int initialNbRows = rows.getCardinality();
+		final int initialNbRows = candidateRows.getCardinality();
 
 		final Meter meter = new Meter();
 		final Meter aggregateMeter = new Meter();
@@ -309,44 +283,41 @@ public class AggregationHelper2 {
 
 		return new AbstractIterator<RawCoordinatesToBitmap>() {
 
-			protected RoaringBitmap leftRows = rows;
+			protected RoaringBitmap leftRows = candidateRows;
 
 			@Override
 			protected RawCoordinatesToBitmap computeNext() {
 				if (leftRows.isEmpty()) {
+					// There is no more rows
 					return endOfData();
 				} else {
 					int nbRowsBefore = leftRows.getCardinality();
 
-					// Do not consider the matching rows for future
-					// aggregation
-					leftRows = consumeNextCellRows(index, axesIndexes, leftRows, consumer);
+					computeNextCellRows(index, axesIndexes, leftRows, aggregateSaver);
+					RawCoordinatesToBitmap actualNext = nextAggregate.get();
 
-					int nbLeftRows = leftRows.getCardinality();
+					// Do not consider the matching rows for future aggregation
+					leftRows = RoaringBitmap.andNot(leftRows, actualNext.getMatchingRows());
+
+					int nbRowsAfter = leftRows.getCardinality();
 
 					// N underlying cells
-					meter.mark(nbRowsBefore - nbLeftRows);
+					meter.mark(nbRowsBefore - nbRowsAfter);
 					// For a single aggregate
 					aggregateMeter.mark();
 
+					// Log once per millis: TODO Change by consumed at least 1% on initialNbRows
 					long now = System.currentTimeMillis();
 					if (now > start.get() + TimeUnit.SECONDS.toMillis(1)) {
 						LOGGER.debug("We consumed {} rows out of {} at rate {}rows/sec, {}agg/sec",
-								initialNbRows - nbLeftRows,
+								initialNbRows - nbRowsAfter,
 								initialNbRows,
 								meter.getMeanRate(),
 								aggregateMeter.getMeanRate());
 						start.set(now);
 					}
 
-					RawCoordinatesToBitmap actualNext = nextAggregate.get();
-
-					if (actualNext == null) {
-						// There is no more rows
-						return endOfData();
-					} else {
-						return actualNext;
-					}
+					return actualNext;
 				}
 			}
 
@@ -357,9 +328,11 @@ public class AggregationHelper2 {
 			final int[] axesIndexes,
 			final RoaringBitmap rows) {
 		Iterator<RawCoordinatesToBitmap> iterator = asIterator(index, axesIndexes, rows);
-		// Immutable as the underlying cube is immutable
-		Spliterator<RawCoordinatesToBitmap> spliterator =
-				Spliterators.spliteratorUnknownSize(iterator, Spliterator.IMMUTABLE);
+		// IMMUTABLE as the underlying cube is immutable
+		// NONNULL as RawCoordinatesToBitmap is never null
+		// DISTINCT as we guarantee each slice is encountered only once
+		Spliterator<RawCoordinatesToBitmap> spliterator = Spliterators.spliteratorUnknownSize(iterator,
+				Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.DISTINCT);
 		return StreamSupport.stream(spliterator, false);
 	}
 }

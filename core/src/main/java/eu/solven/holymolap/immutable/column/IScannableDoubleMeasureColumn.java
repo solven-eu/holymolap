@@ -6,6 +6,12 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.stream.LongStream;
 
+/**
+ * A measure column is a read-only column of double aggregates.
+ * 
+ * @author Benoit Lacelle
+ *
+ */
 public interface IScannableDoubleMeasureColumn extends IScannableMeasureColumn {
 	@Override
 	@Deprecated

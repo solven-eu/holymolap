@@ -1,6 +1,7 @@
 package eu.solven.holymolap.query;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +29,8 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 
 import eu.solven.holymolap.aggregate.CoordinatesRefs;
+import eu.solven.holymolap.aggregate.EmptyCoordinatesRefs;
+import eu.solven.holymolap.aggregate.ICoordinatesRefs;
 import eu.solven.holymolap.aggregate.NiceCellToAggregate;
 import eu.solven.holymolap.aggregate.RawCellToAggregate;
 import eu.solven.holymolap.aggregate.RawCoordinatesToBitmap;
@@ -53,8 +56,8 @@ import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 import eu.solven.holymolap.utils.HolyIterator;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 
-public class AggregateHelper {
-	private static final Logger LOGGER = LoggerFactory.getLogger(AggregateHelper.class);
+public class AggregationHelper {
+	private static final Logger LOGGER = LoggerFactory.getLogger(AggregationHelper.class);
 
 	private static int[] computeAxesIndexes(IHasNavigableAxes navigableAxes, final List<String> queriedAxes) {
 		// This array will hold the indexes of the values of the next coordinate
@@ -102,6 +105,27 @@ public class AggregateHelper {
 
 	public static Stream<RawCellToAggregate<List<?>>> queryToRawCellsIterator(final ICompositeHolyCube compositeCube,
 			final IAggregationQuery query) {
+
+		// Will hold null for unknown measures
+		List<IAggregationLogic<?>> compositeAggregationLogics =
+				mapAggregationLogics(compositeCube.getMeasuresDefinition(), query);
+
+		List<IBinaryOperator> compositeOperators = compositeAggregationLogics.stream()
+				.map(al -> al == null ? null : al.getOperator())
+				.collect(Collectors.toList());
+
+		// Empty is semantically different to holding only the neutral element
+		if (compositeCube.getNbRows() == 0L) {
+			// We fork to accept unknown measuredAxis on an empty cube
+			// We have a specific behavior on empty cube, as there is no cell along which we can iterate
+			// We do not try resolving a relevant cell, as the filter may be complex (e.g. country IN ('FR', 'USA')) and
+			// in such a case, it is unclear what should be the relevant cell to return the aggregates
+			return Stream.of(new RawCellToAggregate<List<?>>(EmptyCoordinatesRefs.EMPTY,
+					compositeOperators.stream()
+							.map(bo -> bo == null ? null : bo.neutral())
+							.collect(Collectors.toList())));
+		}
+
 		List<IHolyCube> partitions = ImmutableList.copyOf(compositeCube.partitions());
 
 		// We pre-compute the filter condition for each cube
@@ -184,15 +208,8 @@ public class AggregateHelper {
 					return Stream.empty();
 				}
 
-				// Will hold null for unknown measures
-				List<IAggregationLogic<?>> compositeAggregationLogics =
-						mapAggregationLogics(compositeCube.getMeasuresDefinition(), query);
-
-				List<IBinaryOperator> headOperators = compositeAggregationLogics.stream()
-						.map(al -> al == null ? null : al.getOperator())
-						.collect(Collectors.toList());
-
-				RawCellToAggregate<List<?>> mergedAggregates = mergeAggregates(headOperators, aggregatesPartitions);
+				RawCellToAggregate<List<?>> mergedAggregates =
+						mergeAggregates(compositeOperators, aggregatesPartitions);
 				LOGGER.debug("Head={} merged {}", headIndex, mergedAggregates);
 
 				return Stream.of(mergedAggregates);
@@ -250,8 +267,7 @@ public class AggregateHelper {
 		return targetCoordinates;
 	}
 
-	public static Stream<NiceCellToAggregate<List<?>>> queryToNiceCellsIterator(final IHolyCube cube,
-			final IAggregationQuery query) {
+	public static Stream<NiceCellToAggregate<List<?>>> toNiceCells(IHolyCube cube, IAggregationQuery query) {
 		IHolyMeasuresTable measuresTable = cube.getMeasuresTable();
 		List<IAggregationLogic<?>> aggregationLogics =
 				mapAggregationLogics(measuresTable.getMeasuresDefinition(), query);
@@ -264,8 +280,8 @@ public class AggregateHelper {
 				.map(rawCellToNiceCell());
 	}
 
-	public static Stream<NiceCellToAggregate<List<?>>> queryToNiceCellsIterator(final ICompositeHolyCube compositeCube,
-			final IAggregationQuery query) {
+	public static Stream<NiceCellToAggregate<List<?>>> toNiceCells(ICompositeHolyCube compositeCube,
+			IAggregationQuery query) {
 		return queryToRawCellsIterator(compositeCube, query).map(rawCellToNiceCell());
 	}
 
@@ -365,7 +381,7 @@ public class AggregateHelper {
 				baseFunction.apply(coordinatesToRows));
 	}
 
-	protected static Function<CoordinatesRefs, NavigableMap<String, Object>> rawToNiceCoordinates() {
+	protected static Function<ICoordinatesRefs, NavigableMap<String, Object>> rawToNiceCoordinates() {
 		return slice -> {
 			NavigableMap<String, Object> coordinates = new ConcurrentSkipListMap<>();
 
@@ -385,7 +401,7 @@ public class AggregateHelper {
 
 	@Deprecated
 	protected static <T> Function<RawCellToAggregate<T>, NiceCellToAggregate<T>> rawCellToNiceCell() {
-		final Function<CoordinatesRefs, NavigableMap<String, Object>> rawToNice = rawToNiceCoordinates();
+		final Function<ICoordinatesRefs, NavigableMap<String, Object>> rawToNice = rawToNiceCoordinates();
 
 		return cellToAggregate -> new NiceCellToAggregate<T>(cellToAggregate.getMeasureValue(),
 				rawToNice.apply(cellToAggregate.getCoordinatesRefs()));
@@ -395,120 +411,23 @@ public class AggregateHelper {
 	 * 
 	 * @param cube
 	 * @param query
-	 * @return a {@link NavigableMap} from slice coordinates to the single queries measure
+	 * @return an {@link Optional} holding the aggregation. May be empty if the cube does not match the input filter
 	 */
-	public static NavigableMap<? extends NavigableMap<String, ?>, ?> singleMeasureToNavigableMap(final IHolyCube cube,
-			final IAggregationQuery query) {
-		return singleMeasureToNavigableMap(cube.asComposite(), query);
-	}
-
 	public static Optional<?> singleMeasureCell(final IHolyCube cube, final IAggregationQuery query) {
 		if (!query.getAxes().isEmpty()) {
 			throw new IllegalArgumentException("Can not select a single cell given wildcards: " + query.getAxes());
+		} else if (query.getMeasures().size() != 1) {
+			throw new IllegalArgumentException("Can select only a single measure: " + query.getMeasures());
 		}
 
-		NavigableMap<? extends NavigableMap<?, ?>, ?> asMap = singleMeasureToNavigableMap(cube.asComposite(), query);
+		Optional<NiceCellToAggregate<List<?>>> optSingleResult = toNiceCells(cube.asComposite(), query).findFirst();
 
-		if (asMap.isEmpty()) {
+		if (optSingleResult.isEmpty()) {
 			return Optional.empty();
-		} else if (asMap.size() == 1) {
-			return Optional.of(asMap.values().iterator().next());
 		} else {
-			throw new IllegalStateException("We return multiple results: " + asMap);
+			NiceCellToAggregate<List<?>> singleResult = optSingleResult.get();
+			return Optional.of(singleResult.getAggregate().get(0));
 		}
-	}
-
-	public static NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> measuresToNavigableMap(
-			final ICompositeHolyCube compositeCube,
-			final IAggregationQuery query) {
-		return measuresToNavigableMap(new HolyDataStructuresFactory(), compositeCube, query);
-	}
-
-	public static NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> measuresToNavigableMap(
-			IHolyDataStructuresFactory factory,
-			final ICompositeHolyCube compositeCube,
-			final IAggregationQuery query) {
-
-		// This Map will accumulate the result
-		final NavigableMap<NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> coordinateToAggregate =
-				new ConcurrentSkipListMap<>(NavigableMapComparator.INSTANCE);
-
-		if (compositeCube.getNbRows() == 0L) {
-			// We fork to accept unknown measuredAxis on an empty cube
-			// We have a specific behavior on empty cube, as there is no cell along which we can iterate
-			// We do not try resolving a relevant cell, as the filter may be complex (e.g. country IN ('FR', 'USA')) and
-			// in such a case, it is unclear what should be the relevant cell to return the aggregates
-
-			// We can only return COUNT measures, only if they are indeed available in the cube
-			if (query.getMeasures().contains(ICountMeasuresConstants.COUNT_MEASURED_AXIS)) {
-				// Empty is semantically different to holding only the neutral element
-
-				long neutral = new OperatorFactory().getLongBinaryOperator(IStandardOperators.COUNT).neutralAsLong();
-				coordinateToAggregate.put(new TreeMap<>(),
-						Map.of(ICountMeasuresConstants.COUNT_MEASURED_AXIS, neutral));
-			}
-		} else {
-			Stream<NiceCellToAggregate<List<?>>> niceCellToAggregate2Iterator =
-					queryToNiceCellsIterator(compositeCube, query);
-
-			// Select the single aggregate
-			Stream<NiceCellToAggregate<Map<IMeasuredAxis, ?>>> niceCellToAggregateIterator =
-					niceCellToAggregate2Iterator.map(l -> {
-						List<?> aggregatesArray = l.getAggregate();
-
-						Map<IMeasuredAxis, Object> aggregatesMap = new HashMap<>();
-						for (int i = 0; i < query.getMeasures().size(); i++) {
-							aggregatesMap.put(query.getMeasures().get(i), aggregatesArray.get(i));
-						}
-
-						return new NiceCellToAggregate<>(aggregatesMap, l.getCoordinates());
-					});
-
-			// Feed the map
-			Consumer<NiceCellToAggregate<Map<IMeasuredAxis, ?>>> niceCellToAggregateConsumer = niceCellToAggregate -> {
-				NavigableMap<String, Object> coordinates = niceCellToAggregate.getCoordinates();
-				Map<IMeasuredAxis, ?> aggregate = niceCellToAggregate.getAggregate();
-				Map<IMeasuredAxis, ?> previousAggregate = coordinateToAggregate.put(coordinates, aggregate);
-
-				if (previousAggregate != null) {
-					throw new IllegalStateException("We encountered twice the same point: " + coordinates
-							+ " associated to "
-							+ aggregate
-							+ " and "
-							+ previousAggregate);
-				}
-			};
-
-			// Process the iteration: it is the terminal operation
-			niceCellToAggregateIterator.iterator().forEachRemaining(niceCellToAggregateConsumer);
-		}
-
-		return coordinateToAggregate;
-	}
-
-	public static NavigableMap<? extends NavigableMap<String, ?>, ?> singleMeasureToNavigableMap(
-			final ICompositeHolyCube compositeCube,
-			final IAggregationQuery query) {
-		if (query.getMeasures().size() == 0 || query.getMeasures().size() >= 2) {
-			throw new IllegalArgumentException("Expects a single measure. Was: " + query.getMeasures());
-		}
-
-		IMeasuredAxis singleMeasure = query.getMeasures().get(0);
-
-		NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> multipleMeasures =
-				measuresToNavigableMap(compositeCube, query);
-
-		Map<NavigableMap<String, ?>, Object> singleMeasureMap = multipleMeasures.entrySet()
-				.stream()
-				.filter(e -> null != e.getValue().get(singleMeasure))
-				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().get(singleMeasure)));
-
-		final NavigableMap<NavigableMap<String, ?>, Object> singleMeasureNavigableMap =
-				new ConcurrentSkipListMap<>(NavigableMapComparator.INSTANCE);
-
-		singleMeasureNavigableMap.putAll(singleMeasureMap);
-
-		return singleMeasureNavigableMap;
 	}
 
 	protected static int[] computeWildcardIndexes(Collection<String> wildards, NavigableSet<String> allKeys) {

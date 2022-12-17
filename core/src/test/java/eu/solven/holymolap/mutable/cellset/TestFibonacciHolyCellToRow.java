@@ -11,7 +11,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 public class TestFibonacciHolyCellToRow extends ATestHolyCellToRow {
 
 	@Override
-	protected IHolyCellToRow makeCellToRow() {
+	protected IReadableHolyCellToRow makeCellToRow() {
 		return new FibonacciHolyCellToRow();
 	}
 
@@ -31,7 +31,7 @@ public class TestFibonacciHolyCellToRow extends ATestHolyCellToRow {
 		FibonacciHolyCellToRow.resetBufferSize();
 		Assertions.assertThat(FibonacciHolyCellToRow.getBufferSize()).isEqualTo(0);
 
-		IHolyCellToRow cellToRow = makeCellToRow();
+		IReadableHolyCellToRow cellToRow = makeCellToRow();
 
 		// Even a .getRow increased the bufferSize
 		cellToRow.getRow(IntArrayList.of(5 - 2, 1 - 2, 10 - 2, 143 - 2));

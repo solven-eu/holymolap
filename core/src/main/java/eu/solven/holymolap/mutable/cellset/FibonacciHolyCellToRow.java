@@ -18,16 +18,16 @@ import me.lemire.integercompression.ByteIntegerCODEC;
 import me.lemire.integercompression.IntWrapper;
 
 /**
- * This implementation of {@link IHolyCellToRow} will compress {@link IntList} into a long by packing coordinates into a
- * long. At some point, the underlying algorithm will not be able to accept additional {@link IntList} (as not packable
- * into a long). It would then be time to switch to a different algorithm.
+ * This implementation of {@link IReadableHolyCellToRow} will compress {@link IntList} into a long by packing
+ * coordinates into a long. At some point, the underlying algorithm will not be able to accept additional
+ * {@link IntList} (as not packable into a long). It would then be time to switch to a different algorithm.
  * 
  * This implementation trades CPU to gain RAM.
  * 
  * @author Benoit Lacelle
  *
  */
-public class FibonacciHolyCellToRow implements IHolyCellToRow, ICompactable {
+public class FibonacciHolyCellToRow implements IBijectiveHolyCellToRow, ICompactable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FibonacciHolyCellToRow.class);
 
 	// By default: 8
@@ -86,7 +86,7 @@ public class FibonacciHolyCellToRow implements IHolyCellToRow, ICompactable {
 	}
 
 	@Override
-	public int registerRow(IntList coordinates) {
+	public int getMayAppendRow(IntList coordinates) {
 		int newIndex = underlying.size();
 
 		ByteList compressedCoordinates = compressToBytes(coordinates, true);
@@ -95,7 +95,7 @@ public class FibonacciHolyCellToRow implements IHolyCellToRow, ICompactable {
 
 		if (previousValue == IMutableAxisSmallDictionary.NO_COORDINATE_INDEX) {
 			// We mapped a value
-			return newIndex;
+			return -newIndex - 1;
 		} else {
 			// It was already mapped
 			return previousValue;

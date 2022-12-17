@@ -137,7 +137,7 @@ public class LoadFromArrow {
 				.collect(Collectors.toCollection(ArrayList::new));
 
 		// Enable querying COUNT(*)
-		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
+		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURE);
 
 		return new HolyMeasuresTableDefinition(measuredAxes);
 	}

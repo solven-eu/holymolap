@@ -21,7 +21,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import eu.solven.holymolap.mutable.cellset.FibonacciHolyCellToRow;
-import eu.solven.holymolap.mutable.cellset.IHolyCellToRow;
+import eu.solven.holymolap.mutable.cellset.IReadableHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.Object2IntHolyCellToRow;
 import eu.solven.holymolap.mutable.cellset.VariableByteHolyCellToRow;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -38,9 +38,9 @@ import it.unimi.dsi.fastutil.ints.IntList;
 @Measurement(iterations = 2, time = 2, timeUnit = TimeUnit.SECONDS)
 public class JmhCellToRows {
 
-	private IHolyCellToRow object = new Object2IntHolyCellToRow();
-	private IHolyCellToRow fibonacci = new FibonacciHolyCellToRow();
-	private IHolyCellToRow variableByte = new VariableByteHolyCellToRow();
+	private IReadableHolyCellToRow object = new Object2IntHolyCellToRow();
+	private IReadableHolyCellToRow fibonacci = new FibonacciHolyCellToRow();
+	private IReadableHolyCellToRow variableByte = new VariableByteHolyCellToRow();
 
 	@Param({ "1", "8", "16", "32" })
 	private int size;

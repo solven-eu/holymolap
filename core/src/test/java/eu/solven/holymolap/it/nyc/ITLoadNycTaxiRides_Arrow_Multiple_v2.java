@@ -20,8 +20,8 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.composite.CompositeHolyCube;
 import eu.solven.holymolap.cube.composite.ICompositeHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
-import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.AggregationToMapHelper;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.LoadingContext;
 import eu.solven.holymolap.sink.arrow.LoadFromArrow;
@@ -94,7 +94,7 @@ public class ITLoadNycTaxiRides_Arrow_Multiple_v2 {
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(partitionnedCube, countRecords);
+					AggregationToMapHelper.singleMeasureToNavigableMap(partitionnedCube, countRecords);
 			LOGGER.info("Total records: {}", result);
 
 			Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(recordsCount.get());
@@ -103,7 +103,7 @@ public class ITLoadNycTaxiRides_Arrow_Multiple_v2 {
 		{
 			String wildcard = "VendorID";
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(partitionnedCube,
+					AggregationToMapHelper.singleMeasureToNavigableMap(partitionnedCube,
 							AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 			LOGGER.info("Total records by '{}': {}", wildcard, result);
 		}

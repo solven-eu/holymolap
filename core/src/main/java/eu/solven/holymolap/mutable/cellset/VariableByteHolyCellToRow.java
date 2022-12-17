@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import me.lemire.integercompression.VariableByte;
 
 /**
- * A {@link IHolyCellToRow} compressing coordinates with {@link VariableByte}
+ * A {@link IReadableHolyCellToRow} compressing coordinates with {@link VariableByte}
  * 
  * @author Benoit Lacelle
  *

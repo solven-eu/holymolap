@@ -24,8 +24,8 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
-import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.AggregationToMapHelper;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
@@ -64,7 +64,7 @@ public class TestCitiesFromCsv {
 			List<String> axes = Stream.of(csvResult.columns()).map(rc -> rc.name()).collect(Collectors.toList());
 
 			// Enable querying COUNT(*)
-			List<IMeasuredAxis> measuredAxes = Arrays.asList(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
+			List<IMeasuredAxis> measuredAxes = Arrays.asList(ICountMeasuresConstants.COUNT_MEASURE);
 			IHolyMeasuresDefinition measures = new HolyMeasuresTableDefinition(measuredAxes);
 			LOGGER.info("Measures: {}", measures);
 
@@ -103,7 +103,7 @@ public class TestCitiesFromCsv {
 
 				{
 					NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-							AggregateHelper.singleMeasureToNavigableMap(holyCube, countRecords);
+							AggregationToMapHelper.singleMeasureToNavigableMap(holyCube, countRecords);
 					LOGGER.info("Total records: {}", result);
 
 					Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(numRows);
@@ -112,7 +112,7 @@ public class TestCitiesFromCsv {
 				{
 					String wildcard = "State";
 					NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-							AggregateHelper.singleMeasureToNavigableMap(holyCube,
+							AggregationToMapHelper.singleMeasureToNavigableMap(holyCube,
 									AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 					// LOGGER.info("Total records by '{}': {}", wildcard, result);
 

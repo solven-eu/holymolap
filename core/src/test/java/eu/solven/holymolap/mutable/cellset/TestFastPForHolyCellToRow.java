@@ -9,7 +9,7 @@ import org.quickperf.junit4.QuickPerfJUnitRunner;
 public class TestFastPForHolyCellToRow extends ATestHolyCellToRow {
 
 	@Override
-	protected IHolyCellToRow makeCellToRow() {
+	protected IReadableHolyCellToRow makeCellToRow() {
 		return new FastPForHolyCellToRow();
 	}
 

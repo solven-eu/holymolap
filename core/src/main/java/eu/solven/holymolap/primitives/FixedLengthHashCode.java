@@ -2,6 +2,8 @@ package eu.solven.holymolap.primitives;
 
 import java.util.Arrays;
 
+import it.unimi.dsi.fastutil.ints.IntList;
+
 //Inspired by https://richardstartin.github.io/posts/explicit-intent-and-even-faster-hash-codes
 public class FixedLengthHashCode {
 	private final int[] coefficients;
@@ -24,6 +26,21 @@ public class FixedLengthHashCode {
 		int result = coefficients[max];
 		for (int i = 0; i < ints.length && i < coefficients.length - 1; ++i) {
 			result += coefficients[max - i - 1] * ints[i];
+		}
+		return result;
+	}
+
+	public int hashCode(IntList ints) {
+		final int max = ints.size();
+
+		if (max > coefficients.length) {
+			// Do not rely on ints.hashCode else it may recursively call itself
+			return Arrays.hashCode(ints.toIntArray());
+		}
+
+		int result = coefficients[max];
+		for (int i = 0; i < ints.size() && i < coefficients.length - 1; ++i) {
+			result += coefficients[max - i - 1] * ints.getInt(i);
 		}
 		return result;
 	}

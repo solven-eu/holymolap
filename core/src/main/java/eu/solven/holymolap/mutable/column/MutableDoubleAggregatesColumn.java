@@ -4,7 +4,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import eu.solven.holymolap.compression.doubles.DynamicSchemeDoubleList;
+import eu.solven.holymolap.factory.IHolyDataStructuresFactory;
 import eu.solven.holymolap.immutable.column.IScannableDoubleMeasureColumn;
 import eu.solven.holymolap.immutable.column.ImmutableDoubleAggregatesColumn;
 import eu.solven.holymolap.stable.v1.IDoubleBinaryOperator;
@@ -95,12 +95,12 @@ public class MutableDoubleAggregatesColumn implements IMutableDoubleAggregatesCo
 	}
 
 	@Override
-	public IScannableDoubleMeasureColumn flush() {
+	public IScannableDoubleMeasureColumn flush(IHolyDataStructuresFactory factory) {
 		if (!flushed.compareAndSet(false, true)) {
 			throw new IllegalStateException("Already flushed");
 		}
-		DynamicSchemeDoubleList dynamicScheme = new DynamicSchemeDoubleList(cellToAggregate);
-		return new ImmutableDoubleAggregatesColumn(dynamicScheme, operator.neutralAsDouble());
+		DoubleList doubleList = factory.makeDoubleList(cellToAggregate);
+		return new ImmutableDoubleAggregatesColumn(doubleList, operator.neutralAsDouble());
 	}
 
 }

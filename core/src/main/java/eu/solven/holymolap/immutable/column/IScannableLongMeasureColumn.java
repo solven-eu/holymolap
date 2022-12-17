@@ -5,6 +5,12 @@ import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 
+/**
+ * A measure column is a read-only column of long aggregates.
+ * 
+ * @author Benoit Lacelle
+ *
+ */
 public interface IScannableLongMeasureColumn extends IScannableMeasureColumn {
 
 	@Override

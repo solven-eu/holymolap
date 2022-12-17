@@ -1,35 +1,28 @@
 package eu.solven.holymolap;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.assertj.core.api.InstanceOfAssertFactory;
-import org.junit.Assert;
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 
-import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.HolyCube;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.composite.CompositeHolyCube;
+import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.OperatorFactory;
-import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.AggregationToMapHelper;
 import eu.solven.holymolap.query.EmptyAggregationQuery;
+import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
-import eu.solven.holymolap.sink.record.EmptyHolyRecord;
 import eu.solven.holymolap.sink.record.FastEntry;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
@@ -47,18 +40,21 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		CompositeHolyCube cube = new CompositeHolyCube(cube1, cube2);
 
 		Assertions.assertThat(cube.getNbRows()).isEqualTo(0);
-		Assertions.assertThat(cube.getMeasuresDefinition().measures()).isEmpty();
+		Assertions.assertThat(cube.getMeasuresDefinition().measures())
+				.extracting(IHolyMeasureColumnMeta::asMeasuredAxis)
+				.contains(ICountMeasuresConstants.COUNT_MEASURE)
+				.hasSize(1);
 
 		for (IAggregationQuery query : getAllQueries()) {
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(cube, query.addAggregations(sumFirstKey));
+					AggregationToMapHelper.singleMeasureToNavigableMap(cube, query.addAggregations(sumFirstKey));
 
 			assertEmptyOrNeutral(result, 0D);
 		}
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(cube, GRAND_TOTAL_COUNT);
+					AggregationToMapHelper.singleMeasureToNavigableMap(cube, GRAND_TOTAL_COUNT);
 
 			Assertions.assertThat(result).hasSize(1);
 			Assertions.assertThat(result.values()).singleElement().isEqualTo(0L);
@@ -88,7 +84,8 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		Assertions.assertThat(cube.getNbRows()).isEqualTo(2);
 		Assertions.assertThat(cube.getMeasuresDefinition().measures()).hasSize(1);
 
-		AggregateHelper.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(sumFirstKey))
+		AggregationToMapHelper
+				.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(sumFirstKey))
 				.values()
 				.forEach(aggregate -> {
 					Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE + DOUBLE_SECOND_VALUE);
@@ -96,8 +93,9 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 		// There is a single fact for DoubleKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregationToMapHelper.singleMeasureToNavigableMap(cube,
+							AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
 
 			result.values().forEach(aggregate -> {
 				Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE + DOUBLE_SECOND_VALUE);
@@ -129,8 +127,8 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		Assertions.assertThat(cube.getMeasuresDefinition().measures()).hasSize(1);
 
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					new EmptyAggregationQuery().addAggregations(sumFirstKey));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregationToMapHelper
+					.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(sumFirstKey));
 
 			Assertions.assertThat(result).hasSize(1);
 			result.values().forEach(aggregate -> {
@@ -140,8 +138,9 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 		// There is a single fact for DoubleKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregationToMapHelper.singleMeasureToNavigableMap(cube,
+							AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
 
 			Assertions.assertThat(result).hasSize(1);
 			result.values().forEach(aggregate -> {
@@ -168,8 +167,8 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		Assertions.assertThat(cube.getMeasuresDefinition().measures()).hasSize(1);
 
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					new EmptyAggregationQuery().addAggregations(sumFirstKey));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregationToMapHelper
+					.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(sumFirstKey));
 
 			Assertions.assertThat(result).hasSize(1);
 			result.values().forEach(aggregate -> {
@@ -179,8 +178,9 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 		// There is a single fact for DoubleKey
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregationToMapHelper.singleMeasureToNavigableMap(cube,
+							AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(sumFirstKey));
 
 			Assertions.assertThat(result).hasSize(1);
 			result.values().forEach(aggregate -> {
@@ -220,16 +220,16 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		Assertions.assertThat(cube.getMeasuresDefinition().measures()).hasSize(3);
 
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					new EmptyAggregationQuery().addAggregations(firstMeasuredAxis));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregationToMapHelper
+					.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(firstMeasuredAxis));
 
 			Assertions.assertThat(result).hasSize(1);
 			Assertions.assertThat(result.get(ImmutableSortedMap.of())).isEqualTo(DOUBLE_FIRST_VALUE);
 		}
 
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					new EmptyAggregationQuery().addAggregations(secondMeasuredAxis));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregationToMapHelper
+					.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(secondMeasuredAxis));
 
 			Assertions.assertThat(result).hasSize(1);
 			Assertions.assertThat(result.get(ImmutableSortedMap.of())).isEqualTo(DOUBLE_SECOND_VALUE * 2D + 7D);
@@ -237,7 +237,7 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, Map<IMeasuredAxis, ?>> result =
-					AggregateHelper.measuresToNavigableMap(cube,
+					AggregationToMapHelper.measuresToNavigableMap(cube,
 							new EmptyAggregationQuery().addAggregations(firstMeasuredAxis, secondMeasuredAxis));
 
 			Assertions.assertThat(result).hasSize(1);
@@ -249,8 +249,8 @@ public class TestAggregationComposite extends ATestAggregation implements IHolyM
 		}
 
 		{
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-					new EmptyAggregationQuery().addAggregations(thirdMeasuredAxis));
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregationToMapHelper
+					.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(thirdMeasuredAxis));
 
 			Assertions.assertThat(result).hasSize(1);
 			Assertions.assertThat(result.get(ImmutableSortedMap.of())).isEqualTo(DOUBLE_THIRD_VALUE);

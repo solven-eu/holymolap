@@ -16,8 +16,8 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.OperatorFactory;
-import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.AggregationToMapHelper;
 import eu.solven.holymolap.query.EmptyAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
 import eu.solven.holymolap.sink.IHolyCubeSink;
@@ -44,7 +44,8 @@ public class TestKryoSerialization extends ATestAggregation {
 		IHolyCube cube = HolyKryoHelper.storeGet(kryo, tmpFolder, "someCube.hcube");
 
 		{
-			AggregateHelper.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))
+			AggregationToMapHelper
+					.singleMeasureToNavigableMap(cube, new EmptyAggregationQuery().addAggregations(measuredAxis))
 					.values()
 					.forEach(aggregate -> {
 						Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE);
@@ -52,8 +53,11 @@ public class TestKryoSerialization extends ATestAggregation {
 
 			// There is a single fact for DoubleKey
 			{
-				NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(cube,
-						AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE).build().addAggregations(measuredAxis));
+				NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+						AggregationToMapHelper.singleMeasureToNavigableMap(cube,
+								AggregateQueryBuilder.filter(FIRST_KEY, FIRST_VALUE)
+										.build()
+										.addAggregations(measuredAxis));
 
 				result.values().forEach(aggregate -> {
 					Assertions.assertThat(aggregate).isEqualTo(DOUBLE_FIRST_VALUE);

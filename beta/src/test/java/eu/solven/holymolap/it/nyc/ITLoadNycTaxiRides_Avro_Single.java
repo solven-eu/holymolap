@@ -28,8 +28,8 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
-import eu.solven.holymolap.query.AggregateHelper;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
+import eu.solven.holymolap.query.AggregationToMapHelper;
 import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.query.SimpleAggregationQuery;
 import eu.solven.holymolap.sink.HolyCubeSink;
@@ -116,7 +116,7 @@ public class ITLoadNycTaxiRides_Avro_Single {
 
 		{
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
-					AggregateHelper.singleMeasureToNavigableMap(holyCube, countRecords);
+					AggregationToMapHelper.singleMeasureToNavigableMap(holyCube, countRecords);
 			LOGGER.info("Total records: {}", result);
 
 			Assertions.assertThat((long) result.values().iterator().next()).isEqualTo(recordCount);
@@ -124,8 +124,9 @@ public class ITLoadNycTaxiRides_Avro_Single {
 
 		{
 			String wildcard = "VendorID";
-			NavigableMap<? extends NavigableMap<?, ?>, ?> result = AggregateHelper.singleMeasureToNavigableMap(holyCube,
-					AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregationToMapHelper.singleMeasureToNavigableMap(holyCube,
+							AggregateQueryBuilder.edit(countRecords).addWildcards(wildcard).build());
 			LOGGER.info("Total records by '{}': {}", wildcard, result);
 		}
 	}
@@ -142,14 +143,14 @@ public class ITLoadNycTaxiRides_Avro_Single {
 				.map(cd -> new MeasuredAxis(Stream.of(cd.getPath()).collect(Collectors.joining(".")),
 						IStandardOperators.SUM))
 				.collect(Collectors.toCollection(ArrayList::new));
-		
+
 		Assertions.assertThat(measuredAxes)
 				.hasSize(11)
 				.contains(new MeasuredAxis("passenger_count", IStandardOperators.SUM))
 				.doesNotContain(new MeasuredAxis("RatecodeID", IStandardOperators.SUM));
 
 		// Enable querying COUNT(*)
-		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURED_AXIS);
+		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURE);
 
 		IHolyMeasuresDefinition measures = new HolyMeasuresTableDefinition(measuredAxes);
 		return measures;
