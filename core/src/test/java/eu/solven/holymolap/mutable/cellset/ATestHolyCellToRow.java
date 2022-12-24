@@ -64,12 +64,13 @@ public abstract class ATestHolyCellToRow {
 	private void consistencyChecks(IReadableHolyCellToRow cellToRow, IntArrayList array) {
 		Assertions.assertThat(cellToRow.getRow(array)).isEqualTo(-1);
 
-		Assertions.assertThat(cellToRow.getMayAppendRow(IntArrayList.of(-1, 0))).isEqualTo(0);
+		Assertions.assertThat(cellToRow.getMayAppendRow(IntArrayList.of(-1, 0))).isEqualTo(-1);
 		Assertions.assertThat(cellToRow.getMayAppendRow(IntArrayList.of(-1, 0))).isEqualTo(0);
 
 		Assertions.assertThat(cellToRow.getRow(IntArrayList.of(-1, 0))).isEqualTo(0);
 
 		// A second cell goes into index==1
+		Assertions.assertThat(cellToRow.getMayAppendRow(IntArrayList.of(0, 0))).isEqualTo(-2);
 		Assertions.assertThat(cellToRow.getMayAppendRow(IntArrayList.of(0, 0))).isEqualTo(1);
 	}
 

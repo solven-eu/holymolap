@@ -53,6 +53,9 @@ public class HolyCubeReducer {
 			IHolyCube holyCube;
 
 			List<IMeasuredAxis> measures = defineMeasures(inputHolyCube);
+
+			// BEWARE: This implementation is inefficient as it materialize in-memory the resultCell instead of
+			// streaming it into the reduced cube
 			NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> result =
 					AggregationToMapHelper.measuresToNavigableMap(inputHolyCube.asComposite(),
 							AggregateQueryBuilder.grandTotal().addWildcards(newAxes).addAggregations(measures).build());
