@@ -14,7 +14,7 @@ public class GZipDoubleCodec implements IDoubleCodec {
 	public void compress(double[] doubles, ByteBuffer buffer) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
-			ByteBuffer bb = ByteBuffer.allocate(doubles.length * 8);
+			ByteBuffer bb = ByteBuffer.allocate(doubles.length * Double.BYTES);
 			bb.asDoubleBuffer().put(doubles);
 			gzip.write(bb.array());
 		} catch (IOException e) {
@@ -25,12 +25,13 @@ public class GZipDoubleCodec implements IDoubleCodec {
 
 	@Override
 	public void uncompress(ByteBuffer buffer, double[] doubles) {
-		ByteBuffer bb = ByteBuffer.allocate(doubles.length * 8);
+		ByteBuffer bb = ByteBuffer.allocate(doubles.length * Double.BYTES);
 
-		ByteArrayInputStream baos = new ByteArrayInputStream(bb.array());
+		ByteArrayInputStream baos = new ByteArrayInputStream(buffer.array());
 		try (GZIPInputStream gzip = new GZIPInputStream(baos)) {
 			byte[] doublesBytes = gzip.readAllBytes();
 			bb.put(doublesBytes);
+			bb.flip();
 
 			bb.asDoubleBuffer().get(doubles);
 		} catch (IOException e) {

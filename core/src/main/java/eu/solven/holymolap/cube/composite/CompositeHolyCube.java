@@ -12,6 +12,7 @@ import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.measures.IHolyMeasureColumnMeta;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
+import eu.solven.holymolap.query.ICountMeasuresConstants;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
 /**
@@ -40,9 +41,18 @@ public class CompositeHolyCube implements ICompositeHolyCube {
 
 	@Override
 	public IHolyMeasuresDefinition getMeasuresDefinition() {
+		// countStar is processed separately as it may be added implicitly on emptyCubes, while missing on not-empty
+		// cubes. Start by checking it is present in all cubes
+		boolean allHasCountStar = partitions().stream()
+				.allMatch(c -> c.getMeasuresTable()
+						.getMeasuresDefinition()
+						.findMeasureIndex(ICountMeasuresConstants.COUNT_MEASURE) >= 0);
+
 		List<IMeasuredAxis> measures = partitions().stream()
 				.flatMap(hc -> hc.getMeasuresTable().getMeasuresDefinition().measures().stream())
 				.map(IHolyMeasureColumnMeta::asMeasuredAxis)
+				// We exclude countStar if it not present in all cubes
+				.filter(m -> allHasCountStar ? true : !m.equals(ICountMeasuresConstants.COUNT_MEASURE))
 				.distinct()
 				.collect(Collectors.toList());
 

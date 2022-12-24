@@ -34,11 +34,12 @@ public class CoordinatesRefs implements ICoordinatesRefs {
 
 	@Override
 	public String toString() {
-		return IntStream.range(0, coordinatesRef.length)
-				.mapToObj(i -> axesWithCoordinates.getCardinality(i) + "->'"
-						+ axesWithCoordinates.dereferenceCoordinate(i, coordinatesRef[i])
-						+ "'")
-				.collect(Collectors.joining(", "));
+		return IntStream.range(0, coordinatesRef.length).mapToObj(i -> {
+			int axisIndex = axesIndexes[i];
+			return axesWithCoordinates.getAxes().get(axisIndex) + "->'"
+					+ axesWithCoordinates.dereferenceCoordinate(axisIndex, coordinatesRef[i])
+					+ "'";
+		}).collect(Collectors.joining(", "));
 	}
 
 }

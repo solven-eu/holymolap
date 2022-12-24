@@ -13,11 +13,11 @@ public class TestObject2IntHolyCellToRow extends ATestHolyCellToRow {
 
 	@Override
 	protected long expectedHeapConsuptionMin() {
-		return 123_000L;
+		return 139_000L;
 	}
 
 	@Override
 	protected long expectedHeapConsuptionMax() {
-		return 125_000L;
+		return 139_500L;
 	}
 }

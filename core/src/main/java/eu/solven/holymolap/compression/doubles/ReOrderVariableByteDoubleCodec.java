@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import eu.solven.holymolap.mutable.cellset.FibonacciEncoding;
 import me.lemire.integercompression.IntWrapper;
 import me.lemire.integercompression.VariableByte;
 import me.lemire.longcompression.LongVariableByte;
@@ -192,13 +191,16 @@ public class ReOrderVariableByteDoubleCodec implements IDoubleCodec {
 					uncompressed,
 					new IntWrapper());
 		}
+		
+		long previousAsLong = 0;
 		for (int index = 0; index < doubles.length; index++) {
 			long l = uncompressed[index];
 			long reArranged = reverseArrange(arrangement, l);
 
 			if (index >= 1) {
-				reArranged ^= reverseArrange(arrangement, uncompressed[index - 1]);
+				reArranged ^= previousAsLong;
 			}
+			previousAsLong = reArranged;
 
 			doubles[index] = Double.longBitsToDouble(reArranged);
 		}

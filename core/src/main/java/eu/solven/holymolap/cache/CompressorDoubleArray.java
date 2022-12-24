@@ -70,6 +70,7 @@ public class CompressorDoubleArray extends AHasSoftRefCache<double[], ByteBuffer
 		ByteBuffer uncompressedAsBB = ByteBuffer.allocate(sizeUncompressed * Doubles.BYTES);
 
 		decompressor.decompress(compressed, uncompressedAsBB);
+		uncompressedAsBB.flip();
 
 		double[] array = new double[sizeUncompressed];
 		uncompressedAsBB.asDoubleBuffer().get(array);

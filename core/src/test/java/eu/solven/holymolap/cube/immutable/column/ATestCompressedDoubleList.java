@@ -42,7 +42,7 @@ public abstract class ATestCompressedDoubleList {
 	}
 
 	public void checkReadWrite(double... inputs) {
-		DoubleList c = makeRawInstance(inputs);
+		DoubleList c = makeInstance(inputs);
 
 		for (int i = 0; i < inputs.length; i++) {
 			double input = inputs[i];
@@ -93,6 +93,62 @@ public abstract class ATestCompressedDoubleList {
 		checkReadWrite(Double.MIN_NORMAL, 1D);
 		checkReadWrite(1D, Double.MIN_VALUE);
 		checkReadWrite(Double.MAX_VALUE, 1D);
+	}
+
+	@Test
+	public void testBug_20221224() {
+		checkReadWrite(807.0, 5109.0, 2262.0, 1359.0);
+
+		checkReadWrite(807.0,
+				5109.0,
+				2262.0,
+				1359.0,
+				180.0,
+				741.0,
+				633.0,
+				1206.0,
+				2184.0,
+				177.0,
+				2832.0,
+				1047.0,
+				525.0,
+				228.0,
+				222.0,
+				240.0,
+				Double.NaN,
+				19758.0,
+				19755.0,
+				783.0,
+				4812.0,
+				2124.0,
+				1347.0,
+				177.0,
+				717.0,
+				582.0,
+				1122.0,
+				2121.0,
+				174.0,
+				2793.0,
+				975.0,
+				519.0,
+				198.0,
+				210.0,
+				213.0,
+				Double.NaN,
+				18873.0,
+				18867.0,
+				1590.0,
+				9921.0,
+				4389.0,
+				2706.0,
+				357.0,
+				1461.0,
+				1218.0,
+				2331.0,
+				4308.0,
+				351.0,
+				5622.0,
+				2022.0);
 	}
 
 	@Test

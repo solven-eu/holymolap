@@ -208,7 +208,6 @@ public class MutableHolyCube implements IMutableHolyCube {
 
 		NavigableMap<Integer, int[]> axisIndexToCoordinates = cellToCoordinates(cellsToAdd, size);
 
-		// .ensureCellRegistration
 		int[] cellIndexes = ensureCellRegistration(size, axisIndexToCoordinates);
 
 		contributeToMeasures(measuresToAdd, size, cellIndexes);
@@ -304,11 +303,16 @@ public class MutableHolyCube implements IMutableHolyCube {
 	private int[] ensureCellRegistration(long size, NavigableMap<Integer, int[]> axisIndexToCoordinates) {
 		IntArrayList cellIndexesAsList = new IntArrayList();
 
-		// This record will no write further than this
-		int maxIndex = axisIndexToCoordinates.lastKey().intValue();
+		int[] noRef;
+		if (axisIndexToCoordinates.isEmpty()) {
+			noRef = new int[0];
+		} else {
+			// This record will no write further than this
+			int maxIndex = axisIndexToCoordinates.lastKey().intValue();
 
-		int[] noRef = new int[maxIndex + 1];
-		Arrays.fill(noRef, IMutableAxisSmallDictionary.NO_COORDINATE_INDEX);
+			noRef = new int[maxIndex + 1];
+			Arrays.fill(noRef, IMutableAxisSmallDictionary.NO_COORDINATE_INDEX);
+		}
 
 		IntList tmpCellCoordinates = new IntArrayList(noRef);
 		for (int rowIndex = 0; rowIndex < size; rowIndex++) {

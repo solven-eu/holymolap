@@ -79,24 +79,43 @@ public class LoadFromCsv {
 
 			HolyCubeSink sink = new HolyCubeSink(loadingContext, measures);
 
+			long limittedNumRows = limitNumRows(numRows);
+
 			{
 
-				IHolyRecordsTable cellsTable =
-						new CsvHolyRecordsTable(axes, numRows, csvResult, Predicates.not(measuredAxes::contains));
-				IHolyRecordsTable measuresTable =
-						new CsvHolyRecordsTable(axes, numRows, csvResult, measuredAxes::contains);
+				IHolyRecordsTable cellsTable = defaultCells(limittedNumRows, csvResult, axes, measuredAxes);
+				IHolyRecordsTable defaultMeasuresTable =
+						defaultMeasures(limittedNumRows, csvResult, axes, measuredAxes);
 
-				IHolyRecordsTable cleanMeasuresTable = cleanMeasures(measuresTable);
+				IHolyRecordsTable adjustedMeasuresTable = adjustMeasures(defaultMeasuresTable);
 
-				sink.sink(cellsTable, new DenormalizeHolyMeasuresRecordsTable(cleanMeasuresTable, measures));
+				sink.sink(cellsTable, new DenormalizeHolyMeasuresRecordsTable(adjustedMeasuresTable, measures));
 			}
 
 			holyCube = sink.closeToHolyCube();
 
-			loadResult = new LoadResult(numRows, holyCube);
+			loadResult = new LoadResult(limittedNumRows, holyCube);
 		}
 		LOGGER.info("We have an immutable cube ready for querying");
 		return loadResult;
+	}
+
+	protected long limitNumRows(long numRows) {
+		return numRows;
+	}
+
+	protected CsvHolyRecordsTable defaultCells(final long numRows,
+			final CsvReader.Result csvResult,
+			List<String> axes,
+			Set<String> measuredAxes) {
+		return new CsvHolyRecordsTable(axes, numRows, csvResult, Predicates.not(measuredAxes::contains));
+	}
+
+	protected CsvHolyRecordsTable defaultMeasures(final long numRows,
+			final CsvReader.Result csvResult,
+			List<String> axes,
+			Set<String> measuredAxes) {
+		return new CsvHolyRecordsTable(axes, numRows, csvResult, measuredAxes::contains);
 	}
 
 	/**
@@ -117,7 +136,7 @@ public class LoadFromCsv {
 		return new HolyMeasuresTableDefinition(measuredAxes);
 	}
 
-	protected IHolyRecordsTable cleanMeasures(IHolyRecordsTable measuresTable) {
+	protected IHolyRecordsTable adjustMeasures(IHolyRecordsTable measuresTable) {
 		return measuresTable;
 	}
 }

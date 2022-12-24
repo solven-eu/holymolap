@@ -13,8 +13,6 @@ import eu.solven.holymolap.aggregate.NiceCellToAggregate;
 import eu.solven.holymolap.comparable.NavigableMapComparator;
 import eu.solven.holymolap.cube.IHolyCube;
 import eu.solven.holymolap.cube.composite.ICompositeHolyCube;
-import eu.solven.holymolap.factory.HolyDataStructuresFactory;
-import eu.solven.holymolap.factory.IHolyDataStructuresFactory;
 import eu.solven.holymolap.stable.v1.IAggregationQuery;
 import eu.solven.holymolap.stable.v1.IMeasuredAxis;
 
@@ -31,13 +29,6 @@ public class AggregationToMapHelper {
 	}
 
 	public static NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> measuresToNavigableMap(
-			final ICompositeHolyCube compositeCube,
-			final IAggregationQuery query) {
-		return measuresToNavigableMap(new HolyDataStructuresFactory(), compositeCube, query);
-	}
-
-	public static NavigableMap<? extends NavigableMap<String, ?>, Map<IMeasuredAxis, ?>> measuresToNavigableMap(
-			IHolyDataStructuresFactory factory,
 			final ICompositeHolyCube compositeCube,
 			final IAggregationQuery query) {
 		Stream<NiceCellToAggregate<List<?>>> niceCellToAggregate2Iterator =

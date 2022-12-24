@@ -26,6 +26,7 @@ import eu.solven.holymolap.immutable.table.IHolyDictionarizedTable;
 import eu.solven.holymolap.measures.IHolyMeasuresDefinition;
 import eu.solven.holymolap.measures.definition.HolyMeasuresTableDefinition;
 import eu.solven.holymolap.measures.operator.IStandardOperators;
+import eu.solven.holymolap.measures.operator.OperatorFactory;
 import eu.solven.holymolap.primitives.HolyPrimitiveParser;
 import eu.solven.holymolap.query.AggregateQueryBuilder;
 import eu.solven.holymolap.query.AggregationToMapHelper;
@@ -60,7 +61,7 @@ public class ITLoadAgeAndSex_csv {
 		loadResult = new LoadFromCsv(new LoadingContext("csv_age_sex")) {
 
 			@Override
-			protected IHolyRecordsTable cleanMeasures(IHolyRecordsTable measuresTable) {
+			protected IHolyRecordsTable adjustMeasures(IHolyRecordsTable measuresTable) {
 				return ITLoadAgeAndSex_csv.cleanMeasures(measuresTable);
 			}
 
@@ -68,6 +69,12 @@ public class ITLoadAgeAndSex_csv {
 			protected IHolyMeasuresDefinition defineMeasures(ResultColumn[] resultColumns) {
 				return ITLoadAgeAndSex_csv.defineMeasures(resultColumns);
 			}
+
+			protected long limitNumRows(long numRows) {
+				// return Math.min(numRows, 50);
+				return numRows;
+
+			};
 		}.loadSingleCsvFile(file);
 
 		IHolyCube holyCube = loadResult.getHolyCube();
@@ -175,10 +182,14 @@ public class ITLoadAgeAndSex_csv {
 		List<IMeasuredAxis> measuredAxes = Stream.of(resultColumns)
 				.filter(cd -> DataType.FLOAT == cd.dataType() || DataType.DOUBLE == cd.dataType()
 						|| cd.name().equals("count"))
-				.map(cd -> new MeasuredAxis(cd.name(), IStandardOperators.SUM))
+				.flatMap(cd -> Stream.of(new MeasuredAxis(cd.name(), IStandardOperators.SUM),
+						new MeasuredAxis(cd.name(), IStandardOperators.SAFE_SUM)))
 				.collect(Collectors.toCollection(ArrayList::new));
 
-		Assertions.assertThat(measuredAxes).hasSize(1).contains(new MeasuredAxis("count", IStandardOperators.SUM));
+		Assertions.assertThat(measuredAxes)
+				.hasSize(2)
+				.contains(new MeasuredAxis("count", IStandardOperators.SUM))
+				.contains(new MeasuredAxis("count", IStandardOperators.SAFE_SUM));
 
 		// Enable querying COUNT(*)
 		measuredAxes.add(ICountMeasuresConstants.COUNT_MEASURE);
@@ -212,6 +223,16 @@ public class ITLoadAgeAndSex_csv {
 			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
 					AggregationToMapHelper.singleMeasureToNavigableMap(holyCube,
 							AggregateQueryBuilder.edit(sumCounts).addWildcards(wildcard).build());
+			LOGGER.info("SUM(count) by '{}': {}", wildcard, result);
+		}
+
+		SimpleAggregationQuery safeSumCounts =
+				AggregateQueryBuilder.grandTotal().addAggregations(OperatorFactory.safeSum("count")).build();
+		{
+			String wildcard = "Sex";
+			NavigableMap<? extends NavigableMap<?, ?>, ?> result =
+					AggregationToMapHelper.singleMeasureToNavigableMap(holyCube,
+							AggregateQueryBuilder.edit(safeSumCounts).addWildcards(wildcard).build());
 			LOGGER.info("SUM(count) by '{}': {}", wildcard, result);
 		}
 	}

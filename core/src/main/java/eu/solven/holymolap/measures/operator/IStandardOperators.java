@@ -2,7 +2,14 @@ package eu.solven.holymolap.measures.operator;
 
 public interface IStandardOperators {
 
+	/**
+	 * Sum inputs with standard addition. If a NaN is encountered, the aggregate is NaN.
+	 */
 	String SUM = "SUM";
+	/**
+	 * Sum inputs with standard addition. If a NaN is encountered, it is excluded from the aggregation.
+	 */
+	String SAFE_SUM = "SAFE_SUM";
 	/**
 	 * Count the number of considered input records (similarly to SQL)
 	 */

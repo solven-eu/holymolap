@@ -58,6 +58,7 @@ public class DynamicSchemeDoubleList extends AbstractDoubleList
 		}
 
 		DoubleList currentUnderlying = underlying.get();
+		DoubleList initialUnderlying = currentUnderlying;
 
 		long currentSize = ImmutableDoubleAggregatesColumn.estimateDoubleListFootprint(currentUnderlying);
 
@@ -90,6 +91,31 @@ public class DynamicSchemeDoubleList extends AbstractDoubleList
 		}
 
 		trimmed.set(true);
+
+		DoubleList newUnderlying = underlying.get();
+		if (newUnderlying instanceof IMayCache) {
+			((IMayCache) newUnderlying).invalidateCache();
+		}
+		if (initialUnderlying.size() != newUnderlying.size()) {
+			throw new IllegalStateException("The compression corrupted the length");
+		}
+		for (int i = 0; i < initialUnderlying.size(); i++) {
+			double initialD = initialUnderlying.getDouble(i);
+			double newD = newUnderlying.getDouble(i);
+
+			// NaN are properly handled
+			if (0 != Double.compare(initialD, newD)) {
+				throw new IllegalStateException("The compression (" + newUnderlying.getClass()
+						+ ") is not lossless. For index="
+						+ i
+						+ " "
+						+ initialD
+						+ " != "
+						+ newD
+						+ " initial double[]="
+						+ initialUnderlying);
+			}
+		}
 	}
 
 	@Override
